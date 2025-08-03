@@ -1,0 +1,7 @@
+pip install psycopg
+pip install psycopg2-binary
+pip install django-tailwind
+pip install 'django-tailwind[reload]'
+pip install Pillow
+pip install python-dotenv
+npm install flowbite
