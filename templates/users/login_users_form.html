@@ -1,0 +1,73 @@
+{% extends 'base/base.html' %}
+
+{% block title %}
+    Login
+{% endblock %}
+
+{% block content %}
+    <div class="flex flex-col items-center p-5 bg-gray-100 gap-4 h-screen">
+{#            <form method="post" class="sm:w-[90%] lg:w-[500px] mx-auto">#}
+            <form method="post" class="sm:w-[90%] lg:w-[50%] ">
+            <h2 class="mb-5 text-2xl font-extrabold leading-none tracking-tight text-gray-500 md:text-4xl ">Login</h2>
+              {% csrf_token %}
+              {% for field in form %}
+                <div class="relative z-0 w-full mb-5 group">
+                  <input
+                    type="{{ field.field.widget.input_type }}"
+                    name="{{ field.html_name }}"
+                    id="{{ field.id_for_label }}"
+                    value="{{ field.value|default_if_none:'' }}"
+                    class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 {% if field.errors %} border-red-500 {% endif %}border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                    placeholder=" "
+                    {% if field.field.required %}required{% endif %}
+                  />
+                  <label
+                    for="{{ field.id_for_label }}"
+                    class="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6"
+                  >
+                    {{ field.label }}
+                  </label>
+
+                  {% if field.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ field.errors }}</p>
+                      {% for error in field.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ error }}</p>
+                      {% endfor %}
+                  {% endif %}
+                </div>
+              {% endfor %}
+
+{#            <div class="flex flex-row m-0 p-0 gap-3">#}
+{#              <button#}
+{#                type="submit"#}
+{#                class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-fulfitl sm:w-auto px-5 py-2.5 text-center"#}
+{#              >#}
+{#                SignUp#}
+{#              </button>#}
+{#                <button type="button" class="text-blue-700 hover:text-white border border-blue-700 hover:ring-transparent hover:bg-blue-200 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center"><a href="{% url 'book_list' %}">Cancel</a></button>#}
+{#            </div>#}
+            {% url 'book_list' as book_list_url %}
+            {% include 'components/button_group.html' with submit_text="Login" cancel_url=book_list_url cancel_text="Cancel" %}
+
+            </form>
+    </div>
+{##}
+{#    <div class="flex flex-col items-center p-5 bg-gray-100 gap-4 h-screen">#}
+{#            <form method="post" class="sm:w-[90%] lg:w-[50%] ">#}
+{#            <h2 class="mb-5 text-2xl font-extrabold leading-none tracking-tight text-gray-500 md:text-4xl ">Login</h2>#}
+{#              {% csrf_token %}#}
+{#            {% include "components/form_input.html" with field = form.first_name %}#}
+{#            {% include "components/form_input.html" with field = form.last_name %}#}
+{#            {% include "components/form_input.html" with field = form.email %}#}
+{#            {% include "components/form_input.html" with field = form.password %}#}
+{#            {% include "components/form_input.html" with field = form.password2 %}#}
+{#            {% include "components/form_input.html" with field = form.contact_number %}#}
+{#            {% include "components/form_input.html" with field = form.date_of_birth %}#}
+{#            {% include "components/form_input.html" with field = form.address %}#}
+{#            {% include "components/form_input.html" with field = form.profile_picture %}#}
+{##}
+{#            </form>#}
+{#    </div>#}
+{% endblock %}
+
+
