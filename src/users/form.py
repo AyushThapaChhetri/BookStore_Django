@@ -46,10 +46,9 @@ class UserForm(UserCreationForm):
 
 
 
-class LoginForm(forms.ModelForm):
-    class Meta:
-        model = User
-        fields = [
-            'email',
-            'password',
-        ]
+class LoginForm(forms.Form):
+    email = forms.EmailField(label="Email", widget=forms.EmailInput(attrs={'autocomplete': 'new-email'}))
+    password = forms.CharField(label="Password", widget=forms.PasswordInput(attrs={'autocomplete': 'new-password'}))
+
+
+

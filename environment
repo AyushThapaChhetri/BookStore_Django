@@ -5,3 +5,4 @@ pip install 'django-tailwind[reload]'
 pip install Pillow
 pip install python-dotenv
 npm install flowbite
+pip install python-decouple

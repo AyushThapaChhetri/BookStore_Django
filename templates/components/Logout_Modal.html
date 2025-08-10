@@ -1,0 +1,14 @@
+<!-- logout_modal.html -->
+<div id="logoutModal" class="fixed inset-0 z-60 hidden backdrop-blur-sm bg-black/50 flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-lg p-6 w-80 text-center">
+        <h2 class="text-lg font-semibold mb-4">Are you sure you want to logout?</h2>
+        <div class="flex justify-center gap-4">
+            <button onclick="closeLogoutModal()" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">
+                Cancel
+            </button>
+            <a href="{% url 'logout_view' %}" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+                Logout
+            </a>
+        </div>
+    </div>
+</div>

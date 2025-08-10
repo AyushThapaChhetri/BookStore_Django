@@ -1,0 +1,21 @@
+<p class="text-2xl font-bold text-gray-800 mb-2">
+    Welcome to Our Bookstore!
+</p>
+<p class="text-gray-700 mb-2 text-justify">
+    Dive into a world of stories, knowledge, and imagination. Whether you're looking for gripping
+    novels, insightful non-fiction, or inspiring biographies, our collection has something for every
+    kind of reader.
+</p>
+
+<p class="text-gray-700 mb-4 text-justify">
+    From timeless classics to the latest bestsellers, explore curated selections tailored to your
+    tastes. Start your literary journey today and let your next favorite book find you.
+</p>
+
+{% if user.is_authenticated %}
+    {% url 'book_list' as target_url %}
+    {% include 'components/button.html' with url_to_visit=target_url button_text="Book View" %}
+{% else %}
+    {% url 'login_view' as target_url %}
+    {% include 'components/button.html' with url_to_visit=target_url button_text="Get Started" %}
+{% endif %}
