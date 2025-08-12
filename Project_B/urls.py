@@ -34,9 +34,11 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.contrib.auth import views as auth_views
 from django.urls import path, include
 
 from src.users.views import UserCreateView, UserLoginView
+from . import views
 from .views import home_view
 
 urlpatterns = [
@@ -45,8 +47,21 @@ urlpatterns = [
                   path('admin/', admin.site.urls),
                   path('books/', include('src.books.urls')),
                   path('users/', include('src.users.urls')),
+                  path('about/', views.about_view, name='about_view'),
                   path('signup/', UserCreateView.as_view(), name='signup_view'),
                   path('login/', UserLoginView.as_view(), name='login_view'),
+                  path('reset_password/',
+                       auth_views.PasswordResetView.as_view(template_name='users/password_reset_form.html'),
+                       name='reset_password'),
+                  path('reset_password_sent/',
+                       auth_views.PasswordResetDoneView.as_view(template_name='users/password_reset_done.html'),
+                       name='password_reset_done'),
+                  path('reset/<uidb64>/<token>/',
+                       auth_views.PasswordResetConfirmView.as_view(template_name='users/password_reset_confirm.html'),
+                       name='password_reset_confirm'),
+                  path('reset_password_complete/',
+                       auth_views.PasswordResetCompleteView.as_view(template_name='users/password_reset_complete.html'),
+                       name='password_reset_complete'),
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:

@@ -12,7 +12,7 @@ class UserCreateView(View):
         if request.user.is_authenticated:
             return redirect('home')
         form = UserForm()
-        return render(request, '../../Project_B/templates/users/signup_users_form.html', {'form': form})
+        return render(request, 'users/signup_users_form.html', {'form': form})
 
     def post(self, request):
         form = UserForm(request.POST, request.FILES)
@@ -24,7 +24,7 @@ class UserCreateView(View):
         print('not valid')
         # Optionally, print form errors to debug:
         print(form.errors)
-        return render(request, '../../Project_B/templates/users/signup_users_form.html', {'form': form})
+        return render(request, 'users/signup_users_form.html', {'form': form})
 
 
 class UserLoginView(View):
@@ -33,7 +33,7 @@ class UserLoginView(View):
         if request.user.is_authenticated:
             return redirect('home')
         form = LoginForm()
-        return render(request, '../../Project_B/templates/users/login_users_form.html', {'form': form})
+        return render(request, 'users/login_users_form.html', {'form': form})
 
     def post(self, request):
         form = LoginForm(request.POST)
@@ -50,7 +50,7 @@ class UserLoginView(View):
                 return redirect('login_view')
                 # form.add_error(None,'Invalid email or password')
         print(form.errors)
-        # return render(request, '../../Project_B/templates/users/login_users_form.html', {'form': form})
+        # return render(request, 'users/login_users_form.html', {'form': form})
         messages.error(request, 'Please correct the form')
         return redirect('login_view')
 

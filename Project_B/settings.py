@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-eq%okkp^+6a%-5$-%10gcn$)jkhz-av2zx91-7+(m74ek1ecn-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -115,6 +115,15 @@ DATABASES = {
         'PORT': os.getenv('DB_PORT', '5432'),  # Default to 5432 if not set
     }
 }
+
+# smtp configurations
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv('host_email')
+EMAIL_HOST_PASSWORD = os.getenv('host_password')
+DEFAULT_FROM_EMAIL = os.getenv('host_email')
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators

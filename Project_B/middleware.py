@@ -17,8 +17,9 @@ URL_PERMISSIONS = [
 #     # '/__reload__/',
 # ]
 
-EXEMPT_PATHS_EXACT = {'/', '/login/', '/signup/'}
-EXEMPT_PATHS_PREFIX = {'/media/', '/static/'}
+EXEMPT_PATHS_EXACT = {'/', '/login/', '/signup/', '/reset_password/', '/reset_password_sent/', '/reset/<uuid>/<token>/',
+                      '/reset_password_complete/', '/about/'}
+EXEMPT_PATHS_PREFIX = {'/media/', '/static/', '/reset/'}
 
 
 class PermissionMiddleware:

@@ -4,7 +4,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    {#    <meta charset="UTF-8">#}
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>
         {% block title %}
             Django Learn
@@ -283,6 +284,18 @@
     function closeLogoutModal() {
         document.getElementById("logoutModal").classList.add("hidden");
     }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('form').forEach(form => {
+            const submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
+            if (!submitBtn) return;
+
+            form.addEventListener('submit', () => {
+                submitBtn.disabled = true;
+                submitBtn.innerText = 'Submitting...';
+            });
+        });
+    });
 </script>
 </script>
 

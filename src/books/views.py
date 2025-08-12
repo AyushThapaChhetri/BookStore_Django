@@ -11,7 +11,8 @@ from src.books.models import Book
 
 # Create your views here.
 def hello(request):
-    return render(request, '../../Project_B/templates/books/hello.html', {'name': 'Ayush'})
+    # return render(request, '../../Project_B/templates/books/hello.html', {'name': 'Ayush'})
+    return render(request, 'books/hello.html', {'name': 'Ayush'})
     # return render(request, 'hello.html')
     # return HttpResponse("Hello, %s!" % request.path)
 
@@ -52,30 +53,30 @@ class BookListView(View):
         page = request.GET.get('page')
         paginated_books = p.get_page(page)
 
-        return render(request, '../../Project_B/templates/books/book_list.html', {'books': books,
-                                                                                  'paginated_books': paginated_books,
-                                                                                  'limit': limit})
+        return render(request, 'books/book_list.html', {'books': books,
+                                                        'paginated_books': paginated_books,
+                                                        'limit': limit})
 
 
 # View specific books(Read)
 class BookDetailView(View):
     def get(self, request, uuid):
         book = get_object_or_404(Book, uuid=uuid)
-        return render(request, '../../Project_B/templates/books/book_detail_view.html', {'book': book})
+        return render(request, 'books/book_detail_view.html', {'book': book})
 
 
 # Create a book
 class BookCreateView(View):
     def get(self, request):
         form = BookForm()
-        return render(request, '../../Project_B/templates/books/book_form.html', {'form': form})
+        return render(request, 'books/book_form.html', {'form': form})
 
     def post(self, request):
         form = BookForm(request.POST)
         if form.is_valid():
             form.save()
             return redirect('book_list')
-        return render(request, '../../Project_B/templates/books/book_form.html', {'form': form})
+        return render(request, 'books/book_form.html', {'form': form})
 
 
 # Update a book
@@ -90,7 +91,7 @@ class BookUpdateView(View):
         print("After permission")
         book = get_object_or_404(Book, uuid=uuid)
         form = BookForm(instance=book)
-        return render(request, '../../Project_B/templates/books/book_form.html', {'form': form})
+        return render(request, 'books/book_form.html', {'form': form})
 
     def post(self, request, uuid):
         print("before permission")
@@ -103,7 +104,7 @@ class BookUpdateView(View):
         if form.is_valid():
             form.save()
             return redirect('book_list')
-        return render(request, '../../Project_B/templates/books/book_form.html', {'form': form})
+        return render(request, 'books/book_form.html', {'form': form})
 
 
 # Delete a book
@@ -116,11 +117,12 @@ class BookDeleteView(View):
         print("After permission")
 
         book = get_object_or_404(Book, uuid=uuid)
-        return render(request, '../../Project_B/templates/books/book_confirm_delete.html', {'book': book})
+        return render(request, 'books/book_confirm_delete.html', {'book': book})
 
     def post(self, request, uuid):
         if not request.user.has_perm('books.change_book'):
             raise PermissionDenied  # 403 Forbidden
         book = get_object_or_404(Book, uuid=uuid)
-        book.delete()
+        # book.delete()
+        book.delete(user=request.user)
         return redirect('book_list')
