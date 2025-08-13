@@ -7,7 +7,7 @@
 
 {% block content %}
 
-    <div class="flex flex-col grow p-5 mg:p-10 bg-gray-100 gap-4">
+    <div class="flex flex-col grow p-5 md:px-15 bg-gray-100  gap-4">
         <div class="flex flex-col space-between justify-between gap-4 ">
             <div>
                 <h1 class="text-xl mb-2">Books</h1>
@@ -37,8 +37,9 @@
 
                 {% if request.user|has_perm:"books.add_book" %}
                     <button class="w-fit h-fit bg-indigo-800 hover:bg-indigo-500 text-white font-bold py-2 px-4 rounded">
-                        <a
-                                href="{% url 'book_create' %}">Add Book</a></button>
+                        {#                        <a href="{% url 'book_create' %}">Add Book</a>#}
+                        <a href="{% url 'book_view' %}">Add Book</a>
+                    </button>
                 {% endif %}
             </div>
         </div>
@@ -83,8 +84,9 @@
                                 {#The string after the colon (:) becomes the second argument (or subsequent arguments if you had more).#}
                                 {% if request.user|has_perm:"books.change_book" %}
                                     <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                                        <a
-                                                href="{% url 'book_update'  book.uuid %}">Edit</a></button>
+                                        {#                                        <a href="{% url 'book_update'  book.uuid %}">Edit</a>#}
+                                        <a href="{% url 'book_view' book.uuid %}">Edit</a>
+                                    </button>
                                     <button
                                             type="button"
                                             class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
@@ -219,7 +221,10 @@
                     </button>
                     <form id="deleteForm" method="post" action="">
                         {% csrf_token %}
-                        <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Yes,
+                        {#                        this hidden input is sent inorder to send delete name for understanding post request#}
+                        <input type="hidden" name="delete" value="1">
+                        <button type="submit" name="delete"
+                                class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Yes,
                             Delete
                         </button>
                     </form>
@@ -268,8 +273,19 @@
                     <div class="flex space-x-2 gap-2">
                         <a href="/books/detail/${book.uuid}" class="bg-indigo-600 hover:bg-indigo-800 text-white font-bold py-2 px-4 rounded">View</a>
                         {% if request.user|has_perm:"books.change_book" %}
-                        <a href="/books/update/${book.uuid}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Edit</a>
-                        <button onclick="openDeleteModal('${book.uuid}')" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Delete</button>
+
+
+
+
+
+
+
+
+
+
+                    {#<a href="/books/update/${book.uuid}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Edit</a>#}
+                        <a href="/books/${book.uuid}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Edit</a>
+                        <button onclick="openDeleteModal('${book.uuid}')"  class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Delete</button>
                         {% endif %}
                         </div>
                     </td>
@@ -288,7 +304,7 @@
             } catch (error) {
                 console.error('Search Failed', error);
             }
-        }, 300)
+        }, 1000)
 
         searchInput.addEventListener('input', handleSearch);
 

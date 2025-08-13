@@ -46,10 +46,10 @@ class BookListView(View):
             limit = 10  # fallback to default
 
         # books = Book.objects.all()
-        books = Book.objects.all()
+        books = Book.objects.all().order_by('-created_at')
 
         # Set Up Pagination
-        p = Paginator(Book.objects.all(), limit)
+        p = Paginator(Book.objects.all().order_by('created_at'), limit)
         page = request.GET.get('page')
         paginated_books = p.get_page(page)
 
@@ -65,64 +65,49 @@ class BookDetailView(View):
         return render(request, 'books/book_detail_view.html', {'book': book})
 
 
-# Create a book
-class BookCreateView(View):
-    def get(self, request):
+class BookView(View):
+    def get(self, request, uuid=None):
         form = BookForm()
+        if uuid:
+            book = get_object_or_404(Book, uuid=uuid)
+            form = BookForm(instance=book)
+            return render(request, 'books/book_form.html', {'form': form})
         return render(request, 'books/book_form.html', {'form': form})
 
-    def post(self, request):
+    def post(self, request, uuid=None):
+
+        if uuid and 'delete' in request.POST:
+
+            if not request.user.has_perm('books.delete_book'):
+                raise PermissionDenied
+            book = get_object_or_404(Book, uuid=uuid)
+            book.delete(user=request.user)
+            return redirect('book_list')
+
+        if not request.user.has_perm('books.change_book'):
+            raise PermissionDenied
         form = BookForm(request.POST)
+
         if form.is_valid():
             form.save()
             return redirect('book_list')
         return render(request, 'books/book_form.html', {'form': form})
 
-
-# Update a book
-class BookUpdateView(View):
-    def get(self, request, uuid):
-        print("before permission")
-        print(request.user.is_superuser)  # True means has all permissions
-        print(request.user.get_all_permissions())  # Shows all assigned permissions
-        if not request.user.has_perm('books.change_book'):
-            print("between permission")
-            raise PermissionDenied  # 403 Forbidden
-        print("After permission")
-        book = get_object_or_404(Book, uuid=uuid)
-        form = BookForm(instance=book)
-        return render(request, 'books/book_form.html', {'form': form})
-
-    def post(self, request, uuid):
-        print("before permission")
-        if not request.user.has_perm('books.change_book'):
-            print("between permission")
-            raise PermissionDenied  # 403 Forbidden
-        print("After permission")
-        book = get_object_or_404(Book, uuid=uuid)
-        form = BookForm(request.POST, instance=book)
-        if form.is_valid():
-            form.save()
-            return redirect('book_list')
-        return render(request, 'books/book_form.html', {'form': form})
-
-
-# Delete a book
-class BookDeleteView(View):
-    def get(self, request, uuid):
-        print("before permission")
-        if not request.user.has_perm('books.change_book'):
-            print("between permission")
-            raise PermissionDenied  # 403 Forbidden
-        print("After permission")
-
-        book = get_object_or_404(Book, uuid=uuid)
-        return render(request, 'books/book_confirm_delete.html', {'book': book})
-
-    def post(self, request, uuid):
-        if not request.user.has_perm('books.change_book'):
-            raise PermissionDenied  # 403 Forbidden
-        book = get_object_or_404(Book, uuid=uuid)
-        # book.delete()
-        book.delete(user=request.user)
-        return redirect('book_list')
+    # def put(self, request, uuid):
+    #     print("delete_book")
+    #     if not request.user.has_perm('books.change_book'):
+    #         raise PermissionDenied
+    #     book = get_object_or_404(Book, uuid=uuid)
+    #     form = BookForm(request.POST, instance=book)
+    #     if form.is_valid():
+    #         form.save()
+    #         return redirect('book_list')
+    #     return render(request, 'books/book_form.html', {'form': form})
+    #
+    # def delete(self, request, uuid):
+    #     print("delete_book")
+    #     if not request.user.has_perm('books.delete_book'):
+    #         raise PermissionDenied
+    #     book = get_object_or_404(Book, uuid=uuid)
+    #     book.delete(user=request.user)
+    #     return redirect('book_list')

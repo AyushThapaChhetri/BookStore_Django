@@ -48,7 +48,7 @@
 
                             <td class="p-3 text-sm text-gray-700">
                                 <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"><a
-                                        href="{% url 'book_update'  book.uuid %}">Edit</a></button>
+                                        href="{% url 'book_view' book.uuid %}">Edit</a></button>
                                 <button
                                         type="button"
                                         class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
@@ -73,7 +73,9 @@
                         </button>
                         <form id="deleteForm" method="post" action="">
                             {% csrf_token %}
-                            <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Yes,
+                            <input type="hidden" name="delete" value="1">
+                            <button type="submit" name="delete"
+                                    class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Yes,
                                 Delete
                             </button>
                         </form>

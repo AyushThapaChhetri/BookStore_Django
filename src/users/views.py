@@ -44,7 +44,7 @@ class UserLoginView(View):
             if user is not None:
                 login(request, user)
                 messages.success(request, "Login successful!")
-                return redirect('book_list')
+                return redirect('home')
             else:
                 messages.error(request, "Invalid email or password.")
                 return redirect('login_view')
