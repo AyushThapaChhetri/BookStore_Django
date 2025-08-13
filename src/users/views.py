@@ -47,12 +47,14 @@ class UserLoginView(View):
                 return redirect('home')
             else:
                 messages.error(request, "Invalid email or password.")
-                return redirect('login_view')
+                # return redirect('login_view')
+                return render(request, 'users/login_users_form.html', {'form': form})
                 # form.add_error(None,'Invalid email or password')
         print(form.errors)
         # return render(request, 'users/login_users_form.html', {'form': form})
         messages.error(request, 'Please correct the form')
-        return redirect('login_view')
+        # return redirect('login_view')
+        return render(request, 'users/login_users_form.html', {'form': form})
 
 
 class UserLogoutView(View):

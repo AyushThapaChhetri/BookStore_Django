@@ -6,8 +6,6 @@
 
 {% block content %}
     <div class="flex flex-col items-center p-5 bg-gray-100 gap-4 h-screen">
-
-
         <form method="post" autocomplete="off" class="w-[90%] lg:w-[40%]" id="loginForm">
             <h2 class="mb-5 text-2xl font-extrabold leading-none tracking-tight text-gray-500 md:text-4xl ">Login</h2>
             {% csrf_token %}
@@ -74,23 +72,7 @@
         </form>
 
     </div>
-    {##}
-    {#    <div class="flex flex-col items-center p-5 bg-gray-100 gap-4 h-screen">#}
-    {#            <form method="post" class="sm:w-[90%] lg:w-[50%] ">#}
-    {#            <h2 class="mb-5 text-2xl font-extrabold leading-none tracking-tight text-gray-500 md:text-4xl ">Login</h2>#}
-    {#              {% csrf_token %}#}
-    {#            {% include "components/form_input.html" with field = form.first_name %}#}
-    {#            {% include "components/form_input.html" with field = form.last_name %}#}
-    {#            {% include "components/form_input.html" with field = form.email %}#}
-    {#            {% include "components/form_input.html" with field = form.password %}#}
-    {#            {% include "components/form_input.html" with field = form.password2 %}#}
-    {#            {% include "components/form_input.html" with field = form.contact_number %}#}
-    {#            {% include "components/form_input.html" with field = form.date_of_birth %}#}
-    {#            {% include "components/form_input.html" with field = form.address %}#}
-    {#            {% include "components/form_input.html" with field = form.profile_picture %}#}
-    {##}
-    {#            </form>#}
-    {#    </div>#}
+
 
     <script>
         // Clear inputs on page load if redirected or after login
@@ -98,23 +80,13 @@
             const emailInput = document.querySelector('input[name="email"]');
             const passwordInput = document.querySelector('input[name="password"]');
 
-            if (emailInput) {
-                {#console.log("Input value", emailInput);#}
-                emailInput.value = "";
-            }
+            {#if (emailInput) {#}
+            {#    emailInput.value = "";#}
+            {##}
+
             if (passwordInput) passwordInput.value = "";
         });
 
-        {##}
-        {#const form = document.getElementById('loginForm');#}
-        {#const submitBtn = document.getElementById('submitBtn');#}
-        {##}
-        {#form.addEventListener('submit', () => {#}
-        {#    submitBtn.disabled = true;#}
-        {#    submitBtn.innerText = 'Submitting...';#}
-        {#})
-            ;
-        #}
 
     </script>
 {% endblock %}
