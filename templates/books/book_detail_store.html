@@ -1,0 +1,136 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+    <div class="flex flex-col  grow items-center justify-between md:p-10 bg-gray-100 gap-4  w-full">
+        <div class="flex flex-col gap-2 md:flex-row justify-center w-[85%] ">
+            <div class="flex flex-col h-fit w-[250px] justify-between  gap-4 p-5 border-[3px] rounded-md border-gray-300">
+                <img class="p-8 rounded-t-lg" src="yolo" alt="{% if books %}{{ books.title }}{% endif %}"/>
+
+            </div>
+            <div class="flex flex-col h-fit justify-between w-[50%]  gap-4 p-5 border-[3px] rounded-md border-gray-300">
+                <div class="flex flex-col gap-2 border-b-[1.5px] p-2 border-gray-300">
+
+                    <h1 class="text-2xl font-bold text-gray-900">
+
+                        {% if books %}
+                            {{ books.title }}
+                        {% endif %}
+                    </h1>
+                    <p>
+                        <span class="text-gray-400">by</span> {% if books %}{{ books.author }}{% endif %}
+                    </p>
+                    <p>
+                        Sold by <span class="text-blue-800 font-medium">Books Addiction</span>
+                    </p>
+                </div>
+                <div class="flex flex-col gap-2 border-b-[1.5px] p-2 pb-[20px] border-gray-300">
+                    <h1 class="text-2xl pb-[30px] font-bold text-gray-900">
+                        Description
+                    </h1>
+                    <p>
+
+                        {% if books %}
+                            {{ books.description }}
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="flex flex-col gap-2  p-2 ">
+                    <h1 class="text-2xl pb-[30px] font-bold text-gray-900">
+                        Other Info
+                    </h1>
+                    <div class="flex gap-4">
+                        <div class="flex flex-col border-[1px] border-gray-200 rounded-md  py-2 px-4 items-center bg-gray-200">
+                            Page Count
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                 stroke="currentColor" class="size-6">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                      d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"/>
+                            </svg>
+                            {% if books %}
+                                {% if not books.pages %}
+                                    0
+                                {% else %}
+                                    {{ books.pages }}
+                                {% endif %}
+                            {% endif %}
+                            Pages
+                        </div>
+                        <div class="flex flex-col border-[1px] border-gray-200 rounded-md  py-2 px-4 items-center bg-gray-200">
+                            Language
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                 stroke="currentColor" class="size-6">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                      d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"/>
+                            </svg>
+                            {% if books %}
+
+                                {{ books.language }}
+
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex flex-col h-fit w-[250px] justify-between  gap-4 p-5 border-[3px] rounded-md border-gray-300">
+                <h2 class="text-xl font-bold text-gray-900">
+                    Get Book
+                </h2>
+                <div class="flex justify-between">
+                    <p class="text-lg text-gray-600">
+                        Rs
+
+                        {% if books %}
+                            {% if not books.price %}
+                                0
+                            {% else %}
+                                {{ books.price }}
+                            {% endif %}
+                        {% endif %}
+                    </p>
+
+                </div>
+
+                <div class="flex flex-col gap-4 justify-between">
+                    <form class="max-w-xs ">
+                        <label for="quantity-input"
+                               class="block mb-2 text-sm font-medium text-gray-900 ">Choose
+                            quantity:</label>
+                        <div class="relative flex items-center max-w-[8rem]">
+                            <button type="button" id="decrement-button"
+                                    data-input-counter-decrement="quantity-input"
+                                    class="bg-gray-100  hover:bg-gray-200 border border-gray-700 rounded-s-lg p-3 h-11 focus:ring-gray-100  focus:ring-2 focus:outline-none">
+                                <svg class="w-3 h-3 text-gray-900 " aria-hidden="true"
+                                     xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 2">
+                                    <path stroke="currentColor" stroke-linecap="round"
+                                          stroke-linejoin="round" stroke-width="2" d="M1 1h16"/>
+                                </svg>
+                            </button>
+                            <input type="text" id="quantity-input" data-input-counter
+                                   data-input-counter-min="1" data-input-counter-max="50"
+                                   aria-describedby="helper-text-explanation"
+                                   class="bg-gray-50 border-y border-gray-900 h-11 text-center text-gray-900 text-sm focus:ring-blue-500 focus:border-blue-500 block w-full py-2.5"
+                                   placeholder="999" value="1" required/>
+                            <button type="button" id="increment-button"
+                                    data-input-counter-increment="quantity-input"
+                                    class="bg-gray-100  hover:bg-gray-200 border border-gray-700 rounded-e-lg p-3 h-11 focus:ring-gray-100  focus:ring-2 focus:outline-none">
+                                <svg class="w-3 h-3 text-gray-900 " aria-hidden="true"
+                                     xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 18">
+                                    <path stroke="currentColor" stroke-linecap="round"
+                                          stroke-linejoin="round" stroke-width="2" d="M9 1v16M1 9h16"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <p id="helper-text-explanation"
+                           class="mt-2 text-sm text-gray-500 dark:text-gray-400">Please select a 5 digit
+                            number from 0 to 9.</p>
+                    </form>
+                    <a href="{% url 'book_cart' %}"
+                       class="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white text-center font-semibold py-2 px-4 rounded-md transition-all duration-300 shadow">
+                        ADD TO CART
+                    </a>
+
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,122 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+    <div class="flex flex-col align-center grow items-center md:p-10 bg-gray-100 gap-4  w-full">
+        <div class="flex flex-col w-[85%]  rounded-md">
+            <h1 class="text-4xl border-b border-gray-500 py-[1rem] text-center font-bold text-green-700">
+                Order Success
+            </h1>
+            <div class="flex flex-col gap-4   p-[2rem]">
+                <div class="flex flex-col items-center  text-sm text-green-800 border border-green-300 rounded-lg bg-green-50 "
+                >
+
+                    <div class="flex flex-col p-4 grow text-center item-center">
+                        <span class="font-medium text-xl">Book Addiction</span><br>
+
+                        Thank you for placing your order with Book Addiction.<br>
+                        We have successfully received your order. We will contact you soon for further processing and
+                        delivery.<br><br>
+
+                        Your order number: OD0012477
+                    </div>
+
+                </div>
+                <div class="flex flex-col md:flex-row gap-4 items-center md:justify-center md:items-start">
+                    <div class="flex flex-col justify-between w-[300px] h-fit gap-4 p-5 border-[3px] rounded-md border-gray-300">
+
+                        <h2 class="text-xl font-bold text-gray-900">
+                            Delivery details
+                        </h2>
+
+
+                        <table class="w-full text-left text-sm">
+                            <tbody>
+                            <tr>
+                                <td class="p-2 font-medium">Full Name</td>
+                                <td class="p-2">dsafdf</td>
+                            </tr>
+                            <tr>
+                                <td class="p-2 font-medium">Email</td>
+                                <td class="p-2">email@gmail.com</td>
+                            </tr>
+                            <tr>
+                                <td class="p-2 font-medium">Mobile</td>
+                                <td class="p-2">986454354546435</td>
+                            </tr>
+
+                            <tr>
+                                <td class="p-2 font-medium">Country</td>
+                                <td class="p-2">Nepal</td>
+                            </tr>
+                            <tr>
+                                <td class="p-2 font-medium">City</td>
+                                <td class="p-2">Kathmandu</td>
+                            </tr>
+                            <tr>
+                                <td class="p-2 font-medium">Street Address</td>
+                                <td class="p-2">chandragiri</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="flex flex-col justify-between h-fit w-fit gap-4 p-5 border-[3px] rounded-md border-gray-300">
+                        <h2 class="text-xl font-bold text-gray-900">
+                            Order Summary(0)
+                        </h2>
+                        <div class="flex flex-col justify-between">
+                            <table class="w-full border-y  text-left text-sm">
+                                <tbody>
+                                <tr>
+                                    <td colspan="2" class="font-medium">Premium Local Jeera Rice (yoyoyo )
+
+                                    </td>
+                                    <td colspan="2" class="py-2 px-4 font-medium">1</td>
+                                    <td colspan="2" class=" text-right">2500</td>
+                                </tr>
+                                </tbody>
+                            </table>
+                            <table class="w-full  text-left text-sm">
+                                <tbody>
+                                <tr>
+                                    <td class="p-2 font-medium">Subtotal</td>
+                                    <td class="p-2 text-right">Rs. 1466</td>
+                                </tr>
+
+
+                                <tr>
+                                    <td class="p-2 font-medium">Discount Coupon</td>
+                                    <td class="p-2 text-right">Rs. 0</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2 font-medium">Shipping Cost</td>
+                                    <td class="p-2 text-right">Rs. 0</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2 font-medium">Bookmarks</td>
+                                    <td class="p-2 text-right">Rs. 0</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2 font-medium">Gift Packaging</td>
+                                    <td class="p-2 text-right">Rs. 0</td>
+                                </tr>
+
+
+                                <!-- Total row -->
+                                <tr class="bg-gray-100 border-t border-dashed">
+                                    <td rowspan="2" class="p-4 text-lg font-bold ">
+                                        Total:<br> <span class="text-[13px] text-gray-400">(VAT INCLUDED)</span>
+                                    </td>
+                                    <td class="p-2 text-right">Rs. 1466</td>
+                                </tr>
+                                </tbody>
+                            </table>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+{% endblock %}

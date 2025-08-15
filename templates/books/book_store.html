@@ -1,0 +1,116 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+    <div class="flex flex-col grow items-center justify-between md:p-10 bg-gray-100 gap-4  w-full">
+        {#        <div class="flex flex-row flex-wrap bg-yellow-500 w-full h-fit border-2 border-gray-800 gap-2 ">#}
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-[85%] p-2">
+            {% if books %}
+                {% for book in paginated_books %}
+                    {% include 'books/components/cards.html' with book=book %}
+                {% endfor %}
+            {% else %}
+                <p class="text-gray-600 p-5">No books available.</p>
+            {% endif %}
+        </div>
+        {% if books %}
+            {% if paginated_books %}
+                <div class="w-[85%] flex flex-wrap flex-column justify-between items-center ">
+
+                    Page {{ paginated_books.number }} of {{ paginated_books.paginator.num_pages }}
+
+                    <div class="flex flex-column flex-wrap gap-4 md:gap-20">
+                        <div class="flex flex-row  items-center gap-2 w-fit">
+                            <p>Show: </p>
+                            <form class="max-w-sm mx-auto" method="get">
+                                <select id="rowsPerPage" name="limit" onchange="this.form.submit()"
+                                        class="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg  focus:ring-blue-500 focus:border-blue-500 block w-fit p-2.5">
+                                    <option value="10" {% if limit == 10 %}selected{% endif %}>10</option>
+                                    <option value="20" {% if limit == 20 %}selected{% endif %}>20</option>
+                                    <option value="30" {% if limit == 30 %}selected{% endif %}>30</option>
+                                    <option value="40" {% if limit == 40 %}selected{% endif %}>40</option>
+                                    <option value="50" {% if limit == 50 %}selected{% endif %}>50</option>
+                                </select>
+                            </form>
+                        </div>
+                        <div class="flex flex-column">
+                            {# First Page#}
+                            <div class="flex p-1 border border-gray-300 items-center">
+                                {% if paginated_books.has_previous %}
+                                    <a href="?page=1&limit={{ limit }}">
+                                {% else %}
+                                    <a class="pointer-event-none text-gray-300">
+                                {% endif %}
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                     stroke-width="1.5"
+                                     stroke="currentColor" class="size-6">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                          d="m18.75 4.5-7.5 7.5 7.5 7.5m-6-15L5.25 12l7.5 7.5"/>
+                                </svg>
+                                </a>
+                            </div>
+                            {#Previous Page#}
+                            <div class="flex p-1 border border-gray-300 items-center">
+                                {% if paginated_books.has_previous %}
+                                    <a href="?page={{ paginated_books.previous_page_number }}&limit={{ limit }}">
+                                {% else %}
+                                    <a class="pointer-event-none text-gray-300">
+                                {% endif %}
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                     stroke-width="1.5"
+                                     stroke="currentColor" class="size-6">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                          d="M15.75 19.5 8.25 12l7.5-7.5"/>
+                                </svg>
+                                </a>
+
+                            </div>
+
+                            <div class="flex py-1 px-3 border border-gray-300 items-center">
+                                {{ paginated_books.number }}
+                            </div>
+
+                            {#Next Page#}
+                            <div class="flex p-1  border border-gray-300 items-center">
+                                {% if paginated_books.has_next %}
+                                    <a href="?page={{ paginated_books.next_page_number }}&limit={{ limit }}">
+                                {% else %}
+                                    <a class="pointer-event-none text-gray-300">
+                                {% endif %}
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                     stroke-width="1.5"
+                                     stroke="currentColor" class="size-6">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/>
+                                </svg>
+                                </a>
+                            </div>
+
+                            {#Last Page#}
+                            <div class="flex p-1  border border-gray-300 items-center">
+                                {% if paginated_books.has_next %}
+                                    <a href="?page={{ paginated_books.paginator.num_pages }}&limit={{ limit }}">
+                                {% else %}
+                                    <a class="pointer-event-none text-gray-300">
+                                {% endif %}
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                     stroke-width="1.5"
+                                     stroke="currentColor" class="size-6">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                          d="m5.25 4.5 7.5 7.5-7.5 7.5m6-15 7.5 7.5-7.5 7.5"/>
+                                </svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        {% endif %}
+    </div>
+    <script>
+
+        const button = document.getElementById("button_cart_add");
+
+        button.addEventListener('click', (e) => {
+            e.stopPropagation(); // prevents card click
+        });
+    </script>
+{% endblock %}

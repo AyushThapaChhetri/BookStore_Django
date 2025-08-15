@@ -41,7 +41,9 @@ INSTALLED_APPS = [
     'src.books',
     'src.core',
     'src.users',
-    'src.orders'
+    'src.orders',
+    'src.cart',
+    'src.shipping',
     # 'src.users.apps.UsersConfig',
     'tailwind',
     'theme'
