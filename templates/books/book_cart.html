@@ -2,15 +2,21 @@
 
 {% block content %}
     <div class="flex flex-col align-center grow items-center md:p-10 bg-gray-100 gap-4  w-full">
-        <div class="flex flex-col w-[85%] ">
+        <div class="flex flex-col w-[80%] md:w-[85%] ">
             <h1 class="mb-4 text-3xl font-bold text-gray-900">
-                Shopping Cart(0)
+                Shopping Cart({% if cart %}{% if items_count %}{{ items_count }}{% else %}0{% endif %}{% endif %})
             </h1>
-            <div class="flex">
+            <div class="flex flex-col-reverse md:flex-row">
 
-                <div class="flex flex-col w-[70%] pr-[40px] gap-4 ">
-
-                    {% include 'books/components/cart_product.html' %}
+                <div class="flex flex-col w-full md:w-[70%] md:pr-[40px] gap-4 ">
+                    {% if cart.items.exists %}
+                        {% for item in items %}
+                            {% include 'books/components/cart_product.html' with item=item %}
+                        {% endfor %}
+                    {% else %}
+                        Looks like you haven't added anything to your cart yet. You can find interesting books if you
+                        look around.
+                    {% endif %}
                     <a href="{% url 'book_store' %}" class="flex gap-2 items-center hover:text-blue-500">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                              stroke-width="1.5" stroke="currentColor" class="size-4">
@@ -21,25 +27,82 @@
                     </a>
 
                 </div>
-                <div class="flex flex-col justify-between grow gap-4 p-5 border-[3px] rounded-md border-gray-300">
-                    <h2 class="text-xl font-bold text-gray-900">
-                        Order Summary
-                    </h2>
-                    <div class="flex justify-between">
-                        <p class="text-lg text-gray-600">
-                            Sub total
-                        </p>
-                        <p class="text-lg text-gray-800">
-                            400
-                        </p>
-                    </div>
-                    <a href="{% url 'book_checkout' %}"
-                       class="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white text-center font-semibold py-2 px-4 rounded-md transition-all duration-300 shadow">
-                        Proceed to checkout
-                    </a>
+                {% if cart.items.exists %}
+                    <div class="flex flex-col justify-between grow gap-4 h-fit p-5 border-[3px] rounded-md border-gray-300">
+                        <h2 class="text-xl font-bold text-gray-900">
+                            Order Summary
+                        </h2>
+                        <div class="flex justify-between">
+                            <p class="text-lg text-gray-600">
+                                Sub total
+                            </p>
+                            <p id="sub-total-shopping_cart" class="text-lg text-gray-800 font-bold">
 
-                </div>
+                                Rs {{ total_price|floatformat:"-2" }}
+                            </p>
+                        </div>
+                        <a href="{% url 'book_checkout' %}"
+                           class="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white text-center font-semibold py-2 px-4 rounded-md transition-all duration-300 shadow">
+                            Proceed to checkout
+                        </a>
+
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        axios.defaults.xsrfCookieName = "csrftoken";
+        axios.defaults.xsrfHeaderName = "X-CSRFToken";
+
+        const subtotal = document.getElementById('sub-total-shopping_cart');
+
+        async function updateQuantity(itemUuid, action) {
+            const input = document.getElementById(`quantity-${itemUuid}`)
+            let quantity = parseInt(input.value);
+
+            if (action === "increment" && quantity < 50) {
+                quantity++;
+                console.log("After increment: ", quantity);
+            } else if (action === "decrement" && quantity > 1) {
+                quantity--;
+                console.log("After decrement: ", quantity);
+
+            }
+
+            console.log("Quantity: ", quantity);
+
+            try {
+                const res = await axios.post(`cart/update/${itemUuid}/`, {quantity});
+                console.log("Quantity updated:", res.data);
+
+                // Update input with actual quantity from server
+                if (res.data.success) {
+                    console.log(res.data.total_price);
+                    input.value = res.data.quantity;
+                    {#subtotal.innerHTML = "Rs " + parseFloat(res.data.total_price).toFixed(2);#}
+                    let price = parseFloat(res.data.total_price);
+                    subtotal.innerHTML = "Rs " + (price % 1 === 0 ? price : price.toFixed(2));
+                } else {
+                    alert(res.data.error);
+                }
+            } catch (err) {
+                console.error("Error updating quantity:", err);
+            }
+        }
+
+        async function removeItem(itemUuid) {
+            try {
+                const res = await axios.post(`cart/remove/${itemUuid}/`);
+                console.log("Item removed:", res.data);
+                location.reload();
+            } catch (err) {
+                console.error("Error removing item:", err);
+            }
+        }
+
+    </script>
 {% endblock %}

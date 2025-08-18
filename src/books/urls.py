@@ -16,6 +16,11 @@ urlpatterns = [
     path('store/detail/<uuid>', BookDetailStore.as_view(), name='book_detail_store'),
     path('detail/<uuid>', BookDetailView.as_view(), name='book_detail_view'),
 
+    path('add-to-cart/', views.add_to_cart, name='add_to_cart'),
+    path('cart/update/<uuid:item_uuid>/', views.update_cart, name='update_cart'),
+    path("cart/remove/<uuid:item_uuid>/", views.remove_cart_item, name="remove_cart_item"),
+    path('cart/clear/', views.clear_cart, name='clear_cart'),
+
     # Checkout flow
     path('shopping-cart', BookCart.as_view(), name='book_cart'),
     path('checkout', BookCheckout.as_view(), name='book_checkout'),

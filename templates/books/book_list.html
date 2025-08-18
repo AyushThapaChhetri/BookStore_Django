@@ -234,7 +234,7 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
     <script>
         const searchInput = document.getElementById('searchInput');
         const tableBody = document.querySelector('tbody');
@@ -273,14 +273,6 @@
                     <div class="flex space-x-2 gap-2">
                         <a href="/books/detail/${book.uuid}" class="bg-indigo-600 hover:bg-indigo-800 text-white font-bold py-2 px-4 rounded">View</a>
                         {% if request.user|has_perm:"books.change_book" %}
-
-
-
-
-
-
-
-
 
 
                     {#<a href="/books/update/${book.uuid}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Edit</a>#}

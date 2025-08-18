@@ -17,7 +17,7 @@
                         We have successfully received your order. We will contact you soon for further processing and
                         delivery.<br><br>
 
-                        Your order number: OD0012477
+                        Your order number: {% if order %}{{ order.uuid }}{% else %}Oder not Placed{% endif %}
                     </div>
 
                 </div>
@@ -33,53 +33,65 @@
                             <tbody>
                             <tr>
                                 <td class="p-2 font-medium">Full Name</td>
-                                <td class="p-2">dsafdf</td>
+                                <td class="p-2">{{ order.shipping_address.full_name }}</td>
                             </tr>
                             <tr>
                                 <td class="p-2 font-medium">Email</td>
-                                <td class="p-2">email@gmail.com</td>
+                                <td class="p-2">{{ request.user.email }}</td>
                             </tr>
                             <tr>
                                 <td class="p-2 font-medium">Mobile</td>
-                                <td class="p-2">986454354546435</td>
+                                <td class="p-2">{{ order.shipping_address.phone_number }}</td>
                             </tr>
 
                             <tr>
                                 <td class="p-2 font-medium">Country</td>
-                                <td class="p-2">Nepal</td>
+                                <td class="p-2">{{ order.shipping_address.country }}</td>
                             </tr>
                             <tr>
                                 <td class="p-2 font-medium">City</td>
-                                <td class="p-2">Kathmandu</td>
+                                <td class="p-2">{{ order.shipping_address.city }}</td>
                             </tr>
                             <tr>
                                 <td class="p-2 font-medium">Street Address</td>
-                                <td class="p-2">chandragiri</td>
+                                <td class="p-2">{{ order.shipping_address.street_address }}</td>
+                            </tr>
+                            {% if order.shipping_address.state %}
+                                <tr>
+                                    <td class="p-2 font-medium">State</td>
+                                    <td class="p-2">{{ order.shipping_address.state }}</td>
+                                </tr>
+                            {% endif %}
+                            <tr>
+                                <td class="p-2 font-medium">Zip Code</td>
+                                <td class="p-2">{{ order.shipping_address.zip_code }}</td>
                             </tr>
                             </tbody>
                         </table>
                     </div>
                     <div class="flex flex-col justify-between h-fit w-fit gap-4 p-5 border-[3px] rounded-md border-gray-300">
                         <h2 class="text-xl font-bold text-gray-900">
-                            Order Summary(0)
+                            Order Summary({{ order_items.count }})
                         </h2>
                         <div class="flex flex-col justify-between">
                             <table class="w-full border-y  text-left text-sm">
                                 <tbody>
-                                <tr>
-                                    <td colspan="2" class="font-medium">Premium Local Jeera Rice (yoyoyo )
+                                {% for item in order_items %}
+                                    <tr>
+                                        <td colspan="2" class="font-medium">{{ item.book.title }}
 
-                                    </td>
-                                    <td colspan="2" class="py-2 px-4 font-medium">1</td>
-                                    <td colspan="2" class=" text-right">2500</td>
-                                </tr>
+                                        </td>
+                                        <td colspan="2" class="py-2 px-4 font-medium">{{ item.quantity }}</td>
+                                        <td colspan="2" class=" text-right">{{ item.book.price }}</td>
+                                    </tr>
+                                {% endfor %}
                                 </tbody>
                             </table>
                             <table class="w-full  text-left text-sm">
                                 <tbody>
                                 <tr>
                                     <td class="p-2 font-medium">Subtotal</td>
-                                    <td class="p-2 text-right">Rs. 1466</td>
+                                    <td class="p-2 text-right">Rs. {{ order.total_amount }}</td>
                                 </tr>
 
 
@@ -106,7 +118,7 @@
                                     <td rowspan="2" class="p-4 text-lg font-bold ">
                                         Total:<br> <span class="text-[13px] text-gray-400">(VAT INCLUDED)</span>
                                     </td>
-                                    <td class="p-2 text-right">Rs. 1466</td>
+                                    <td class="p-2 text-right">Rs. {{ order.total_amount }}</td>
                                 </tr>
                                 </tbody>
                             </table>

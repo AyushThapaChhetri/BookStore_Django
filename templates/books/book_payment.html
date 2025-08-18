@@ -1,10 +1,10 @@
 {% extends 'base/base.html' %}
 
 {% block content %}
-    <div class="flex flex-col align-center grow items-center md:p-10 bg-gray-100 gap-4  w-full">
-        <div class="flex flex-col w-[85%] ">
-            <div class="flex items-center md:justify-center md:items-start flex-col md:flex-row gap-[40px]">
-                <div class="flex flex-col justify-between w-[300px] h-fit gap-4 p-5 border-[3px] rounded-md border-gray-300">
+    <div class="flex flex-col align-center grow items-center p-2 md:p-10 bg-gray-100 gap-4  w-full">
+        <div class="flex flex-col w-full  sm:w-[90%] ">
+            <div class="flex flex-wrap items-center md:justify-center md:items-start flex-col md:flex-row gap-[40px]">
+                <div class="flex flex-col justify-between p-2 w-full sm:w-[400px] h-fit gap-4  border-[3px] rounded-md border-gray-300">
 
                     <h2 class="text-xl font-bold text-gray-900">
                         Delivery details
@@ -13,44 +13,52 @@
                         <tbody>
                         <tr>
                             <td class="p-2 font-medium">Full Name</td>
-                            <td class="p-2">dsafdf</td>
+                            <td class="p-2">{{ delivery.full_name }}</td>
                         </tr>
                         <tr>
                             <td class="p-2 font-medium">Email</td>
-                            <td class="p-2">email@gmail.com</td>
+                            <td class="p-2">{{ request.user.email }}</td>
                         </tr>
                         <tr>
                             <td class="p-2 font-medium">Mobile</td>
-                            <td class="p-2">986454354546435</td>
+                            <td class="p-2">{{ delivery.phone_number }}</td>
                         </tr>
 
                         <tr>
                             <td class="p-2 font-medium">Country</td>
-                            <td class="p-2">Nepal</td>
+                            <td class="p-2">{{ delivery.country }}</td>
                         </tr>
                         <tr>
                             <td class="p-2 font-medium">City</td>
-                            <td class="p-2">Kathmandu</td>
+                            <td class="p-2">{{ delivery.city }}</td>
                         </tr>
                         <tr>
                             <td class="p-2 font-medium">Street Address</td>
-                            <td class="p-2">chandragiri</td>
+                            <td class="p-2">{{ delivery.street_address }}</td>
+                        </tr>
+                        <tr>
+                            <td class="p-2 font-medium">State</td>
+                            <td class="p-2">{{ delivery.state|default:"-" }}</td>
+                        </tr>
+                        <tr>
+                            <td class="p-2 font-medium">Zip code</td>
+                            <td class="p-2">{{ delivery.zip_code }}</td>
                         </tr>
                         </tbody>
                     </table>
                 </div>
 
 
-                <div class="flex flex-col justify-between w-[300px] h-fit gap-4 p-5 border-[3px] rounded-md border-gray-300">
+                <div class="flex flex-col justify-between p-2 w-full sm:w-[400px] h-fit gap-4  border-[3px] rounded-md border-gray-300">
                     <h2 class="text-xl font-bold text-gray-900">
-                        Order Summary(0)
+                        Order Summary({{ total_quantity }})
                     </h2>
                     <div class="flex justify-between">
                         <table class="w-full  text-left text-sm">
                             <tbody>
                             <tr>
                                 <td class="p-2 font-medium">Subtotal</td>
-                                <td class="p-2 text-right">Rs. 1466</td>
+                                <td class="p-2 text-right">Rs. {{ total_price }}</td>
                             </tr>
 
 
@@ -77,7 +85,7 @@
                                 <td rowspan="2" class="p-4 text-lg font-bold ">
                                     Total:<br> <span class="text-[13px] text-gray-400">(VAT INCLUDED)</span>
                                 </td>
-                                <td class="p-2 text-right">Rs. 1466</td>
+                                <td class="p-2 text-right">Rs. {{ total_price }}</td>
                             </tr>
                             </tbody>
                         </table>
@@ -86,29 +94,34 @@
 
 
                 </div>
-                <div class="flex flex-col justify-between h-fit w-[300px] gap-4 p-5 border-[3px] rounded-md border-gray-300">
+                <div class="flex flex-col justify-between h-fit p-2 w-full sm:max-w-[300px] gap-4 border-[3px] rounded-md border-gray-300">
 
 
                     <h2 class="text-xl font-bold text-gray-900">
                         Payment methods
                     </h2>
+                    <form method="post" action="{% url 'book_payment' %}">
+                        {% csrf_token %}
 
-                    <!-- Radio Buttons -->
-                    <div class="flex flex-col gap-2">
-                        <label class="inline-flex items-center">
-                            <input type="radio" name="payment_method" value="cod" class="form-radio text-blue-600">
-                            <span class="ml-2 text-gray-700">Cash on Delivery</span>
-                        </label>
-                        <label class="inline-flex items-center">
-                            <input type="radio" name="payment_method" value="khalti" class="form-radio text-purple-600">
-                            <span class="ml-2 text-gray-700">Khalti</span>
-                        </label>
-                    </div>
+                        <!-- Radio Buttons -->
+                        <div class="flex flex-col gap-2">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="payment_method" value="cod" class="form-radio text-blue-600">
+                                <span class="ml-2 text-gray-700">Cash on Delivery</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="payment_method" value="khalti"
+                                       class="form-radio text-purple-600">
+                                <span class="ml-2 text-gray-700">Khalti</span>
+                            </label>
+                            <button type="submit"
+                                    class="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white text-center font-semibold py-2 px-4 rounded-md transition-all duration-300 shadow">
+                                Complete
+                            </button>
+                        </div>
 
-                    <a href="{% url 'book_order_complete' %}"
-                       class="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white text-center font-semibold py-2 px-4 rounded-md transition-all duration-300 shadow">
-                        Complete
-                    </a>
+
+                    </form>
                 </div>
             </div>
         </div>

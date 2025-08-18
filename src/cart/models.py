@@ -1,3 +1,5 @@
+import uuid
+
 from django.conf import settings
 from django.db import models
 
@@ -26,6 +28,7 @@ class Cart(AbstractBaseModel):
 
 
 class CartItem(models.Model):
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     cart = models.ForeignKey(
         Cart,
         on_delete=models.CASCADE,

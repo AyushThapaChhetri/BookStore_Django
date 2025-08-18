@@ -2,67 +2,37 @@
 
 {% block content %}
     <div class="flex flex-col align-center grow items-center md:p-10 bg-gray-100 gap-4  w-full">
-        <div class="flex flex-col w-[85%] ">
-            <div class="flex gap-2">
-                <div class="flex flex-col w-[70%] p-[20px] h-fit border-[3px] rounded-md border-gray-300 ">
+        <div class="flex flex-col w-full p-2 md:w-[85%]  ">
+            <div class="flex gap-2 flex-col-reverse  md:flex-row">
+                <div class="flex flex-col w-full  md:w-[70%] p-[20px] h-fit border-[3px] rounded-md border-gray-300 ">
                     <h2 class="text-xl border-b border-gray-500 pb-[1rem] text-center font-bold text-gray-900">
                         Delivery Details
                     </h2>
-                    <form class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                        <!-- Full Name -->
-                        <div>
-                            <label for="fullname" class="block text-sm font-medium text-gray-700">Full Name</label>
-                            <input type="text" id="fullname"
-                                   class="mt-1 p-2 block w-full border-gray-300 rounded-md shadow-sm"
-                                   placeholder="John Doe"/>
-                        </div>
+                    <form id="deliveryForm" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        {% csrf_token %}
+                        {% include "components/form_input.html" with field=form.full_name %}
+                        {% include "components/form_input.html" with field=form.country %}
+                        {% include "components/form_input.html" with field=form.city %}
+                        {% include "components/form_input.html" with field=form.state %}
+                        {% include "components/form_input.html" with field=form.street_address %}
+                        {% include "components/form_input.html" with field=form.zip_code %}
+                        {% include "components/form_input.html" with field=form.phone_number %}
+                      
 
-
-                        <!-- Mobile Number -->
-                        <div>
-                            <label for="mobile" class="block text-sm font-medium text-gray-700">Mobile Number</label>
-                            <input type="text" id="mobile"
-                                   class="mt-1 p-2 block w-full border-gray-300 rounded-md shadow-sm"
-                                   placeholder="+977 9800000000"/>
-                        </div>
-
-                        <!-- Country -->
-                        <div>
-                            <label for="country" class="block text-sm font-medium text-gray-700">Country</label>
-                            <input type="text" id="country"
-                                   class="mt-1 p-2 block w-full border-gray-300 rounded-md shadow-sm"
-                                   placeholder="Nepal"/>
-                        </div>
-
-                        <!-- City -->
-                        <div>
-                            <label for="city" class="block text-sm font-medium text-gray-700">City</label>
-                            <input type="text" id="city"
-                                   class="mt-1 p-2 block w-full border-gray-300 rounded-md shadow-sm"
-                                   placeholder="Kathmandu"/>
-                        </div>
-
-                        <!-- Street Name -->
-                        <div>
-                            <label for="street" class="block text-sm font-medium text-gray-700">Street Name</label>
-                            <input type="text" id="street"
-                                   class="mt-1 p-2 block w-full border-gray-300 rounded-md shadow-sm"
-                                   placeholder="Baneshwor"/>
-                        </div>
                     </form>
 
                 </div>
 
-                <div class="flex flex-col justify-between grow gap-4 p-5 border-[3px] rounded-md border-gray-300">
+                <div class="flex flex-col justify-between grow gap-4 p-5 border-[3px] h-fit rounded-md border-gray-300">
                     <h2 class="text-xl font-bold text-gray-900">
-                        Order Summary(0)
+                        Order Summary({{ total_quantity }})
                     </h2>
                     <div class="flex justify-between">
                         <table class="w-full  text-left text-sm">
                             <tbody>
                             <tr>
                                 <td class="p-2 font-medium">Subtotal</td>
-                                <td class="p-2 text-right">Rs. 1466</td>
+                                <td class="p-2 text-right">Rs. {{ total_price }}</td>
                             </tr>
 
 
@@ -89,17 +59,18 @@
                                 <td rowspan="2" class="p-4 text-lg font-bold ">
                                     Total:<br> <span class="text-[13px] text-gray-400">(VAT INCLUDED)</span>
                                 </td>
-                                <td class="p-2 text-right">Rs. 1466</td>
+                                <td class="p-2 text-right">Rs. {{ total_price }}</td>
                             </tr>
                             </tbody>
                         </table>
 
                     </div>
-                    <a href="{% url 'book_payment' %}"
+                    <a href="#"
+                       id="btn_submit_deliveryDetails"
                        class="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white text-center font-semibold py-2 px-4 rounded-md transition-all duration-300 shadow">
                         Payment Options
                     </a>
-                    <a href="#"
+                    <a href="{% url 'clear_cart' %}"
                        class="bg-red-500 hover:bg-red-800 text-white text-center font-semibold py-2 px-4 rounded-md transition-all duration-300 shadow">
                         Clear
                     </a>
@@ -108,4 +79,53 @@
             </div>
         </div>
     </div>
+{% endblock %}
+{% block extra_js %}
+    <script>
+        const button = document.querySelector('#btn_submit_deliveryDetails');
+        button.addEventListener('click', async function (e) {
+            e.preventDefault();
+
+            const form = document.getElementById("deliveryForm");
+            const formData = new FormData(form);
+
+            // Clear previous errors
+            form.querySelectorAll("[data-field] p").forEach(p => {
+                p.textContent = "";
+                p.classList.add("hidden");
+                p.previousElementSibling.classList.remove("border-red-500");
+            });
+
+            try {
+                const response = await axios.post("{% url 'book_checkout' %}", formData, {
+                    headers: {'X-CSRFToken': formData.get("csrfmiddlewaretoken")}
+                });
+
+                if (response.data.success && response.data.redirect_url) {
+                    window.location.href = response.data.redirect_url;
+                }
+            } catch (error) {
+                if (error.response && error.response.data && error.response.data.errors) {
+                    const errors = error.response.data.errors;
+                    for (const field in errors) {
+                        const wrapper = form.querySelector(`[data-field="${field}"]`);
+                        if (wrapper) {
+                            const p = wrapper.querySelector("p");
+                            p.textContent = errors[field].join(", ");
+                            p.classList.remove("hidden");
+
+                            const input = wrapper.querySelector("input");
+                            input.classList.add("border-red-500");
+                        }
+                    }
+                } else {
+                    alert("Something went wrong!");
+                }
+            }
+        });
+
+    </script>
+
+
+
 {% endblock %}

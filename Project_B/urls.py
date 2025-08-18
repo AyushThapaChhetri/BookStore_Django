@@ -47,6 +47,7 @@ urlpatterns = [
                   path('admin/', admin.site.urls),
                   path('books/', include('src.books.urls')),
                   path('users/', include('src.users.urls')),
+                  path('delivery/', include('src.shipping.urls')),
                   path('about/', views.about_view, name='about_view'),
                   path('signup/', UserCreateView.as_view(), name='signup_view'),
                   path('login/', UserLoginView.as_view(), name='login_view'),
