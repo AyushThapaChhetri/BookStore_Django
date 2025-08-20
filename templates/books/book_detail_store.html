@@ -1,11 +1,25 @@
 {% extends 'base/base.html' %}
+{% load static %}
 
 {% block content %}
     <div class="flex flex-col  grow items-center justify-between md:p-10 bg-gray-100 gap-4  w-full">
         <div class="flex flex-col gap-2 md:flex-row justify-center w-[85%] ">
             <div class="flex flex-col h-fit w-[250px] justify-between  gap-4 p-5 border-[3px] rounded-md border-gray-300">
-                <img class="p-8 rounded-t-lg" src="{% if books %}{{ books.cover_image }}{% endif %}"
-                     alt="{% if books %}{{ books.title }}{% endif %}"/>
+                {#                <img class="p-8 rounded-t-lg" src="{% if books %}{{ books.cover_image }}{% endif %}"#}
+                {#                     alt="{% if books %}{{ books.title }}{% endif %}"/>#}
+                {% if books.cover_image %}
+                    <img class=" rounded-t-lg"
+                         src="{{ books.cover_image.url }}"
+                         alt="{{ books.title }}"
+                    />
+
+                {% else %}
+                    <!-- Optional placeholder image -->
+                    <img class=""
+                         src="{% static 'images/no_book_cover.png' %}"
+                         alt="No cover available"
+                    />
+                {% endif %}
 
             </div>
             <div class="flex flex-col h-fit justify-between w-[50%]  gap-4 p-5 border-[3px] rounded-md border-gray-300">

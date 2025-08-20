@@ -5,30 +5,53 @@
 {% endblock %}
 
 {% block content %}
-    <div class="flex flex-col items-center p-5 bg-gray-100 gap-4 min-h-screen">
+    <div class="flex flex-col items-center p-5 bg-gray-100 gap-4 flex-grow">
         {#            <form method="post" class="sm:w-[90%] lg:w-[500px] mx-auto">#}
-        <form method="post" class="w-[90%] lg:w-[50%] " id="bookForm">
+        <form method="post" class="w-[90%] lg:w-[50%] " id="bookForm" enctype="multipart/form-data">
             <h2 class="mb-5 text-2xl font-extrabold leading-none tracking-tight text-gray-500 md:text-4xl ">
                 {% if form.instance.pk %}Edit Book{% else %}Add New Book {% endif %}</h2>
             {% csrf_token %}
             {% for field in form %}
                 <div class="relative z-0 w-full mb-5 group">
-                    <input
-                            type="{{ field.field.widget.input_type }}"
-                            name="{{ field.html_name }}"
-                            id="{{ field.id_for_label }}"
-                            value="{{ field.value|default_if_none:'' }}"
-                            class="block py-2.5 px-0 w-full text-[16px] text-gray-900 bg-transparent border-0 border-b-2 {% if field.errors %} border-red-500 {% endif %}border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
-                            placeholder=" "
-                            {#        {% if field.field.required %}required{% endif %}#}
-                    />
-                    <label
-                            for="{{ field.id_for_label }}"
-                            class="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6"
-                    >
-                        {{ field.label }}
-                    </label>
+                    {% if field.field.widget.input_type == "file" %}
+                        <input
+                                type="file"
+                                name="{{ field.html_name }}"
+                                id="{{ field.id_for_label }}"
+                                class="block py-2.5 px-0 w-full text-[16px] text-gray-900  bg-transparent border-0 border-b-2 {% if field.errors %} border-red-500 {% endif %} border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                        />
+                        <label
+                                for="{{ field.id_for_label }}"
+                                class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6"
+                        >
+                            {{ field.label }}
+                        </label>
 
+                        {% if field.value %}
+                            <p class="mt-2 text-sm text-gray-600">
+                                Currently:
+                                <a href="{{ field.value.url }}" target="_blank" class="text-blue-600 underline">
+                                    {{ field.value.name }}
+                                </a>
+                            </p>
+                        {% endif %}
+                    {% else %}
+                        <input
+                                type="{{ field.field.widget.input_type }}"
+                                name="{{ field.html_name }}"
+                                id="{{ field.id_for_label }}"
+                                value="{{ field.value|default_if_none:'' }}"
+                                class="block py-2.5 px-0 w-full text-[16px] text-gray-900 bg-transparent border-0 border-b-2 {% if field.errors %} border-red-500 {% endif %}border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                                placeholder=" "
+                                {#        {% if field.field.required %}required{% endif %}#}
+                        />
+                        <label
+                                for="{{ field.id_for_label }}"
+                                class="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6"
+                        >
+                            {{ field.label }}
+                        </label>
+                    {% endif %}
                     {% if field.errors %}
                         {#                    <p class="text-red-500 text-sm mt-1">{{ field.errors }}</p>#}
                         {% for error in field.errors %}
@@ -51,15 +74,7 @@
                     <a href="{% url 'book_list' %}">Cancel</a></button>
             </div>
         </form>
-        {#        <script>#}
-        {#            const form = document.getElementById('bookForm');#}
-        {#            const submitBtn = document.getElementById('submitBtn');#}
-        {##}
-        {#            form.addEventListener('submit', () => {#}
-        {#                submitBtn.disabled = true;#}
-        {#                submitBtn.innerText = 'Submitting...';#}
-        {#            });#}
-        {#        </script>#}
+
     </div>
 {% endblock %}
 

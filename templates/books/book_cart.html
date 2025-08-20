@@ -76,7 +76,7 @@
             console.log("Quantity: ", quantity);
 
             try {
-                const res = await axios.post(`cart/update/${itemUuid}/`, {quantity});
+                const res = await axios.post(`cart/update/${itemUuid}/`, {quantity, action});
                 console.log("Quantity updated:", res.data);
 
                 // Update input with actual quantity from server

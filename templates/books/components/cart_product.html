@@ -1,14 +1,29 @@
+{% load static %}
 <div class="flex max-h-[300px] pb-2 box-border gap-2 border-b-2 border-gray-200">
     <div class="flex  w-[150px] border-1  border-gray-200">
-        <img class="p-8 rounded-t-lg"
-             src="{{ book.cover.url }}" alt="hello"
-        />
+        {#        <img class="p-8 rounded-t-lg"#}
+        {#             src="{{ book.cover.url }}" alt="hello"#}
+        {#        />#}
+        {% if item.book.cover_image %}
+            <img class="p-8 rounded-t-lg"
+                 src="{{ item.book.cover_image.url }}"
+                 alt="{{ item.book.title }}"
+            />
+
+        {% else %}
+            <!-- Optional placeholder image -->
+            <img class="p-8 rounded-t-lg"
+                 src="{% static 'images/no_book_cover.png' %}"
+                 alt="No cover available"
+            />
+        {% endif %}
     </div>
     <div class="flex flex-col justify-between grow gap-2">
         <div class="flex flex-col md:flex-row justify-between ">
             <div class="flex flex-col max-w-[170px] lg:max-w-[290px]">
                 <p class="line-clamp-2 font-bold">
                     {{ item.book.title }}
+
                 </p>
                 <p class="line-clamp-1">
                     by {{ item.book.author }}
@@ -26,8 +41,9 @@
                     <button type="button" id="decrement-button"
                             data-input-counter-decrement="quantity-input"
                             onclick="updateQuantity('{{ item.uuid|escapejs }}', 'decrement')"
-                            class="bg-gray-100  hover:bg-gray-200 border border-gray-700 rounded-s-lg p-2 sm:p-3 h-9 sm:h-11 focus:ring-gray-100  focus:ring-2 focus:outline-none">
-                        <svg class="w-3 h-3 text-gray-900 " aria-hidden="true"
+                            class="bg-gray-100  hover:bg-gray-200 {% if item.quantity > item.book.stock_quantity %}border-2 border-red-700{% else %}border border-gray-700{% endif %}  rounded-s-lg p-2 sm:p-3 h-9 sm:h-11 focus:ring-gray-100  focus:ring-2 focus:outline-none">
+                        <svg class="w-3 h-3  {% if item.quantity > item.book.stock_quantity %} text-red-900{% else %} text-gray-900{% endif %} "
+                             aria-hidden="true"
                              xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 2">
                             <path stroke="currentColor" stroke-linecap="round"
                                   stroke-linejoin="round" stroke-width="2" d="M1 1h16"/>
@@ -39,7 +55,7 @@
                            data-input-counter
                             {#                           data-input-counter-min="1" data-input-counter-max="50"#}
                            aria-describedby="helper-text-explanation"
-                           class="bg-gray-50 border-y border-gray-900 h-9 sm:h-11 py-1.5 sm:py-2.5 min-w-[28px] sm:min-w-[40px] text-center text-gray-900 text-sm focus:ring-blue-500 focus:border-blue-500 block w-full "
+                           class="bg-gray-50 {% if item.quantity > item.book.stock_quantity %}border-y-2 border-red-700 text-red-700{% else %}border-y border-gray-700{% endif %} h-9 sm:h-11 py-1.5 sm:py-2.5 min-w-[28px] sm:min-w-[40px] text-center text-gray-900 text-sm focus:ring-blue-500 focus:border-blue-500 block w-full "
                            placeholder="1" value="{{ item.quantity }}" required readonly/>
                     {#                    <div class="bg-gray-50 flex justify-center items-center border-y h-11 w-[40px] border-gray-900">#}
                     {#                        {{ item.quantity }}#}
@@ -47,8 +63,9 @@
                     <button type="button" id="increment-button"
                             data-input-counter-increment="quantity-input"
                             onclick="updateQuantity('{{ item.uuid|escapejs }}', 'increment')"
-                            class="bg-gray-100  hover:bg-gray-200 border border-gray-700 rounded-e-lg p-2 sm:p-3 h-9 sm:h-11 focus:ring-gray-100  focus:ring-2 focus:outline-none">
-                        <svg class="w-3 h-3 text-gray-900 " aria-hidden="true"
+                            class="bg-gray-100  hover:bg-gray-200  {% if item.quantity > item.book.stock_quantity %}border-2 border-red-700{% else %}border border-gray-700{% endif %} rounded-e-lg p-2 sm:p-3 h-9 sm:h-11 focus:ring-gray-100  focus:ring-2 focus:outline-none">
+                        <svg class="w-3 h-3 {% if item.quantity > item.book.stock_quantity %} text-red-900{% else %} text-gray-900{% endif %} "
+                             aria-hidden="true"
                              xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 18">
                             <path stroke="currentColor" stroke-linecap="round"
                                   stroke-linejoin="round" stroke-width="2" d="M9 1v16M1 9h16"/>
@@ -56,8 +73,20 @@
                     </button>
                 </div>
                 <p id="helper-text-explanation"
-                   class="mt-2 text-sm text-gray-500 hidden sm:block"><span
-                        class="font-bold">{{ item.book.stock_quantity }}</span> in stock</p>
+                   class="mt-2 text-sm
+                    {% if item.book.stock_quantity == 0 or item.quantity > item.book.stock_quantity %}
+                        text-red-600
+                  {% else %}
+                      text-gray-500
+                  {% endif %}
+                    hidden sm:block">
+                    {% if item.book.stock_quantity > 0 %}
+                        <span class="font-bold">{{ item.book.stock_quantity }}</span> in stock
+                    {% else %}
+                        {{ item.book.stock_quantity }} Out of stock{% if item.quantity == 1 %}! Please remove this item
+                    {% endif %}
+                    {% endif %}
+                </p>
                 {#            </form>#}
             </div>
             <div class="flex items-center">

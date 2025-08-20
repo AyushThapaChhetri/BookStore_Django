@@ -1,12 +1,16 @@
 import json
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.db import transaction
 from django.db.models import Q, Sum
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
+from django.utils.decorators import method_decorator
 from django.views import View
+from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
 from pygments.lexers import q
 
@@ -78,45 +82,57 @@ def add_to_cart(request):
 @require_POST
 @login_required
 def update_cart(request, item_uuid):
-    print("update start")
-    print(item_uuid)
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        quantity = int(data.get('quantity', 1))
-        print("Inside if")
-        try:
-            print("Inside if 1")
-            print("User:", request.user)
-            item = CartItem.objects.get(uuid=item_uuid, cart__user=request.user)
-            print("Item found:", item)
-            book = item.book
-            print("Book:", book)
-            if quantity > book.stock_quantity:
-                return JsonResponse({
-                    'success': False,
-                    'error': f"Only {book.stock_quantity} left in stock."
-                }, status=400)
+    data = json.loads(request.body)
+    quantity = int(data.get('quantity', 1))
+    action = str(data.get('action', ''))
 
-            if quantity < 1:
+    try:
+        item = CartItem.objects.get(uuid=item_uuid, cart__user=request.user)
+        book = item.book
+        message = None
+
+        # Handle increment
+        if action == 'increment':
+            if item.quantity >= book.stock_quantity:
+                # Can't go above stock
+                quantity = book.stock_quantity
+                message = f"Only {book.stock_quantity} left in stock."
+            else:
+                quantity = item.quantity + 1
+
+        # Handle decrement
+        elif action == 'decrement':
+            if item.quantity <= 1:
                 quantity = 1
+                message = "Quantity cannot be less than 1."
+            else:
+                quantity = item.quantity - 1
 
-            item.quantity = quantity
-            item.save()
+        # Handle other cases (like stock dropped between sessions)
+        if quantity > book.stock_quantity:
+            quantity = max(book.stock_quantity, 1)
+            message = f"Stock updated. Only {book.stock_quantity} left now."
 
-            cart = Cart.objects.get_or_create(user=request.user)[0]
-            items = cart.items.all()
-            total_price = sum(item.get_subtotal() for item in items)
-            return JsonResponse({
-                "success": True,
-                "quantity": item.quantity,
-                "subtotal": item.get_subtotal(),
-                'total_price': total_price,
-                "available_stock": book.stock_quantity
-            })
+        item.quantity = quantity
+        item.save()
 
-        except CartItem.DoesNotExist:
-            print("CartItem not found!")
-            return JsonResponse({"success": False, "error": "Item not found"}, status=404)
+        cart = Cart.objects.get_or_create(user=request.user)[0]
+        total_price = sum(i.get_subtotal() for i in cart.items.all())
+
+        response = {
+            "success": True,
+            "quantity": item.quantity,
+            "subtotal": item.get_subtotal(),
+            "total_price": total_price,
+            "available_stock": book.stock_quantity,
+        }
+        if message:
+            response["message"] = message
+
+        return JsonResponse(response)
+
+    except CartItem.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Item not found."}, status=404)
 
 
 @require_POST
@@ -190,8 +206,19 @@ class BookStore(View):
         # return render(request, 'books/book_store.html', context)
 
 
+def is_cart_item_exists(request):
+    cart, _ = Cart.objects.get_or_create(user=request.user)
+    if not cart or not cart.items.exists():
+        return redirect('book_cart')
+    return None
+
+
 class BookCheckout(View):
     def get(self, request):
+        redirect_response = is_cart_item_exists(request)
+        if redirect_response:
+            return redirect_response
+
         delivery_instance = None
 
         # First session
@@ -208,8 +235,21 @@ class BookCheckout(View):
 
         form = DeliveryForm(instance=delivery_instance)
 
+        # --- Cart stock validation ---
         cart = Cart.objects.get_or_create(user=request.user)[0]
         items = cart.items.all()
+        stock_adjusted = False
+
+        for item in items:
+            if item.quantity > item.book.stock_quantity:
+                item.quantity = max(item.book.stock_quantity, 1)  # keep at least 1
+                item.save()
+                stock_adjusted = True
+                messages.warning(
+                    request,
+                    f"{item.book.title} quantity adjusted to {item.quantity} due to stock limits."
+                )
+
         total_price = sum(item.get_subtotal() for item in items)
         total_quantity = cart.items.aggregate(Sum('quantity'))[
                              'quantity__sum'
@@ -235,6 +275,10 @@ class BookCheckout(View):
 
 class BookCheckoutPayment(View):
     def get(self, request):
+        redirect_response = is_cart_item_exists(request)
+        if redirect_response:
+            return redirect_response
+
         delivery_uuid = request.session.get('delivery_uuid')
         delivery_instance = None
 
@@ -243,9 +287,8 @@ class BookCheckoutPayment(View):
                 delivery_instance = DeliveryInfo.objects.get(uuid=delivery_uuid, user=request.user)
             except DeliveryInfo.DoesNotExist:
                 delivery_instance = None
-
-        if not delivery_instance:
-            delivery_instance = request.user.addresses.order_by('-created_at').first()
+        else:
+            return redirect('book_cart')
 
         cart = Cart.objects.get_or_create(user=request.user)[0]
         items = cart.items.all()
@@ -260,45 +303,71 @@ class BookCheckoutPayment(View):
         if not payment_method:
             return redirect('book_payment')
 
-        cart = Cart.objects.get(user=request.user)
-        items = cart.items.all()
-        if not items:
-            return redirect('book_cart')
+        # Get card
+        redirect_response = is_cart_item_exists(request)
+        if redirect_response:
+            return redirect_response
 
+        # Get Delivery info
         delivery_uuid = request.session.get('delivery_uuid')
         delivery_instance = None
         if delivery_uuid:
             delivery_instance = DeliveryInfo.objects.filter(uuid=delivery_uuid, user=request.user).first()
+
         if not delivery_instance:
             delivery_instance = request.user.addresses.order_by('-created_at').first()
 
+        cart, _ = Cart.objects.get_or_create(user=request.user)
+        items = cart.items.all()
         total_amount = sum(item.get_subtotal() for item in items)
-        order = Order.objects.create(
-            user=request.user,
-            status='pending',
-            total_amount=total_amount,
-            shipping_address=delivery_instance,
-            shipping_cost=0,
-        )
 
-        request.session['order_uuid'] = str(order.uuid)
+        try:
+            with transaction.atomic():
+                locked_books = {}
+                for item in items:
+                    book = Book.objects.select_for_update().get(id=item.book.id)
+                    if item.quantity > book.stock_quantity:
+                        messages.error(request, f"Not enough stock for {book.title}")
+                        return redirect('book_cart')
+                    locked_books[item.book.id] = book
+                order = Order.objects.create(
+                    user=request.user,
+                    status='pending',
+                    total_amount=total_amount,
+                    shipping_address=delivery_instance,
+                    shipping_cost=0,
+                )
 
-        for item in items:
-            OrderItem.objects.create(
-                order=order,
-                book=item.book,
-                quantity=item.quantity,
-                unit_price=item.book.price,
-            )
+                request.session['order_uuid'] = str(order.uuid)
 
-            # Reduce stock
-            item.book.stock_quantity -= item.quantity
-            item.book.save()
+                for item in items:
+                    # book = Book.objects.select_for_update().get(id=item.book.id)
+                    book = locked_books[item.book.id]
+                    OrderItem.objects.create(
+                        order=order,
+                        book=item.book,
+                        quantity=item.quantity,
+                        unit_price=item.book.price,
+                    )
 
-        cart.items.all().delete()
-        order_items = order.items.all()
-        return render(request, 'books/order_complete.html',
-                      {'order': order, 'payment_method': payment_method, 'order_items': order_items})
+                    # Reduce stock
+                    book.stock_quantity -= item.quantity
+                    book.save()
+
+                # Clear cart only after success
+                cart.items.all().delete()
+                order_items = order.items.all()
+
+                if delivery_uuid:
+                    del request.session['delivery_uuid']
+
+                messages.success(request, f"Order Successful")
+
+        except Exception as e:
+            messages.error(request, f"An error occurred: {str(e)}")
+            return redirect('book_cart')
+
+        return redirect('book_order_complete')
 
 
 class BookOrderComplete(View):
@@ -307,10 +376,11 @@ class BookOrderComplete(View):
         if not order_uuid:
             return redirect('book_cart')
 
-        order = Order.object.get(uuid=order_uuid, user=request.user).first()
+        order = Order.objects.get(uuid=order_uuid, user=request.user)
         if not order:
             return redirect('book_cart')
 
+        del request.session['order_uuid']
         order_items = order.items.all()
         return render(request, 'books/order_complete.html', {
             'order': order,
@@ -318,6 +388,7 @@ class BookOrderComplete(View):
         })
 
 
+@method_decorator(never_cache, name='dispatch')
 class BookCart(View):
     def get(self, request):
         if not request.user.is_authenticated:
@@ -383,7 +454,7 @@ class BookView(View):
             if not request.user.has_perm('books.change_book'):
                 raise PermissionDenied
             book = get_object_or_404(Book, uuid=uuid)
-            form = BookForm(request.POST, instance=book)  # attach instance here
+            form = BookForm(request.POST, request.FILES, instance=book)  # attach instance here
             if form.is_valid():
                 form.save()
                 return redirect('book_list')
@@ -391,9 +462,10 @@ class BookView(View):
 
         # Create
         print("Create Post After")
+        print(request.FILES)
         if not request.user.has_perm('books.add_book'):
             raise PermissionDenied
-        form = BookForm(request.POST)
+        form = BookForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
             return redirect('book_list')
