@@ -78,7 +78,8 @@
                                 <tbody>
                                 {% for item in order_items %}
                                     <tr>
-                                        <td colspan="2" class="font-medium">{{ item.book.title }}
+                                        <td colspan="2"
+                                            class="font-medium line-clamp-2 lg:line-clamp-1">{{ item.book.title }}
 
                                         </td>
                                         <td colspan="2" class="py-2 px-4 font-medium">{{ item.quantity }}</td>

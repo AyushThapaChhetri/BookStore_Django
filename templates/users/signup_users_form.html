@@ -7,7 +7,7 @@
 {% block content %}
 
     <div class="flex flex-col items-center p-5 bg-gray-100 gap-4 h-screen overflow-auto">
-        <form method="post" class="sm:w-[90%] lg:w-[40%] " id="signupForm">
+        <form method="post" class="sm:w-[90%] lg:w-[40%] " id="signupForm" enctype="multipart/form-data">
             <h2 class="mb-5 text-2xl font-extrabold leading-none tracking-tight text-gray-500 md:text-4xl ">Signup</h2>
             {% csrf_token %}
             {% include "components/form_input.html" with field=form.first_name %}

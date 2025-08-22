@@ -1,10 +1,18 @@
 import os
+import re
 from decimal import Decimal, ROUND_DOWN
 
 from django import forms
 from django.core.exceptions import ValidationError
 
 from src.books.models import Book
+
+
+def clean_spaces_or_none(value: str | None) -> str | None:
+    if not value:
+        return None
+    cleaned = re.sub(r'\s+', ' ', value).strip()
+    return cleaned if cleaned else None
 
 
 class BookForm(forms.ModelForm):
@@ -26,12 +34,36 @@ class BookForm(forms.ModelForm):
             'price': forms.TextInput(attrs={'placeholder': 'e.g. 39.99'}),
         }
 
+    def clean_title(self):
+        title = self.cleaned_data.get('title')
+        return clean_spaces_or_none(title)
+
+    def clean_author(self):
+        author = self.cleaned_data.get('author')
+        return clean_spaces_or_none(author)
+
+    def clean_publisher(self):
+        publisher = self.cleaned_data.get('publisher')
+        return clean_spaces_or_none(publisher)
+
+    def clean_language(self):
+        language = clean_spaces_or_none(self.cleaned_data.get('language'))
+
+        if language is not None and language.isdigit():
+            raise forms.ValidationError("Language cannot be a number.")
+
+        return language
+
     def clean_description(self):
         desc = self.cleaned_data.get('description', '')
         return desc.strip() or None
 
     def clean_pages(self):
         pages = self.cleaned_data.get('pages')
+
+        if pages == 0:
+            raise forms.ValidationError("Pages cannot be zero.")
+
         return pages if pages not in ['', None] else None
 
     def clean_price(self):
@@ -45,6 +77,18 @@ class BookForm(forms.ModelForm):
         if price < 0:
             raise forms.ValidationError("Price must be positive")
         return price
+
+    def clean_stock_quantity(self):
+        stock = self.cleaned_data.get('stock_quantity')
+
+        # Convert empty string to None if the field is optional
+        if stock in ['', None]:
+            return None
+
+        if stock < 0:
+            raise forms.ValidationError("Stock quantity cannot be negative.")
+
+        return stock
 
     def clean_cover_image(self):
         image = self.cleaned_data.get('cover_image')

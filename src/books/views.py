@@ -7,6 +7,7 @@ from django.db import transaction
 from django.db.models import Q, Sum
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views import View
@@ -178,7 +179,7 @@ class BookListView(View):
 
         # pagination int paginate.py
         books = Book.objects.all().order_by('-created_at')
-        paginated_books, limit = paginate_queryset(request, books)
+        paginated_books, limit = paginate_queryset(request, books, default_limit=10)
 
         return render(request, 'books/book_list.html', {'books': books,
                                                         'paginated_books': paginated_books,
@@ -194,10 +195,33 @@ class BookDetailView(View):
 
 class BookStore(View):
     def get(self, request):
+        query = request.GET.get('q', '')
         books = Book.objects.all()
+
+        if query:
+            books = books.filter(
+                Q(title__icontains=query) |
+                Q(author__icontains=query) |
+                Q(publisher__icontains=query)
+            )
         #
         # books = Book.objects.all().order_by('-created_at')
-        paginated_books, limit = paginate_queryset(request, books)
+        paginated_books, limit = paginate_queryset(request, books, default_limit=12)
+
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            cards_html = render_to_string("books/components/book_cards.html", {'paginated_books': paginated_books, })
+            pagination_html = render_to_string('books/components/pagination_div.html',
+                                               {'paginated_books': paginated_books})
+
+            return JsonResponse({
+                "cards": cards_html,
+                "pagination": pagination_html,
+            })
+
+            # return render(request, "books/components/book_cards.html", {
+            #     "paginated_books": paginated_books,
+            #     "limit": limit
+            # })
 
         return render(request, 'books/book_store.html', {'books': books,
                                                          'paginated_books': paginated_books,

@@ -1,12 +1,12 @@
 {% extends 'base/base.html' %}
 
 {% block content %}
-    <div class="flex flex-col align-center grow items-center md:p-10 bg-gray-100 gap-4  w-full">
-        <div class="flex flex-col w-[80%] md:w-[85%] ">
+    <div class="flex flex-col align-center grow items-center py-10 md:p-10 bg-gray-100 gap-4  w-full">
+        <div class="flex flex-col w-[90%] md:w-[85%] ">
             <h1 class="mb-4 text-3xl font-bold text-gray-900">
                 Shopping Cart({% if cart %}{% if items_count %}{{ items_count }}{% else %}0{% endif %}{% endif %})
             </h1>
-            <div class="flex flex-col-reverse md:flex-row">
+            <div class="flex flex-col-reverse gap-4 md:gap-0 md:flex-row">
 
                 <div class="flex flex-col w-full md:w-[70%] md:pr-[40px] gap-4 ">
                     {% if cart.items.exists %}

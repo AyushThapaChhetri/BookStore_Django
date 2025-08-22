@@ -3,110 +3,96 @@
 {% block content %}
     <div class="flex flex-col grow items-center justify-between md:p-10 bg-gray-100 gap-4  w-full">
         {#        <div class="flex flex-row flex-wrap bg-yellow-500 w-full h-fit border-2 border-gray-800 gap-2 ">#}
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-[85%] p-2">
-            {% if books %}
-                {% for book in paginated_books %}
-                    {% include 'books/components/cards.html' with book=book %}
-                {% endfor %}
-            {% else %}
-                <p class="text-gray-600 p-5">No books available.</p>
-            {% endif %}
-        </div>
-        {% if books %}
-            {% if paginated_books %}
-                <div class="w-[85%] flex flex-wrap flex-column justify-between items-center ">
-
-                    Page {{ paginated_books.number }} of {{ paginated_books.paginator.num_pages }}
-
-                    <div class="flex flex-column flex-wrap gap-4 md:gap-20">
-                        <div class="flex flex-row  items-center gap-2 w-fit">
-                            <p>Show: </p>
-                            <form class="max-w-sm mx-auto" method="get">
-                                <select id="rowsPerPage" name="limit" onchange="this.form.submit()"
-                                        class="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg  focus:ring-blue-500 focus:border-blue-500 block w-fit p-2.5">
-                                    <option value="10" {% if limit == 10 %}selected{% endif %}>10</option>
-                                    <option value="20" {% if limit == 20 %}selected{% endif %}>20</option>
-                                    <option value="30" {% if limit == 30 %}selected{% endif %}>30</option>
-                                    <option value="40" {% if limit == 40 %}selected{% endif %}>40</option>
-                                    <option value="50" {% if limit == 50 %}selected{% endif %}>50</option>
-                                </select>
-                            </form>
-                        </div>
-                        <div class="flex flex-column">
-                            {# First Page#}
-                            <div class="flex p-1 border border-gray-300 items-center">
-                                {% if paginated_books.has_previous %}
-                                    <a href="?page=1&limit={{ limit }}">
-                                {% else %}
-                                    <a class="pointer-event-none text-gray-300">
-                                {% endif %}
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                     stroke-width="1.5"
-                                     stroke="currentColor" class="size-6">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                          d="m18.75 4.5-7.5 7.5 7.5 7.5m-6-15L5.25 12l7.5 7.5"/>
-                                </svg>
-                                </a>
-                            </div>
-                            {#Previous Page#}
-                            <div class="flex p-1 border border-gray-300 items-center">
-                                {% if paginated_books.has_previous %}
-                                    <a href="?page={{ paginated_books.previous_page_number }}&limit={{ limit }}">
-                                {% else %}
-                                    <a class="pointer-event-none text-gray-300">
-                                {% endif %}
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                     stroke-width="1.5"
-                                     stroke="currentColor" class="size-6">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                          d="M15.75 19.5 8.25 12l7.5-7.5"/>
-                                </svg>
-                                </a>
-
-                            </div>
-
-                            <div class="flex py-1 px-3 border border-gray-300 items-center">
-                                {{ paginated_books.number }}
-                            </div>
-
-                            {#Next Page#}
-                            <div class="flex p-1  border border-gray-300 items-center">
-                                {% if paginated_books.has_next %}
-                                    <a href="?page={{ paginated_books.next_page_number }}&limit={{ limit }}">
-                                {% else %}
-                                    <a class="pointer-event-none text-gray-300">
-                                {% endif %}
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                     stroke-width="1.5"
-                                     stroke="currentColor" class="size-6">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/>
-                                </svg>
-                                </a>
-                            </div>
-
-                            {#Last Page#}
-                            <div class="flex p-1  border border-gray-300 items-center">
-                                {% if paginated_books.has_next %}
-                                    <a href="?page={{ paginated_books.paginator.num_pages }}&limit={{ limit }}">
-                                {% else %}
-                                    <a class="pointer-event-none text-gray-300">
-                                {% endif %}
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                     stroke-width="1.5"
-                                     stroke="currentColor" class="size-6">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                          d="m5.25 4.5 7.5 7.5-7.5 7.5m6-15 7.5 7.5-7.5 7.5"/>
-                                </svg>
-                                </a>
-                            </div>
-                        </div>
+        <div class="flex flex-col w-full gap-4">
+            <div class="w-full">
+                {#                <form method="get" class="w-full ">#}
+                <label for="default-search" class="mb-2 text-sm font-medium text-gray-900 sr-only dark:text-white">Search</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                        <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true"
+                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                  stroke-width="2"
+                                  d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>
+                        </svg>
                     </div>
+                    <input type="search" name="q" id="default-search"
+                           class="block w-full p-4 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                           placeholder="Search Title, Author, Publisher..."/>
+                    <button type="submit"
+                            class="text-white absolute end-2.5 bottom-2.5 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+                        Search
+                    </button>
                 </div>
-            {% endif %}
-        {% endif %}
-    </div>
-    <script>
+                {#                </form>#}
+            </div>
+            <div class="flex">
+                <div class="w-[30%]">
+                    Filter section
+                </div>
+                <div class="flex flex-col gap-4">
+                    <div id="store-book-items"
+                         class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full">
+                        {% if paginated_books %}
+                            {% include 'books/components/book_cards.html' with paginated_books=paginated_books %}
+                        {% endif %}
+                        {#                        {% if paginated_books %}#}
+                        {#                            {% for book in paginated_books %}#}
+                        {#                                {% include 'books/components/cards.html' with book=book %}#}
+                        {#                            {% endfor %}#}
+                        {#                        {% else %}#}
+                        {#                            <p class="text-gray-600 p-5">No books available.</p>#}
+                        {#                        {% endif %}#}
+                    </div>
 
+                    {% if paginated_books %}
+                        {% include 'books/components/pagination_div.html' with paginated_books=paginated_books %}
+                    {% endif %}
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        const searchInput = document.getElementById('default-search')
+        const storeContent = document.getElementById('store-book-items')
+        const paginationContent = document.getElementById('store-paginationContent')
+
+        let debounceTimer;
+
+        searchInput.addEventListener('input', () => {
+            clearTimeout(debounceTimer);
+
+            debounceTimer = setTimeout(async () => {
+                const query = searchInput.value;
+
+                try {
+                    const response = await axios.get("{% url 'book_store' %}", {
+                        params: {q: query},
+                        headers: {'X-Requested-With': 'XMLHttpRequest'}
+                    });
+
+                    {#storeContent.innerHTML = response.data;#}
+                    storeContent.innerHTML = response.data.cards;
+                    paginationContent.innerHTML = response.data.pagination;
+
+
+                } catch (e) {
+                    console.error('Search Error:', e);
+                    alert(`⚠️ Something went wrong while fetching results. Please try again.`);
+
+                }
+
+
+            }, 500)
+
+
+        });
 
         document.querySelectorAll('.button_cart_add').forEach(button => {
             button.addEventListener('click', async (e) => {
