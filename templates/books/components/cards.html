@@ -1,6 +1,8 @@
 {% load static %}
 <div class="flex flex-col justify-between gap-2 w-full max-w-sm bg-white border border-gray-200 rounded-lg hover:shadow-lg "
-     onclick="window.location='{% url 'book_detail_store' book.uuid %}'">
+        {#     onclick="window.location='{% url 'book_detail_store' book.uuid %}'#}
+     data-href="{% url 'book_detail_store' book.uuid %}"
+>
     {#    <a href="#">#}
     {#        <img class="p-8 rounded-t-lg" src="{{ book.cover.url }}" alt="{{ book.title }}"/>#}
     {#    </a>#}

@@ -1,4 +1,5 @@
 {% extends 'base/base.html' %}
+{% load static %}
 
 {% block content %}
     <div class="flex flex-col grow items-center justify-between md:p-10 bg-gray-100 gap-4  w-full">
@@ -59,6 +60,8 @@
 
 {% block extra_js %}
     <script>
+
+
         const searchInput = document.getElementById('default-search')
         const storeContent = document.getElementById('store-book-items')
         const paginationContent = document.getElementById('store-paginationContent')
@@ -94,52 +97,87 @@
 
         });
 
-        document.querySelectorAll('.button_cart_add').forEach(button => {
-            button.addEventListener('click', async (e) => {
-                e.stopPropagation(); // prevents card click
-                e.preventDefault(); // prevents default anchor behavior
+        // 2 Card click navigation
+        storeContent.addEventListener('click', (e) => {
+            if (e.target.closest('.button_cart_add')) return // skip Add to Cart
+            const card = e.target.closest('[data-href]')
+            if (card) {
+                const href = card.dataset.href
+                if (href) window.location.href = href
+            }
+        })
 
-                const bookUuid = button.dataset.bookUuid;
+        // Add to Cart listener
+        storeContent.addEventListener('click', async (e) => {
+            const button = e.target.closest('.button_cart_add');
+            if (!button) return;
+            e.stopPropagation(); // prevents card click
+            e.preventDefault(); // prevents default anchor behavior
+            {#console.log("buttonclicked");#}
 
-                try {
-                    const response = await axios.post(
-                        "{% url 'add_to_cart' %}",
-                        new URLSearchParams({book_uuid: bookUuid}),
-                        {
-                            headers: {
-                                'X-CSRFToken': '{{ csrf_token }}',
-                                'Content-Type': 'application/x-www-form-urlencoded'
-                            }
+            const bookUuid = button.dataset.bookUuid;
+
+
+            try {
+                const response = await axios.post(
+                    "{% url 'add_to_cart' %}",
+                    new URLSearchParams({book_uuid: bookUuid}),
+                    {
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}',
+                            'Content-Type': 'application/x-www-form-urlencoded'
                         }
-                    );
+                    }
+                );
 
-                    const data = response.data;
+                const data = response.data;
 
-                    if (data.success) {
-                        if (data.created) {
-                            // First time addition
-                            button.textContent = "Added";
-                            setTimeout(() => {
-                                button.outerHTML = `<a href="{% url 'book_cart' %}"
-                            class="bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm">
-                            View Cart
-                        </a>`;
-                            }, 1500);
-                        } else {
-                            // Already in cart
+                if (data.success) {
+                    if (data.created) {
+                        button.textContent = "Added";
+                        setTimeout(() => {
                             button.outerHTML = `<a href="{% url 'book_cart' %}"
                         class="bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm">
                         View Cart
                     </a>`;
-                        }
+                        }, 1500);
                     } else {
-                        alert(data.message);
+                        button.outerHTML = `<a href="{% url 'book_cart' %}"
+                    class="bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm">
+                    View Cart
+                </a>`;
                     }
-                } catch (error) {
-                    console.error("Error adding to cart:", error);
-                    alert("Something went wrong. Please try again.");
+
+                    async function updateCartCount() {
+                        try {
+                            let response = await axios.get('/carts/count/');
+
+                            {#console.log("response", response);#}
+                            {#console.log("response", response.data);#}
+                            {#console.log("response", response.data.count);#}
+
+                            let data = await response.data.count;
+                            const cartCount = document.querySelector("#cart-count");
+                            if (cartCount) {
+
+                                cartCount.innerHTML = data;
+                            }
+
+                        } catch (e) {
+                            console.log(e);
+                            alert(`Error occured`);
+                        }
+                    }
+
+                    await updateCartCount();
+                } else {
+                    alert(data.message);
                 }
-            });
+            } catch (error) {
+                console.error("Error adding to cart:", error);
+                alert("Something went wrong. Please try again.");
+            }
         });
+
     </script>
 {% endblock %}

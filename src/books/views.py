@@ -193,10 +193,12 @@ class BookDetailView(View):
         return render(request, 'books/book_detail_view.html', {'book': book})
 
 
+@method_decorator(never_cache, name='dispatch')
 class BookStore(View):
     def get(self, request):
         query = request.GET.get('q', '')
         books = Book.objects.all()
+        items_count = CartItem.objects.filter(cart__user=request.user).count()
 
         if query:
             books = books.filter(
@@ -216,6 +218,7 @@ class BookStore(View):
             return JsonResponse({
                 "cards": cards_html,
                 "pagination": pagination_html,
+                'items_count': items_count,
             })
 
             # return render(request, "books/components/book_cards.html", {
