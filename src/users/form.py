@@ -66,17 +66,17 @@ class UserForm(UserCreationForm):
         value = clean_spaces_or_none(value)
         value = not_none_or_number(value)
         if not value:
-            raise forms.ValidationError("Please enter a first name.")
+            raise forms.ValidationError("Please enter a last name.")
         if len(value) < 3:
             raise forms.ValidationError("First name must be at least 3 characters long.")
         return value
 
     def email(self):
-        value = self.cleaned_data.get('full_name')
+        value = self.cleaned_data.get('email')
         value = clean_spaces_or_none(value)
         value = not_none_or_number(value)
         if not value:
-            raise forms.ValidationError("Please enter a first name.")
+            raise forms.ValidationError("Please enter a email.")
         return value
 
     def clean_date_of_birth(self):
@@ -100,7 +100,7 @@ class UserForm(UserCreationForm):
             raise forms.ValidationError("Please enter a address.")
         if len(value) < 3:
             raise forms.ValidationError("First name must be at least 3 characters long.")
-        
+
         return value
 
     def clean_profile_picture(self):
