@@ -21,6 +21,7 @@
 #
 #     class Meta:
 #         indexes = [models.Index(fields=['price'])]  # Index on price for sorting/filtering in store views
+from decimal import ROUND_HALF_UP, Decimal
 
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
@@ -106,11 +107,11 @@ class Book(AbstractBaseModel):
 class Stock(AbstractBaseModel):
     book = models.OneToOneField('Book', on_delete=models.CASCADE, related_name='stock')
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00,
-                                validators=[MinValueValidator(0), MaxValueValidator(100)])
+                                validators=[MinValueValidator(0.00)])
     stock_quantity = models.PositiveIntegerField(default=0)
-    is_available = models.BooleanField(default=True)
+    is_available = models.BooleanField(default=False)
     discount_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0.00,
-                                              validators=[MinValueValidator(0)])
+                                              validators=[MinValueValidator(0), MaxValueValidator(100)])
     last_restock_date = models.DateField(blank=True, null=True)
 
     def __str__(self):
@@ -125,7 +126,7 @@ class Stock(AbstractBaseModel):
 
     @property
     def discounted_price(self):
-        return self.price * (1 - self.discount_percentage / 100)
+        return self.price * (1 - self.discount_percentage / 100).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
     def save(self, *args, **kwargs):
         if self.stock_quantity is not None:

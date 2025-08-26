@@ -13,8 +13,13 @@
 </p>
 
 {% if user.is_authenticated %}
-    {% url 'book_list' as target_url %}
-    {% include 'components/button.html' with url_to_visit=target_url button_text="Book View" %}
+    {% if user.is_superuser %}
+        {% url 'admin-book-list' as target_url %}
+        {% include 'components/button.html' with url_to_visit=target_url button_text="Book Manager" %}
+    {% else %}
+        {% url 'book_store' as target_url %}
+        {% include 'components/button.html' with url_to_visit=target_url button_text="Book Store" %}
+    {% endif %}
 {% else %}
     {% url 'login_view' as target_url %}
     {% include 'components/button.html' with url_to_visit=target_url button_text="Get Started" %}

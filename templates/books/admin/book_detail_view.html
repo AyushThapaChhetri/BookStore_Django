@@ -1,0 +1,142 @@
+{% extends 'base/admin/admin_base.html' %}
+{% load permissions %}
+
+{% block title %}
+    Book List
+{% endblock %}
+
+{% block content %}
+    <div class="p-5 h-screen bg-gray-100">
+        <a href="{% url 'admin-book-list' %}"
+           class="inline-flex items-center justify-center p-2 hover:bg-gray-200 rounded"
+           aria-label="Back to book list">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                 stroke="currentColor" class="size-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3"/>
+            </svg>
+        </a>
+
+        {% if book %}
+
+            <div class="overflow-auto rounded-lg shadow mt-5">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b-2 border-gray-200">
+                    <tr>
+                        <th class="min-w-48 p-3 text-sm font-semibold tracking-wide text-left">Cover</th>
+                        <th class="min-w-48 p-3 text-sm font-semibold tracking-wide text-left">Title</th>
+                        <th class="min-w-48 p-3 text-sm font-semibold tracking-wide text-left">Author(s)</th>
+                        <th class="min-w-48 p-3 text-sm font-semibold tracking-wide text-left">Publisher</th>
+                        <th class="min-w-48 p-3 text-sm font-semibold tracking-wide text-left">Genre</th>
+                        <th class="min-w-48 p-3 text-sm font-semibold tracking-wide text-left">ISBN</th>
+                        <th class="min-w-48 p-3 text-sm font-semibold tracking-wide text-left">Edition</th>
+                        <th class="min-w-48 p-3 text-sm font-semibold tracking-wide text-left">Publication Date</th>
+                        <th class="min-w-48 p-3 text-sm font-semibold tracking-wide text-left">Description</th>
+                        <th class="p-3 text-sm font-semibold tracking-wide text-left">Pages</th>
+                        <th class="p-3 text-sm font-semibold tracking-wide text-left">Language</th>
+                        <th class=" p-3 text-sm font-semibold tracking-wide text-left">Stocks</th>
+                        <th class=" p-3 text-sm font-semibold tracking-wide text-left">Discount</th>
+                        <th class="whitespace-nowrap p-3 text-sm font-semibold tracking-wide text-left">Added Date</th>
+                        <th class="whitespace-nowrap p-3 text-sm font-semibold tracking-wide text-left">Updated Date
+                        </th>
+                        {% if request.user|has_perm:"books.change_book" %}
+                            <th class="min-w-64 p-3 text-sm font-semibold tracking-wide text-left">Actions</th>
+                        {% endif %}
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                    <tr class="bg-gray-50">
+                        <td class="p-3 text-sm text-gray-700"> {% if book.cover_image %}
+                            <img src="{{ book.cover_image.url }}"
+                                 alt="{{ book.title }}"
+                                 class="h-10 w-8 object-cover"/>
+                        {% else %}
+                            <span class="italic text-gray-400">No cover available</span>
+                        {% endif %}</td>
+                        <td class="p-3 text-sm text-gray-700">{{ book.title }}</td>
+                        <td class="p-3 text-sm text-gray-700">
+                            {% for author in book.authors.all %}{{ author.name }}{% if not forloop.last %},
+                            {% endif %}{% endfor %}</td>
+                        <td class="p-3 text-sm text-gray-700">{{ book.publisher.name }}</td>
+                        <td class="p-3 text-sm text-gray-700">
+                            {% for genre in book.genres.all %}{{ genre.name }}{% if not forloop.last %},
+                            {% endif %} {% empty %}
+                                {#                                <span class="text-gray-400 italic">No genre</span>#}
+                                -
+                            {% endfor %}</td>
+                        <td class="p-3 text-sm text-gray-700">{{ book.isbn|default:"-" }}</td>
+                        <td class="p-3 text-sm text-gray-700">{{ book.edition|default:"-" }}</td>
+                        <td class="p-3 text-sm text-gray-700">{{ book.publication_date }}</td>
+                        <td class="p-3 text-sm text-gray-700 ">{{ book.description|default:"-" }}</td>
+                        <td class="p-3 text-sm text-gray-700">{{ book.pages|default:"-" }}</td>
+                        <td class="p-3 text-sm text-gray-700">{{ book.language }}</td>
+                        <td class="p-3 whitespace-nowrap text-sm text-gray-700">{% if book.stock %}
+                            ${{ book.stock.price }} ({{ book.stock.stock_quantity }} left)
+                        {% else %}
+                            Out of stock
+                        {% endif %}</td>
+                        <td class="p-3 text-sm text-gray-700 whitespace-nowrap">
+                            {% if book.stock and book.stock.discount_percentage %}
+                                {{ book.stock.discount_percentage }}% → ${{ book.stock.discounted_price }}
+                            {% else %}-{% endif %}</td>
+                        <td class="p-3 text-sm text-gray-700 whitespace-nowrap">{{ book.created_at|date:"Y-m-d" }}</td>
+                        <td class="p-3 text-sm text-gray-700 whitespace-nowrap">{{ book.updated_at|date:"Y-m-d" }}</td>
+
+                        {% if request.user|has_perm:"books.change_book" %}
+
+                            <td class="p-3 text-sm text-gray-700">
+                                <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"><a
+                                        href="{% url 'book_vbiew' book.uuid %}">Edit</a></button>
+                                <button
+                                        type="button"
+                                        class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+                                        onclick="openDeleteModal('{{ book.uuid }}')"
+                                >
+                                    Delete
+                                </button>
+                            </td>
+                        {% endif %}
+                    </tr>
+
+                    </tbody>
+                </table>
+            </div>
+            <div id="deleteModal" class="fixed inset-0 hidden justify-center items-center z-50
+            backdrop-blur-sm bg-white/10">
+                <div class="bg-white rounded-lg p-6 w-[90%] max-w-md">
+                    <p class="text-lg text-gray-800">Are you sure you want to delete this book?</p>
+                    <div class="flex justify-end gap-3">
+                        <button onclick="closeDeleteModal()" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">
+                            Cancel
+                        </button>
+                        <form id="deleteForm" method="post" action="">
+                            {% csrf_token %}
+                            <input type="hidden" name="delete" value="1">
+                            <button type="submit" name="delete"
+                                    class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Yes,
+                                Delete
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        {% else %}
+            no Book
+        {% endif %}
+    </div>
+    <script>
+        function openDeleteModal(bookUUID) {
+            const modal = document.getElementById('deleteModal');
+            const form = document.getElementById('deleteForm');
+            form.action = `/admin-panel/book/delete/${bookUUID}`;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeDeleteModal() {
+            const modal = document.getElementById('deleteModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    </script>
+{% endblock %}

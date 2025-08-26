@@ -4,6 +4,7 @@ import re
 
 from django import forms
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from src.books.models import Book, Author, Genre, Publisher, Stock
 
@@ -17,14 +18,26 @@ def clean_spaces_or_none(value: str | None) -> str | None:
 
 def validate_isbn(isbn: str) -> bool:
     """Validate ISBN-13: strip non-digits, check length 13, starts with 978/979, and checksum."""
-    d = re.sub(r'\D', '', isbn)  # Remove non digit
+    d = re.sub(r'\D', '', isbn).strip()
+    print("Digits:", list(d))  # debug
+
     if len(d) != 13 or not d.isdigit():
         return False
     if not d.startswith(('978', '979')):
         return False
-    odd = [int(x) for x in d[::2]]
-    even = [int(x) * 3 for x in d[1::2]]
-    return (sum(odd) + sum(even)) % 10 == 0
+
+    # Take only the first 12 digits.
+    # Multiply alternate digits by 1 or 3.
+    # Compute the check digit (13th digit).
+    # Compare it with the given last digit.
+    digits = [int(x) for x in d]
+    check_digit = digits[-1]  # last digit
+    body = digits[:-1]  # first 12 digits
+
+    total = sum(body[::2]) + sum(x * 3 for x in body[1::2])
+    expected = (10 - (total % 10)) % 10
+
+    return check_digit == expected
 
 
 class AuthorForm(forms.ModelForm):
@@ -45,7 +58,11 @@ class AuthorForm(forms.ModelForm):
         }
 
     def clean_name(self):
-        return clean_spaces_or_none(self.cleaned_data.get('name'))
+        name = clean_spaces_or_none(self.cleaned_data.get('name'))
+
+        if not name or len(name) < 5:
+            raise forms.ValidationError('Name must be at least 5 characters long.')
+        return name
 
     def clean_bio(self):
         bio = self.cleaned_data.get('bio', '')
@@ -153,6 +170,8 @@ class GenreForm(forms.ModelForm):
 
 
 class BookForm(forms.ModelForm):
+    isbn = forms.CharField(required=False)  # override, skip default max_length check
+
     class Meta:
         model = Book
         fields = [
@@ -199,9 +218,13 @@ class BookForm(forms.ModelForm):
         isbn = self.cleaned_data.get('isbn')
         if not isbn:
             return None
-        cleaned_isbn = re.sub(r'\D', '', isbn)  # Strip non-digits for storage
-        if not validate_isbn(isbn):
+        cleaned_isbn = re.sub(r'\D', '', isbn).strip()  # Strip non-digits for storage
+        print("Validating ISBN:", repr(cleaned_isbn))
+        print(cleaned_isbn)
+        if not validate_isbn(cleaned_isbn):
+            print('invalid ISBN')
             raise ValidationError("Invalid ISBN-13 format or checksum.")
+        print('correct Isbn')
         return cleaned_isbn  # Store without hyphens
 
     def clean_edition(self):
@@ -223,6 +246,31 @@ class BookForm(forms.ModelForm):
             raise ValidationError("Image too large (max 2MB).")
         return image
 
+    def clean_publisher(self):
+        publisher = self.cleaned_data.get('publisher')
+
+        if not publisher:
+            raise ValidationError("Please select a publisher.")
+
+        return publisher
+
+    def clean_publication_date(self):
+        pub_date = self.cleaned_data.get('publication_date')
+
+        if not pub_date:
+            return None
+
+            # Ensure it's a date object
+        if not isinstance(pub_date, (datetime.date,)):
+            raise ValidationError("Invalid date format.")
+
+        # Check if the date is in the future
+        today = timezone.localdate()
+        if pub_date > today:
+            raise ValidationError("Publication date cannot be in the future.")
+
+        return pub_date
+
 
 class StockForm(forms.ModelForm):
     class Meta:
@@ -237,9 +285,10 @@ class StockForm(forms.ModelForm):
         ]
         widgets = {
             'price': forms.NumberInput(attrs={'step': '0.01'}),
-            'discount_percentage': forms.NumberInput(attrs={'step': '0.01'}),
+            'discount_percentage': forms.NumberInput(attrs={'step': '0.01', 'min': '0', 'max': '100'}),
             'last_restock_date': forms.DateInput(attrs={'type': 'date'}),
             'book': forms.HiddenInput(),  # Often hidden if creating via Book
+            'is_available': forms.HiddenInput(),
         }
 
     def clean_price(self):
@@ -259,6 +308,14 @@ class StockForm(forms.ModelForm):
         if discount < 0 or discount > 100:
             raise ValidationError("Discount percentage must be between 0 and 100.")
         return discount
+
+    def clean_last_restock_date(self):
+        restock_date = self.cleaned_data.get('last_restock_date')
+        if restock_date:
+            today = timezone.localdate()
+            if restock_date > today:
+                raise ValidationError("Restock date cannot be in the future.")
+            return restock_date
 
 # class BookForm(forms.ModelForm):
 #     class Meta:

@@ -1,0 +1,130 @@
+{% extends 'base/admin/admin_base.html' %}
+{% load permissions %}
+
+{% block title %}
+    Book List
+{% endblock %}
+
+{% block content %}
+    <div class="p-5 h-screen bg-gray-100">
+        <a href="{% url 'admin-stock-list' %}"
+           class="inline-flex items-center justify-center p-2 hover:bg-gray-200 rounded"
+           aria-label="Back to stock list">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                 stroke="currentColor" class="size-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3"/>
+            </svg>
+        </a>
+
+        {% if stock %}
+
+            <div class="overflow-auto rounded-lg shadow mt-5">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b-2 border-gray-200">
+                    <tr>
+                        <th class="min-w-48 p-3 text-sm font-semibold tracking-wide text-left">Cover</th>
+                        <th class="min-w-48 p-3 text-sm font-semibold tracking-wide text-left">Title</th>
+                        <th class="min-w-48 p-3 text-sm font-semibold tracking-wide text-left">Publisher</th>
+                        <th class="min-w-48 p-3 text-sm font-semibold tracking-wide text-left">Price</th>
+                        <th class="min-w-48 p-3 text-sm font-semibold tracking-wide text-left">Discount</th>
+                        <th class="min-w-48 p-3 text-sm font-semibold tracking-wide text-left">Quantity</th>
+                        <th class="min-w-48 p-3 text-sm font-semibold tracking-wide text-left">Available</th>
+                        <th class="min-w-48 p-3 text-sm font-semibold tracking-wide text-left">Last Restock</th>
+                        <th class="whitespace-nowrap p-3 text-sm font-semibold tracking-wide text-left">Added Date</th>
+                        <th class="whitespace-nowrap p-3 text-sm font-semibold tracking-wide text-left">Updated Date
+                        </th>
+                        <th class="p-3 text-sm font-semibold tracking-wide text-left">Actions</th>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                    <tr class="bg-gray-50">
+                        <td class="p-3 text-sm text-gray-700">
+                            {% if stock.book.cover_image %}
+                                <img src="{{ stock.book.cover_image.url }}"
+                                     alt="{{ stock.book.title }}"
+                                     class="h-10 w-8 object-cover"/>
+                            {% else %}
+                                <span class="italic text-gray-400">No cover available</span>
+                            {% endif %}
+                        </td>
+                        <td class="p-3 text-sm text-gray-700">{{ stock.book.title }}</td>
+                        <td class="p-3 text-sm text-gray-700">{{ stock.book.publisher.name|default:'-' }}</td>
+                        <td class="p-3 text-sm text-gray-700">{% if stock.price %}
+                            Rs {% endif %}{{ stock.price|default:"-" }}</td>
+                        <td class="p-3 text-sm text-gray-700">{% if stock.discount_percentage %}
+                            {{ stock.discount_percentage }}% → ${{ stock.discounted_price }}
+                        {% else %}
+                            -
+                        {% endif %}</td>
+                        <td class="p-3 text-sm text-gray-700">{{ stock.stock_quantity|default:'-' }}</td>
+                        <td class="p-3 text-sm text-gray-700">{% if stock.is_available %}
+                            <span class="text-green-600 font-semibold">Yes</span>
+                        {% else %}
+                            <span class="text-red-600 font-semibold">No</span>
+                        {% endif %}</td>
+                        <td class="p-3 text-sm text-gray-700">{{ stock.last_restock_date|default:"-" }}</td>
+                        <td class="p-3 text-sm text-gray-700 whitespace-nowrap">{{ stock.created_at|date:"Y-m-d" }}</td>
+                        <td class="p-3 text-sm text-gray-700 whitespace-nowrap">{{ stock.updated_at|date:"Y-m-d" }}</td>
+
+
+                        {% if request.user|has_perm:"stock.change_stock" %}
+
+
+                            <td class="p-3 whitespace-nowrap text-sm text-gray-700">
+                                <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"><a
+                                        href="{% url 'stock_view' stock.uuid %}">Edit</a></button>
+                                <button
+                                        type="button"
+                                        class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+                                        onclick="openResetModal('{{ stock.uuid }}')"
+                                >
+                                    Reset
+                                </button>
+                            </td>
+                        {% endif %}
+                    </tr>
+
+                    </tbody>
+                </table>
+            </div>
+            <div id="resetModal" class="fixed inset-0 hidden justify-center items-center z-50
+            backdrop-blur-sm bg-white/10">
+                <div class="bg-white rounded-lg p-6 w-[90%] max-w-md">
+                    <p class="text-lg text-gray-800">Are you sure you want to Reset the Stock?
+                        <span class="text-sm text-gray-500">(This will clear stock quantity, price, and discount)</span>
+                    </p>
+                    <div class="flex justify-end gap-3">
+                        <button onclick="closeResetModal()" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">
+                            Cancel
+                        </button>
+                        <form id="resetForm" method="post" action="">
+                            {% csrf_token %}
+                            <input type="hidden" name="reset" value="1">
+                            <button type="submit" name="reset"
+                                    class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Yes,
+                                Reset
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        {% else %}
+            no Book
+        {% endif %}
+    </div>
+    <script>
+        function openResetModal(stockUUID) {
+            const modal = document.getElementById('resetModal');
+            const form = document.getElementById('resetForm');
+            form.action = `/admin-panel/stock/reset/${stockUUID}`;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeResetModal() {
+            const modal = document.getElementById('resetModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    </script>
+{% endblock %}

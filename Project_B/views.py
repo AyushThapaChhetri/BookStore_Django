@@ -11,8 +11,14 @@ def home_view(request):
         cart = Cart.objects.filter(user=request.user).first()
         if cart:
             items_count = CartItem.objects.filter(cart=cart).count()
-
-        return render(request, 'base/base.html', {'cart': cart, 'items_count': items_count})
+    return render(request, 'base/base.html', {
+        'cart': cart,
+        'items_count': items_count
+    })
+  
+    #
+    #     return render(request, 'base/base.html', {'cart': cart, 'items_count': items_count})
+    # return render(request, 'base/base.html')
 
 
 def about_view(request):
