@@ -33,13 +33,32 @@
                             Order Summary
                         </h2>
                         <div class="flex justify-between">
-                            <p class="text-lg text-gray-600">
-                                Sub total
-                            </p>
-                            <p id="sub-total-shopping_cart" class="text-lg text-gray-800 font-bold">
+                            {#                            <p class="text-lg text-gray-600">#}
+                            {#                                Sub total#}
+                            {#                            </p>#}
+                            {#                            <p id="sub-total-shopping_cart" class="text-lg text-gray-800 font-bold">#}
+                            {##}
+                            {#                                Rs {{ total_price|floatformat:"-2" }}#}
+                            {#                            </p>#}
+                            <table class="w-full text-left text-sm">
+                                <tr>
+                                    <td class="p-2 font-medium">Sub Total</td>
+                                    <td id="sub-total-shopping_cart" class="p-2 text-right">
+                                        Rs {{ total_price|floatformat:"-2" }}</td>
+                                </tr>
+                                <tr>
 
-                                Rs {{ total_price|floatformat:"-2" }}
-                            </p>
+                                    <td class="p-2 font-medium">Discount</td>
+                                    <td id="discount-shopping_cart" class="p-2 text-right">Rs.
+                                        {% if total_discount %}{{ total_discount }}{% else %}0{% endif %}</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2 font-medium">Total</td>
+                                    <td id="total-shopping_cart" class="p-2 text-right">Rs.
+                                        {% if total_amount_after_discount %}{{ total_amount_after_discount }}{% else %}
+                                            {{ total_price|floatformat:"-2" }}{% endif %}</td>
+                                </tr>
+                            </table>
                         </div>
                         <a href="{% url 'book_checkout' %}"
                            class="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white text-center font-semibold py-2 px-4 rounded-md transition-all duration-300 shadow">
@@ -59,33 +78,55 @@
         axios.defaults.xsrfHeaderName = "X-CSRFToken";
 
         const subtotal = document.getElementById('sub-total-shopping_cart');
+        const discount = document.getElementById('discount-shopping_cart');
+        const total_after_discount = document.getElementById('total-shopping_cart');
 
         async function updateQuantity(itemUuid, action) {
+            {#console.log("items uuid", itemUuid);#}
             const input = document.getElementById(`quantity-${itemUuid}`)
             let quantity = parseInt(input.value);
 
             if (action === "increment" && quantity < 50) {
                 quantity++;
-                console.log("After increment: ", quantity);
+                {#console.log("After increment: ", quantity);#}
             } else if (action === "decrement" && quantity > 1) {
                 quantity--;
-                console.log("After decrement: ", quantity);
+                {#console.log("After decrement: ", quantity);#}
 
             }
 
-            console.log("Quantity: ", quantity);
+            {#console.log("Quantity: ", quantity);#}
 
             try {
                 const res = await axios.post(`cart/update/${itemUuid}/`, {quantity, action});
-                console.log("Quantity updated:", res.data);
+                {#console.log("Quantity updated:", res.data);#}
 
                 // Update input with actual quantity from server
                 if (res.data.success) {
-                    console.log(res.data.total_price);
+                    {#console.log(res.data.total_price);#}
                     input.value = res.data.quantity;
                     {#subtotal.innerHTML = "Rs " + parseFloat(res.data.total_price).toFixed(2);#}
-                    let price = parseFloat(res.data.total_price);
-                    subtotal.innerHTML = "Rs " + (price % 1 === 0 ? price : price.toFixed(2));
+                    {#let price = parseFloat(res.data.total_price);#}
+                    {#console.log("to be updated", price);#}
+                    {#subtotal.innerHTML = "Rs " + (price % 1 === 0 ? price : price.toFixed(2));#}
+                    // Extract totals from response
+                    const {
+                        subtotal: itemSubtotal,
+                        total_price,
+                        total_discount,
+                        total_amount_after_discount,
+                    } = res.data;
+
+                    // Format numbers (2 decimals if not whole number)
+                    const formatMoney = (val) => {
+                        let num = parseFloat(val) || 0; // convert string → number
+                        return "Rs " + (num % 1 === 0 ? num : num.toFixed(2));
+                    };
+
+                    subtotal.innerHTML = formatMoney(itemSubtotal);
+                    discount.innerHTML = formatMoney(total_discount);
+                    total_after_discount.innerHTML = formatMoney(total_amount_after_discount);
+
                 } else {
                     alert(res.data.error);
                 }

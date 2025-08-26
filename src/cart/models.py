@@ -39,13 +39,14 @@ class CartItem(models.Model):
         on_delete=models.CASCADE,
         related_name='cart_items'
     )
+
     quantity = models.PositiveIntegerField(default=1)
 
     def __str__(self):
         return f"{self.quantity} x {self.book.title} in Cart"
 
     def get_subtotal(self):
-        return self.quantity * self.book.price
+        return self.quantity * self.book.stock.price
 
     class Meta:
         unique_together = ('cart', 'book')  # No duplicates per book in cart

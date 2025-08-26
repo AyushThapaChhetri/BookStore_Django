@@ -59,26 +59,22 @@
                             <tbody>
                             <tr>
                                 <td class="p-2 font-medium">Subtotal</td>
-                                <td class="p-2 text-right">Rs. {{ total_price }}</td>
+                                <td class="p-2 text-right whitespace-nowrap">Rs. {{ total_price|floatformat:'-2' }}</td>
                             </tr>
-
-
                             <tr>
-                                <td class="p-2 font-medium">Discount Coupon</td>
-                                <td class="p-2 text-right">Rs. 0</td>
+                                <td class="p-2 font-medium">Discount</td>
+                                <td class="p-2 text-right">Rs.
+                                    {% if total_discount %}{{ total_discount }}{% else %}0{% endif %}</td>
                             </tr>
                             <tr>
                                 <td class="p-2 font-medium">Shipping Cost</td>
                                 <td class="p-2 text-right">Rs. 0</td>
                             </tr>
-                            <tr>
-                                <td class="p-2 font-medium">Bookmarks</td>
-                                <td class="p-2 text-right">Rs. 0</td>
-                            </tr>
-                            <tr>
-                                <td class="p-2 font-medium">Gift Packaging</td>
-                                <td class="p-2 text-right">Rs. 0</td>
-                            </tr>
+
+                            {#                            <tr>#}
+                            {#                                <td class="p-2 font-medium">Gift Packaging</td>#}
+                            {#                                <td class="p-2 text-right">Rs. 0</td>#}
+                            {#                            </tr>#}
 
 
                             <!-- Total row -->
@@ -86,7 +82,9 @@
                                 <td rowspan="2" class="p-4 text-lg font-bold ">
                                     Total:<br> <span class="text-[13px] text-gray-400">(VAT INCLUDED)</span>
                                 </td>
-                                <td class="p-2 text-right">Rs. {{ total_price }}</td>
+                                <td class="p-2 text-right whitespace-nowrap">Rs.
+                                    {% if total_amount_after_discount %}{{ total_amount_after_discount }}{% else %}
+                                        {{ total_price|floatformat:"-2" }}{% endif %}</td>
                             </tr>
                             </tbody>
                         </table>

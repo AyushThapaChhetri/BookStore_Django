@@ -5,7 +5,7 @@
     <div class="flex flex-col  grow items-center px-2 py-10 justify-between md:p-10 bg-gray-100 gap-4  w-full">
 
         <div class="flex flex-col gap-2 items-center md:items-start md:flex-row md:justify-center md:w-[85%] ">
-           
+
             <div class="flex flex-col h-fit w-[250px] justify-between  gap-4 p-5 border-[3px] rounded-md border-gray-300">
                 {#                <img class="p-8 rounded-t-lg" src="{% if books %}{{ books.cover_image }}{% endif %}"#}
                 {#                     alt="{% if books %}{{ books.title }}{% endif %}"/>#}
@@ -34,7 +34,9 @@
                         {% endif %}
                     </h1>
                     <p>
-                        <span class="text-gray-400">by</span> {% if books %}{{ books.author }}{% endif %}
+                        <span class="text-gray-400">by</span>
+                        {% if books %}{% for author in books.authors.all %}{{ author.name }} {% if not forloop.last %},
+                        {% endif %}{% endfor %}{% endif %}
                     </p>
                     <p>
                         Sold by <span class="text-blue-800 font-medium">Books Addiction</span>
@@ -94,7 +96,7 @@
                             </svg>
                             {% if books %}
 
-                                {{ books.stock_quantity }}
+                                {{ books.stock.stock_quantity }}
 
                             {% endif %}
                         </div>
@@ -110,10 +112,10 @@
                         Rs
 
                         {% if books %}
-                            {% if not books.price %}
+                            {% if not books.stock.price %}
                                 0
                             {% else %}
-                                {{ books.price|floatformat:"-2" }}
+                                {{ books.stock.price|floatformat:"-2" }}
                             {% endif %}
                         {% endif %}
                     </p>
@@ -162,22 +164,22 @@
                         </div>
                         <p id="helper-text-explanation"
                            class="mt-2 text-sm text-gray-500"><span
-                                class="font-bold">{{ books.stock_quantity }}</span> in stock</p>
+                                class="font-bold">{{ books.stock.stock_quantity }}</span> in stock</p>
                         {#            </form>#}
                     </div>
                     <button
                             type="button"
                             class="button_cart_add text-white
-           {% if books.stock_quantity > 0 %}
+           {% if books.stock.stock_quantity > 0 %}
                bg-blue-700 hover:bg-blue-800 focus:ring-blue-300
            {% else %}
                bg-red-700 hover:bg-red-800 focus:ring-red-300 cursor-not-allowed
            {% endif %}
            focus:ring-4 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center"
                             data-book-uuid="{{ books.uuid }}"
-                            {% if books.stock_quantity <= 0 %}disabled aria-disabled="true"{% endif %}
+                            {% if books.stock.stock_quantity <= 0 %}disabled aria-disabled="true"{% endif %}
                     >
-                        {% if books.stock_quantity > 0 %}
+                        {% if books.stock.stock_quantity > 0 %}
                             Add to cart
                         {% else %}
                             Sold Out

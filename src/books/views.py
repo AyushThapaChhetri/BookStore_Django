@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models import Q, Sum
+from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
@@ -19,6 +19,7 @@ from src.books.forms import BookForm, AuthorForm, GenreForm, PublisherForm, Stoc
 from src.books.models import Book, Stock
 from src.books.pagination import paginate_queryset
 from src.cart.models import CartItem, Cart
+from src.cart.utils import calculate_cart_totals
 from src.orders.models import Order, OrderItem
 from src.shipping.forms import DeliveryForm
 from src.shipping.models import DeliveryInfo
@@ -97,7 +98,7 @@ def add_to_cart(request):
 
     book = get_object_or_404(Book, uuid=book_uuid)
 
-    if book.stock_quantity <= 0:
+    if book.stock.stock_quantity <= 0:
         return JsonResponse({'success': False, 'message': f"'{book.title}' is sold out"}, status=400)
 
     cart, _ = Cart.objects.get_or_create(user=request.user)
@@ -135,10 +136,10 @@ def update_cart(request, item_uuid):
 
         # Handle increment
         if action == 'increment':
-            if item.quantity >= book.stock_quantity:
+            if item.quantity >= book.stock.stock_quantity:
                 # Can't go above stock
-                quantity = book.stock_quantity
-                message = f"Only {book.stock_quantity} left in stock."
+                quantity = book.stock.stock_quantity
+                message = f"Only {book.stock.stock_quantity} left in stock."
             else:
                 quantity = item.quantity + 1
 
@@ -151,22 +152,28 @@ def update_cart(request, item_uuid):
                 quantity = item.quantity - 1
 
         # Handle other cases (like stock dropped between sessions)
-        if quantity > book.stock_quantity:
-            quantity = max(book.stock_quantity, 1)
-            message = f"Stock updated. Only {book.stock_quantity} left now."
+        if quantity > book.stock.stock_quantity:
+            quantity = max(book.stock.stock_quantity, 1)
+            message = f"Stock updated. Only {book.stock.stock_quantity} left now."
 
         item.quantity = quantity
         item.save()
 
-        cart = Cart.objects.get_or_create(user=request.user)[0]
-        total_price = sum(i.get_subtotal() for i in cart.items.all())
+        # cart = Cart.objects.get_or_create(user=request.user)[0]
+        # total_price = sum(i.get_subtotal() for i in cart.items.all())
+
+        #  Use centralized cart totals
+        totals = calculate_cart_totals(request.user)
 
         response = {
             "success": True,
             "quantity": item.quantity,
             "subtotal": item.get_subtotal(),
-            "total_price": total_price,
-            "available_stock": book.stock_quantity,
+            "available_stock": book.stock.stock_quantity,
+            "total_price": totals["total_price"],
+            "total_discount": totals["total_discount"],
+            "total_amount_after_discount": totals["total_amount_after_discount"],
+            "total_quantity": totals["total_quantity"],
         }
         if message:
             response["message"] = message
@@ -358,8 +365,8 @@ class BookCheckout(View):
         stock_adjusted = False
 
         for item in items:
-            if item.quantity > item.book.stock_quantity:
-                item.quantity = max(item.book.stock_quantity, 1)  # keep at least 1
+            if item.quantity > item.book.stock.stock_quantity:
+                item.quantity = max(item.book.stock.stock_quantity, 1)  # keep at least 1
                 item.save()
                 stock_adjusted = True
                 messages.warning(
@@ -367,14 +374,20 @@ class BookCheckout(View):
                     f"{item.book.title} quantity adjusted to {item.quantity} due to stock limits."
                 )
 
-        total_price = sum(item.get_subtotal() for item in items)
-        total_quantity = cart.items.aggregate(Sum('quantity'))[
-                             'quantity__sum'
-                         ] or 0
+            # total_price = sum(item.get_subtotal() for item in items)
+            # total_quantity = cart.items.aggregate(Sum('quantity'))[
+            #                      'quantity__sum'
+            #                  ] or 0
+            # --- Use centralized cart totals ---
+
         # print("Form")
         # print(form)
+        # return render(request, 'books/book_checkout.html',
+        #               {'form': form, 'total_price': total_price, 'total_quantity': total_quantity})
+
+        totals = calculate_cart_totals(request.user)
         return render(request, 'books/book_checkout.html',
-                      {'form': form, 'total_price': total_price, 'total_quantity': total_quantity})
+                      {'form': form, **totals})
 
     def post(self, request):
         form = DeliveryForm(request.POST)
@@ -407,12 +420,20 @@ class BookCheckoutPayment(View):
         else:
             return redirect('book_cart')
 
-        cart = Cart.objects.get_or_create(user=request.user)[0]
-        items = cart.items.all()
-        total_quantity = cart.items.aggregate(Sum('quantity'))['quantity__sum'] or 0
-        total_price = sum(item.get_subtotal() for item in items)
+        # cart = Cart.objects.get_or_create(user=request.user)[0]
+        # items = cart.items.all()
+        # total_quantity = cart.items.aggregate(Sum('quantity'))['quantity__sum'] or 0
+        # total_price = sum(item.get_subtotal() for item in items)
+        cart_totals = calculate_cart_totals(request.user)
+        total_discount = cart_totals["total_discount"]
+        total_quantity = cart_totals["total_quantity"]
+        total_price = cart_totals['total_price']
+        total_amount_after_discount = cart_totals['total_amount_after_discount']
+
         return render(request, 'books/book_payment.html', {'delivery': delivery_instance,
                                                            'total_price': total_price,
+                                                           'total_discount': total_discount,
+                                                           'total_amount_after_discount': total_amount_after_discount,
                                                            'total_quantity': total_quantity})
 
     def post(self, request):
@@ -434,16 +455,20 @@ class BookCheckoutPayment(View):
         if not delivery_instance:
             delivery_instance = request.user.addresses.order_by('-created_at').first()
 
-        cart, _ = Cart.objects.get_or_create(user=request.user)
-        items = cart.items.all()
-        total_amount = sum(item.get_subtotal() for item in items)
+        # cart, _ = Cart.objects.get_or_create(user=request.user)
+        # items = cart.items.all()
+        # total_amount = sum(item.get_subtotal() for item in items)
+        cart_totals = calculate_cart_totals(request.user)
+        cart = cart_totals['cart']
+        items = cart_totals["items"]
+        total_amount = cart_totals['total_amount_after_discount']
 
         try:
             with transaction.atomic():
                 locked_books = {}
                 for item in items:
                     book = Book.objects.select_for_update().get(id=item.book.id)
-                    if item.quantity > book.stock_quantity:
+                    if item.quantity > book.stock.stock_quantity:
                         messages.error(request, f"Not enough stock for {book.title}")
                         return redirect('book_cart')
                     locked_books[item.book.id] = book
@@ -464,11 +489,11 @@ class BookCheckoutPayment(View):
                         order=order,
                         book=item.book,
                         quantity=item.quantity,
-                        unit_price=item.book.price,
+                        unit_price=item.book.stock.price,
                     )
 
                     # Reduce stock
-                    book.stock_quantity -= item.quantity
+                    book.stock.stock_quantity -= item.quantity
                     book.save()
 
                 # Clear cart only after success
@@ -511,20 +536,57 @@ class BookCart(View):
         if not request.user.is_authenticated:
             return redirect('/login/')
 
-        cart = Cart.objects.get_or_create(user=request.user)[0]
-        items = cart.items.all()
-        items_count = cart.items.count()
-        total_quantity = cart.items.aggregate(Sum('quantity'))[
-                             'quantity__sum'
-                         ] or 0
+        # cart = Cart.objects.get_or_create(user=request.user)[0]
+        # items = cart.items.all()
+        # items_count = cart.items.count()
+        # total_quantity = cart.items.aggregate(Sum('quantity'))[
+        #                      'quantity__sum'
+        #                  ] or 0
 
-        total_price = sum(item.get_subtotal() for item in items)
+        # total_price = sum(item.get_subtotal() for item in items)
+
+        # items_discount_prices = []
+        # for item in items:
+        #     discount_price = item.stock.price * (item.stock.discount_percentage / 100) * item.quantity
+        #     items_discount_prices.append(discount_price)
+        # total_discount = sum(items_discount_prices)
+        #
+        # total_price_after_discount = total_price - total_discount
+
+        # Use Decimal for precise calculations
+        # total_price = sum(
+        #     (Decimal(str(item.get_subtotal())) for item in items),
+        #     start=Decimal('0.00')
+        # )
+        #
+        # total_discount = sum(
+        #     (
+        #         Decimal(str(item.book.stock.price)) *
+        #         Decimal(str(item.book.stock.discount_percentage)) / Decimal('100') *
+        #         item.quantity
+        #         for item in items
+        #     ),
+        #     start=Decimal('0.00')
+        # )
+        #
+        # total_amount_after_discount = total_price - total_discount
+        #
+        # # Round to 2 decimal points
+        # total_price = total_price.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        # total_discount = total_discount.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        # total_amount_after_discount = total_amount_after_discount.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+        totals = calculate_cart_totals(request.user)
 
         return render(request, 'books/book_cart.html',
-                      {'cart': cart, 'items': items, 'items_count': items_count, 'total_quantity': total_quantity,
-                       'total_price': total_price})
+                      # {'cart': cart, 'items': items, 'items_count': items_count, 'total_quantity': total_quantity,
+                      #  'total_price': total_price, 'total_discount': total_discount,
+                      #  'total_amount_after_discount': total_amount_after_discount}
+                      totals
+                      )
 
 
+@method_decorator(never_cache, name='dispatch')
 class BookDetailStore(View):
     def get(self, request, uuid):
         book = get_object_or_404(Book, uuid=uuid)

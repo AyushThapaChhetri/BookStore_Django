@@ -79,11 +79,11 @@
                                 {% for item in order_items %}
                                     <tr>
                                         <td colspan="2"
-                                            class="font-medium line-clamp-2 lg:line-clamp-1">{{ item.book.title }}
+                                            class="font-medium py-2 px-4  line-clamp-2 lg:line-clamp-1">{{ item.book.title }}
 
                                         </td>
                                         <td colspan="2" class="py-2 px-4 font-medium">{{ item.quantity }}</td>
-                                        <td colspan="2" class=" text-right">{{ item.book.price }}</td>
+                                        <td colspan="2" class="py-2 px-4  text-right">{{ item.book.price }}</td>
                                     </tr>
                                 {% endfor %}
                                 </tbody>

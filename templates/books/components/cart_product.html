@@ -26,10 +26,11 @@
 
                 </p>
                 <p class="line-clamp-1">
-                    by {{ item.book.author }}
+                    by {% for author in item.book.authors.all %}{{ author.name }}{% if not forloop.last %},
+                {% endif %}{% endfor %}
                 </p>
             </div>
-            <p class="font-bold p-[2px]">Rs {{ item.book.price|floatformat:"-2" }}</p>
+            <p class="font-bold p-[2px]">Rs {{ item.book.stock.price|floatformat:"-2" }}</p>
         </div>
         <div class="flex flex-row-reverse sm:flex-row  gap-1 justify-between">
             <div class="flex flex-col  justify-between">
@@ -80,8 +81,8 @@
                       text-gray-500
                   {% endif %}
                     hidden sm:block">
-                    {% if item.book.stock_quantity > 0 %}
-                        <span class="font-bold">{{ item.book.stock_quantity }}</span> in stock
+                    {% if item.book.stock.stock_quantity > 0 %}
+                        <span class="font-bold">{{ item.book.stock.stock_quantity }}</span> in stock
                     {% else %}
                         {{ item.book.stock_quantity }} Out of stock{% if item.quantity == 1 %}! Please remove this item
                     {% endif %}
