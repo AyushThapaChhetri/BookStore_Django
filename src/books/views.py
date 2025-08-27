@@ -273,9 +273,6 @@ class BookListView(View):
         # author = Author.objects.filter(books__in=books)
         paginated_books, limit = paginate_queryset(request, books, default_limit=10)
 
-        # return render(request, 'books/book_list.html', {'books': books,
-        #                                                 'paginated_books': paginated_books,
-        #                                                 'limit': limit})
         return render(request, 'books/admin/admin_book_list.html', {'books': books,
                                                                     'paginated_books': paginated_books,
                                                                     'limit': limit})
