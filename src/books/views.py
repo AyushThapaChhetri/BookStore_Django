@@ -1,4 +1,6 @@
 import json
+from decimal import Decimal
+from uuid import UUID
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -19,7 +21,7 @@ from src.books.forms import BookForm, AuthorForm, GenreForm, PublisherForm, Stoc
 from src.books.models import Book, Stock
 from src.books.pagination import paginate_queryset
 from src.cart.models import CartItem, Cart
-from src.cart.utils import calculate_cart_totals
+from src.cart.utils import calculate_cart_totals, round_decimal
 from src.orders.models import Order, OrderItem
 from src.shipping.forms import DeliveryForm
 from src.shipping.models import DeliveryInfo
@@ -31,6 +33,12 @@ def hello(request):
     return render(request, 'books/hello.html', {'name': 'Ayush'})
     # return render(request, 'hello.html')
     # return HttpResponse("Hello, %s!" % request.path)
+
+
+def search_query(query):
+    return (Book.objects.filter(Q(title__icontains=query) | Q(authors__name__icontains=query) | Q(
+        publisher__name__icontains=query)).select_related('publisher', 'stock').prefetch_related('authors',
+                                                                                                 'genres').distinct())
 
 
 def search_books(request):
@@ -47,14 +55,16 @@ def search_books(request):
     # ))
     # return JsonResponse({'books': data})
 
-    books = (Book.objects.filter(
-        Q(title__icontains=query) |
-        Q(authors__name__icontains=query) |  # ManyToManyField lookup
-        Q(publisher__name__icontains=query)  # ForeignKey lookup
-    )
-             .select_related('publisher', 'stock')
-             .prefetch_related('authors', 'genres')
-             .distinct())  # distinct is important to avoid duplicates if multiple authors match
+    # books = (Book.objects.filter(
+    #     Q(title__icontains=query) |
+    #     Q(authors__name__icontains=query) |  # ManyToManyField lookup
+    #     Q(publisher__name__icontains=query)  # ForeignKey lookup
+    # )
+    #          .select_related('publisher', 'stock')
+    #          .prefetch_related('authors', 'genres')
+    #          .distinct())  # distinct is important to avoid duplicates if multiple authors match
+
+    books = search_query(query)
 
     data = []
     for book in books:
@@ -102,9 +112,13 @@ def add_to_cart(request):
         return JsonResponse({'success': False, 'message': f"'{book.title}' is sold out"}, status=400)
 
     cart, _ = Cart.objects.get_or_create(user=request.user)
-    print(cart)
+    # print('Cart: ',cart)
     cart_item, created = CartItem.objects.get_or_create(cart=cart, book=book)
-    print(cart_item)
+    # print('Cart Item: ',cart_item)
+    cart_item.unit_price = book.stock.price
+    # total discount for that item only
+    cart_item.discount_amount = book.stock.discount_amount
+
     if created:
         # First Time
         message = f"{book.title} added to cart"
@@ -112,22 +126,37 @@ def add_to_cart(request):
         # Already in cart
         message = f"{book.title} is already on cart"
 
+    cart_item.save()
+
     return JsonResponse({
         'success': True,
         'created': created,
         'message': f"{book.title} added to cart",
         'quantity': cart_item.quantity,
-        'total_price': cart.get_total_price(),
-        'cart_items_count': cart.items.count()
+        'total_price': cart.get_total_price,
+        'cart_items_count': cart.items.count(),
+        'cart_item_uuid': str(cart_item.uuid),
     })
 
 
 @require_POST
 @login_required
 def update_cart(request, item_uuid):
+    print('cart item uuid form update: ', item_uuid)
+
+    # Check if missing or invalid UUID
+    try:
+        item_uuid = UUID(item_uuid)
+    except (TypeError, ValueError):
+        return JsonResponse(
+            {"success": False, "error": "Invalid or missing item uuid"},
+            status=400
+        )
+
     data = json.loads(request.body)
     quantity = int(data.get('quantity', 1))
     action = str(data.get('action', ''))
+    print("Item Uuid: ", item_uuid)
 
     try:
         item = CartItem.objects.get(uuid=item_uuid, cart__user=request.user)
@@ -164,11 +193,11 @@ def update_cart(request, item_uuid):
 
         #  Use centralized cart totals
         totals = calculate_cart_totals(request.user)
-
+        print(totals)
         response = {
             "success": True,
             "quantity": item.quantity,
-            "subtotal": item.get_subtotal(),
+            "subtotal": item.cart.get_total_price,
             "available_stock": book.stock.stock_quantity,
             "total_price": totals["total_price"],
             "total_discount": totals["total_discount"],
@@ -298,11 +327,12 @@ class BookStore(View):
         items_count = CartItem.objects.filter(cart__user=request.user).count()
 
         if query:
-            books = books.filter(
-                Q(title__icontains=query) |
-                Q(author__icontains=query) |
-                Q(publisher__icontains=query)
-            )
+            # books = books.filter(
+            #     Q(title__icontains=query) |
+            #     Q(author__icontains=query) |
+            #     Q(publisher__icontains=query)
+            # )
+            books = search_query(query)
         #
         # books = Book.objects.all().order_by('-created_at')
         paginated_books, limit = paginate_queryset(request, books, default_limit=12)
@@ -461,8 +491,9 @@ class BookCheckoutPayment(View):
         cart_totals = calculate_cart_totals(request.user)
         cart = cart_totals['cart']
         items = cart_totals["items"]
-        total_amount = cart_totals['total_amount_after_discount']
-
+        # total_amount = cart_totals['total_amount_after_discount']
+        total_amount = cart.total_after_discount_shipping
+        shopping_cost = cart.shipping_cost
         try:
             with transaction.atomic():
                 locked_books = {}
@@ -477,7 +508,7 @@ class BookCheckoutPayment(View):
                     status='pending',
                     total_amount=total_amount,
                     shipping_address=delivery_instance,
-                    shipping_cost=0,
+                    shipping_cost=shopping_cost,
                 )
 
                 request.session['order_uuid'] = str(order.uuid)
@@ -489,7 +520,8 @@ class BookCheckoutPayment(View):
                         order=order,
                         book=item.book,
                         quantity=item.quantity,
-                        unit_price=item.book.stock.price,
+                        unit_price=item.unit_price,
+                        discount_amount=item.discount_amount,
                     )
 
                     # Reduce stock
@@ -524,9 +556,23 @@ class BookOrderComplete(View):
 
         del request.session['order_uuid']
         order_items = order.items.all()
+
+        subtotal = sum((item.base_price for item in order_items), start=Decimal('0.00'))
+        discount = sum((item.discount_amount * item.quantity for item in order_items), start=Decimal('0.00'))
+        total_price = sum((item.total_price_after_discount for item in order_items),
+                          start=Decimal('0.00')) + order.shipping_cost
+
         return render(request, 'books/order_complete.html', {
             'order': order,
             'order_items': order_items,
+            'shipping_cost': order.shipping_cost,
+            # 'subtotal': sum(item.base_price for item in order.items.all()),
+            # 'discount': order.get_total_discount,
+            # 'total_price': order.total_after_shipping_discount,
+            'subtotal': round_decimal(subtotal),
+            'discount': round_decimal(discount),
+            'total_price': round_decimal(total_price),
+
         })
 
 
@@ -600,6 +646,7 @@ class BookDetailStore(View):
 
         # Pass the CartItem UUID to template (or None if not in cart)
         cart_item_uuid = str(book_in_cart.uuid) if book_in_cart else None
+        print('Cart uuid from detail store: ', cart_item_uuid)
 
         return render(request, 'books/book_detail_store.html',
                       {'books': book, 'book_in_cart': book_in_cart, 'quantity': quantity,

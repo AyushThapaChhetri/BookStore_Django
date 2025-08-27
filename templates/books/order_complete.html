@@ -17,7 +17,7 @@
                         We have successfully received your order. We will contact you soon for further processing and
                         delivery.<br><br>
 
-                        Your order number: {% if order %}{{ order.uuid }}{% else %}Oder not Placed{% endif %}
+                        Your order number: {% if order %}{{ order.uuid }}{% else %}Order not Placed{% endif %}
                     </div>
 
                 </div>
@@ -83,7 +83,8 @@
 
                                         </td>
                                         <td colspan="2" class="py-2 px-4 font-medium">{{ item.quantity }}</td>
-                                        <td colspan="2" class="py-2 px-4  text-right">{{ item.book.price }}</td>
+                                        <td colspan="2" class="py-2 px-4  text-right">Rs. {% if item.unit_price %}
+                                            {{ item.unit_price }}{% else %}0{% endif %}</td>
                                     </tr>
                                 {% endfor %}
                                 </tbody>
@@ -92,26 +93,29 @@
                                 <tbody>
                                 <tr>
                                     <td class="p-2 font-medium">Subtotal</td>
-                                    <td class="p-2 text-right">Rs. {{ order.total_amount }}</td>
+                                    <td class="p-2 text-right">Rs. {% if subtotal %} {{ subtotal }}{% else %}
+                                        0{% endif %}</td>
                                 </tr>
 
 
                                 <tr>
-                                    <td class="p-2 font-medium">Discount Coupon</td>
-                                    <td class="p-2 text-right">Rs. 0</td>
+                                    <td class="p-2 font-medium">Discount</td>
+                                    <td class="p-2 text-right">Rs.
+                                        {% if discount %}{{ discount }}{% else %}0{% endif %}</td>
                                 </tr>
                                 <tr>
                                     <td class="p-2 font-medium">Shipping Cost</td>
-                                    <td class="p-2 text-right">Rs. 0</td>
+                                    <td class="p-2 text-right">Rs.
+                                        {% if shipping_cost %}{{ shipping_cost }}{% else %}0{% endif %}</td>
                                 </tr>
-                                <tr>
-                                    <td class="p-2 font-medium">Bookmarks</td>
-                                    <td class="p-2 text-right">Rs. 0</td>
-                                </tr>
-                                <tr>
-                                    <td class="p-2 font-medium">Gift Packaging</td>
-                                    <td class="p-2 text-right">Rs. 0</td>
-                                </tr>
+                                {#                                <tr>#}
+                                {#                                    <td class="p-2 font-medium">Bookmarks</td>#}
+                                {#                                    <td class="p-2 text-right">Rs. 0</td>#}
+                                {#                                </tr>#}
+                                {#                                <tr>#}
+                                {#                                    <td class="p-2 font-medium">Gift Packaging</td>#}
+                                {#                                    <td class="p-2 text-right">Rs. 0</td>#}
+                                {#                                </tr>#}
 
 
                                 <!-- Total row -->
@@ -119,7 +123,8 @@
                                     <td rowspan="2" class="p-4 text-lg font-bold ">
                                         Total:<br> <span class="text-[13px] text-gray-400">(VAT INCLUDED)</span>
                                     </td>
-                                    <td class="p-2 text-right">Rs. {{ order.total_amount }}</td>
+                                    <td class="p-2 text-right">Rs. {% if total_price %} {{ total_price }}{% else %}
+                                        0{% endif %}</td>
                                 </tr>
                                 </tbody>
                             </table>
@@ -127,6 +132,15 @@
                         </div>
                     </div>
                 </div>
+
+                <a href="{% url 'book_store' %}" class="flex gap-2 items-center justify-center hover:text-blue-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                         stroke-width="1.5" stroke="currentColor" class="size-4">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/>
+                    </svg>
+                    Continue Shopping
+                </a>
             </div>
 
         </div>

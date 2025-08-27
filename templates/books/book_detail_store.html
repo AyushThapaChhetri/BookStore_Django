@@ -196,12 +196,21 @@
     <script>
         axios.defaults.xsrfCookieName = "csrftoken";
         axios.defaults.xsrfHeaderName = "X-CSRFToken";
+        const incBtn = document.getElementById("increment-button");
+        const decBtn = document.getElementById("decrement-button");
 
         async function updateQuantity(itemUuid, action) {
-            console.log("Item UUid", itemUuid);
+            console.log("Item UUid: ", itemUuid);
+
+            if (!itemUuid || itemUuid === "None" || itemUuid === "null" || itemUuid === "undefined") {
+
+                alert("Please place Item in cart");
+                return;
+            }
+
+
             const input = document.getElementById(`quantity-${itemUuid}`)
             let quantity = parseInt(input.value);
-
             if (action === "increment" && quantity < 50) {
                 quantity++;
                 console.log("After increment: ", quantity);
@@ -266,6 +275,30 @@
 
                     if (data.success) {
                         if (data.created) {
+                            const cartItemUuid = response.data.cart_item_uuid;
+                            const cartItemCount = response.data.cart_items_count;
+                            const cartCount = document.getElementById("cart-count");
+                            console.log("Item count: ", cartItemCount);
+                            if (cartCount) {
+                                cartCount.textContent = cartItemCount;
+                            }
+
+                            if (incBtn) {
+                                incBtn.setAttribute("onclick", `updateQuantity('${cartItemUuid}', 'increment')`);
+                            }
+
+                            if (decBtn) {
+                                decBtn.setAttribute("onclick", `updateQuantity('${cartItemUuid}', 'decrement')`);
+                            }
+                            // update input
+                            const qtyInput = document.querySelector("[data-cart-item-uuid]");
+                            if (qtyInput) {
+                                qtyInput.id = `quantity-${cartItemUuid}`;
+                                qtyInput.setAttribute("data-cart-item-uuid", cartItemUuid);
+                            }
+
+                            console.log("Updated buttons with new UUID:", cartItemUuid);
+
                             // First time addition
                             button.textContent = "Added";
                             setTimeout(() => {

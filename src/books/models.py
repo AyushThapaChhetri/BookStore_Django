@@ -125,7 +125,11 @@ class Stock(AbstractBaseModel):
         ]
 
     @property
-    def discounted_price(self):
+    def discount_amount(self):
+        return self.price - self.price_after_discount_one_item
+
+    @property
+    def price_after_discount_one_item(self):
         return self.price * (1 - self.discount_percentage / 100).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
     def save(self, *args, **kwargs):

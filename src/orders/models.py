@@ -34,6 +34,16 @@ class Order(AbstractBaseModel):
     )
     shipping_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
+    @property
+    def total_after_shipping_discount(self):
+        """Sum of all order item totals + shipping cost"""
+        items_total = sum(item.total_price_after_discount for item in self.items.all())
+        return items_total + self.shipping_cost
+
+    @property
+    def get_total_discount(self):
+        return sum(item.discount_amount for item in self.items.all())
+
     def __str__(self):
         return f"Order {self.uuid} by {self.user} - {self.order_date} ({self.status})"
 
@@ -51,11 +61,22 @@ class OrderItem(AbstractBaseModel):
     book = models.ForeignKey(
         Book,
         on_delete=models.CASCADE,
-        related_name='items',
+        related_name='order_items',
     )
 
     quantity = models.PositiveIntegerField(default=1)
-    unit_price = models.DecimalField(max_digits=10, decimal_places=2)  # price at time of purchase
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # price at time of purchase
+    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # total discount applied
+
+    @property
+    def base_price(self):
+        """Price without any discount or extras"""
+        return self.unit_price * self.quantity
+
+    @property
+    def total_price_after_discount(self):
+        """Price for this item after discount"""
+        return (self.unit_price - self.discount_amount) * self.quantity
 
     def __str__(self):
         return f"{self.quantity} x {self.book.title} in Order {self.order.uuid}"
