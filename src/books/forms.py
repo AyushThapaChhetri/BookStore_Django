@@ -55,6 +55,9 @@ class AuthorForm(forms.ModelForm):
         widgets = {
             'bio': forms.Textarea(attrs={'rows': 4}),
             'profile_image': forms.ClearableFileInput(),
+            'birth_date': forms.DateInput(attrs={'type': 'date'}),
+            'death_date': forms.DateInput(attrs={'type': 'date'}),
+            'website': forms.URLInput(attrs={'type': 'url'}),
         }
 
     def clean_name(self):
@@ -78,6 +81,7 @@ class AuthorForm(forms.ModelForm):
         return birth_date
 
     def clean_death_date(self):
+
         death_date = self.cleaned_data.get('death_date')
         if death_date and death_date > datetime.date.today():
             raise ValidationError("Death date cannot be in the future.")

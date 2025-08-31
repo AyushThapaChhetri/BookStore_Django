@@ -2,7 +2,7 @@
 {% load permissions %}
 
 {% block title %}
-    Stock List
+    Publisher List
 {% endblock %}
 
 {% block content %}
@@ -10,12 +10,9 @@
     <div class="flex flex-col h-full p-5 md:px-15 bg-blue-100  gap-4">
         <div class="flex flex-col  space-between justify-between gap-4 ">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900 mb-4">Stock</h1>
-                <p class="italic text-gray-500">This section provides a detailed overview of all available books in
-                    stock, including
-                    key information
-                    such as the title, authors, number of pages, language, and current availability. It helps you
-                    quickly assess which books are ready for purchase or restocking.</p>
+                <h1 class="text-2xl font-bold text-gray-900 mb-4">Genre</h1>
+                <p class="italic text-gray-500">This section provides a detailed overview of all available Genre of
+                    Book.</p>
             </div>
 
             <div class="flex flex-col gap-4 md:flex-row md:justify-between md:items-center">
@@ -36,14 +33,13 @@
                         {#                    <button type="submit" class="text-white absolute end-2.5 bottom-2.5 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 ">Search</button>#}
                     </div>
                 </form>
+                {% if request.user|has_perm:"authors.add_author" %}
+                    <button class="w-fit h-fit bg-indigo-800 hover:bg-indigo-500 text-white font-bold py-2 px-4 rounded">
+                        {#                        <a href="{% url 'book_create' %}">Add Book</a>#}
+                        <a href="{% url 'author_view' %}">Add Author</a>
+                    </button>
+                {% endif %}
 
-
-                {#                {% if request.user|has_perm:"stock.add_stock" %}#}
-                {#                    <button class="w-fit h-fit bg-indigo-800 hover:bg-indigo-500 text-white font-bold py-2 px-4 rounded">#}
-                {#                   #}
-                {#                        <a href="{% url 'stock_view' %}">Add Stock</a>#}
-                {#                    </button>#}
-                {#                {% endif %}#}
             </div>
         </div>
         {#        <table class="table-fixed">#}
@@ -51,72 +47,52 @@
             <table class="w-full">
                 <thead class="bg-gray-50 border-b-2 border-gray-200">
                 <tr>
-                    <th class="min-w-48 p-3 text-sm font-semibold tracking-wide text-left">Cover</th>
-                    <th class="min-w-48 p-3 text-sm font-semibold tracking-wide text-left">Title</th>
-                    <th class="min-w-48 p-3 text-sm font-semibold tracking-wide text-left">Publisher</th>
-                    <th class="min-w-48 p-3 text-sm font-semibold tracking-wide text-left">Price</th>
-                    <th class="min-w-48 p-3 text-sm font-semibold tracking-wide text-left">Discount</th>
-                    <th class="min-w-48 p-3 text-sm font-semibold tracking-wide text-left">Quantity</th>
-                    <th class="min-w-48 p-3 text-sm font-semibold tracking-wide text-left">Available</th>
-                    <th class="min-w-48 p-3 text-sm font-semibold tracking-wide text-left">Last Restock</th>
-                    <th class="whitespace-nowrap p-3 text-sm font-semibold tracking-wide text-left">Added Date</th>
-                    <th class="whitespace-nowrap p-3 text-sm font-semibold tracking-wide text-left">Updated Date</th>
+                    <th class="min-w-48 p-3 text-sm font-semibold tracking-wide text-left">Cover Image</th>
+                    <th class="min-w-48 p-3 text-sm font-semibold tracking-wide text-left">Genre Name</th>
+                    <th class="min-w-48 p-3 text-sm font-semibold tracking-wide text-left">Description</th>
+                    <th class="min-w-48 p-3 text-sm font-semibold tracking-wide text-left">Parent Genre</th>
+
+                    {#                    <th class="min-w-48 p-3 text-sm font-semibold tracking-wide text-left">Added Date</th>#}
+                    {#                    <th class="min-w-48 p-3 text-sm font-semibold tracking-wide text-left">Created Date</th>#}
+
                     <th class="p-3 text-sm font-semibold tracking-wide text-left">Actions</th>
                 </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
-                {% for stock in paginated_stocks %}
+                {% for genre in paginated_genre %}
                     <tr class="{% if forloop.counter|divisibleby:2 %}bg-gray-300{% else %}bg-gray-50{% endif %}">
-                        <td class="p-3 text-sm text-gray-700"> {% if stock.book.cover_image %}
-                            <img src="{{ stock.book.cover_image.url }}"
-                                 alt="{{ stock.book.title }}"
+                        <td class="p-3 text-sm text-gray-700"> {% if genre.profile_image %}
+                            <img src="{{ genre.profile_image.url }}"
+                                 alt="{{ genre.name }}"
                                  class="h-10 w-8 object-cover"/>
                         {% else %}
                             <span class="italic text-gray-400">No cover available</span>
                         {% endif %}</td>
-                        <td class="p-3 text-sm text-gray-700">{{ stock.book.title }}</td>
-                        <td class="p-3 text-sm text-gray-700">{{ stock.book.publisher.name|default:'-' }}</td>
-                        <td class="p-3 text-sm text-gray-700">
-                            {% if stock.price %}
-                                Rs {{ stock.price|floatformat:"-2" }}
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
-                        <td class="p-3 text-sm text-gray-700">{% if stock.discount_percentage %}
-                            {{ stock.discount_percentage|floatformat:-2 }}% → Rs
-                            {{ stock.discount_amount|floatformat:"2"|floatformat:"g" }}
-                        {% else %}
-                            -
-                        {% endif %}</td>
-                        <td class="p-3 text-sm text-gray-700">{{ stock.stock_quantity|default:'-' }}</td>
-                        <td class="p-3 text-sm text-gray-700">{% if stock.is_available %}
-                            <span class="text-green-600 font-semibold">Yes</span>
-                        {% else %}
-                            <span class="text-red-600 font-semibold">No</span>
-                        {% endif %}</td>
-                        <td class="p-3 text-sm text-gray-700">{{ stock.last_restock_date|default:"-" }}</td>
-                        <td class="p-3 text-sm text-gray-700 whitespace-nowrap">{{ stock.created_at|date:"Y-m-d" }}</td>
-                        <td class="p-3 text-sm text-gray-700 whitespace-nowrap">{{ stock.updated_at|date:"Y-m-d" }}</td>
+                        <td class="p-3 text-sm text-gray-700">{{ genre.name }}</td>
+                        <td class="p-3 text-sm text-gray-700">{{ genre.description|default:"-" }}</td>
+                        <td class="p-3 text-sm text-gray-700">{{ genre.parent_genre|default:"-" }}</td>
+                        {#                        <td class="p-3 text-sm text-gray-700 whitespace-nowrap">{{ genre.created_at|date:"Y-m-d" }}</td>#}
+                        {#                        <td class="p-3 text-sm text-gray-700 whitespace-nowrap">{{ genre.updated_at|date:"Y-m-d" }}</td>#}
+
+
                         <td class="p-3 text-sm text-gray-700">
                             <div class="flex  space-x-2 gap-1">
 
                                 <button class="bg-indigo-600 hover:bg-indigo-800 text-white font-bold py-2 px-4 rounded">
-                                    <a
-                                            href="{% url 'stock_detail_view' stock.uuid %}">View</a>
+                                    <a href="{% url 'genre_detail_view' genre.uuid %}">View</a>
                                 </button>
 
-                                {% if request.user|has_perm:"stock.change_stock" %}
+                                {% if request.user|has_perm:"genres.change_genre" %}
                                     <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
 
-                                        <a href="{% url 'stock_view' stock.uuid %}">Edit</a>
+                                        <a href="{% url 'genre_view' genre.uuid %}">Edit</a>
                                     </button>
                                     <button
                                             type="button"
                                             class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
-                                            onclick="openResetModal('{{ stock.uuid }}')"
+                                            onclick="openDeleteModal('{{ genre.uuid }}')"
                                     >
-                                        Reset
+                                        Delete
                                     </button>
                                 {% endif %}
                             </div>
@@ -135,10 +111,10 @@
         </div>
 
 
-        {% if paginated_stocks %}
+        {% if paginated_genre %}
             <div class="w-full flex flex-wrap flex-column justify-between items-center ">
 
-                Page {{ paginated_stocks.number }} of {{ paginated_stocks.paginator.num_pages }}
+                Page {{ paginated_genre.number }} of {{ paginated_genre.paginator.num_pages }}
 
                 <div class="flex flex-column flex-wrap gap-4 md:gap-20">
                     <div class="flex flex-row  items-center gap-2 w-fit">
@@ -157,7 +133,7 @@
                     <div class="flex flex-column">
                         {# First Page#}
                         <div class="flex p-1 border border-gray-300 items-center">
-                            {% if paginated_stocks.has_previous %}
+                            {% if paginated_genre.has_previous %}
                                 <a href="?page=1&limit={{ limit }}">
                             {% else %}
                                 <a class="pointer-event-none text-gray-300">
@@ -171,8 +147,8 @@
                         </div>
                         {#Previous Page#}
                         <div class="flex p-1 border border-gray-300 items-center">
-                            {% if paginated_stocks.has_previous %}
-                                <a href="?page={{ paginated_stocks.previous_page_number }}&limit={{ limit }}">
+                            {% if paginated_genre.has_previous %}
+                                <a href="?page={{ paginated_genre.previous_page_number }}&limit={{ limit }}">
                             {% else %}
                                 <a class="pointer-event-none text-gray-300">
                             {% endif %}
@@ -185,13 +161,13 @@
                         </div>
 
                         <div class="flex py-1 px-3 border border-gray-300 items-center">
-                            {{ paginated_stocks.number }}
+                            {{ paginated_genre.number }}
                         </div>
 
                         {#Next Page#}
                         <div class="flex p-1  border border-gray-300 items-center">
-                            {% if paginated_stocks.has_next %}
-                                <a href="?page={{ paginated_stocks.next_page_number }}&limit={{ limit }}">
+                            {% if paginated_genre.has_next %}
+                                <a href="?page={{ paginated_genre.next_page_number }}&limit={{ limit }}">
                             {% else %}
                                 <a class="pointer-event-none text-gray-300">
                             {% endif %}
@@ -204,8 +180,8 @@
 
                         {#Last Page#}
                         <div class="flex p-1  border border-gray-300 items-center">
-                            {% if paginated_stocks.has_next %}
-                                <a href="?page={{ paginated_stocks.paginator.num_pages }}&limit={{ limit }}">
+                            {% if paginated_genre.has_next %}
+                                <a href="?page={{ paginated_genre.paginator.num_pages }}&limit={{ limit }}">
                             {% else %}
                                 <a class="pointer-event-none text-gray-300">
                             {% endif %}
@@ -276,7 +252,7 @@
                     ? `<img src="${book.cover_image}" alt="${book.title}" class="h-10 w-8 object-cover"/>`
                     : `<span class="italic text-gray-400">No cover available</span>`;
 
-                // publisher
+                // genre
                 const publisher = book.publisher || "-";
 
                 // stock price
@@ -317,7 +293,7 @@
                     <a href="/admin-panel/stock/detail/${book.stock?.uuid}" class="bg-indigo-600 hover:bg-indigo-800 text-white font-bold py-2 px-4 rounded">View</a>
 
                     <a href="/admin-panel/stock/edit/${book.stock?.uuid}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Edit</a>
-                    <button onclick="openResetModal('${book.stock?.uuid}')" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Reset</button>
+                    <button onclick="openDeleteModal('${book.stock?.uuid}')" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Reset</button>
 
                 </div>
             </td>
@@ -346,16 +322,16 @@
             }
         });
 
-        function openResetModal(stockUUID) {
-            const modal = document.getElementById('resetModal');
-            const form = document.getElementById('resetForm');
-            form.action = `/admin-panel/stock/reset/${stockUUID}`;
+        function openDeleteModal(bookUUID) {
+            const modal = document.getElementById('deleteModal');
+            const form = document.getElementById('deleteForm');
+            form.action = `/admin-panel/book/delete/${bookUUID}`;
             modal.classList.remove('hidden');
             modal.classList.add('flex');
         }
 
-        function closeResetModal() {
-            const modal = document.getElementById('resetModal');
+        function closeDeleteModal() {
+            const modal = document.getElementById('deleteModal');
             modal.classList.add('hidden');
             modal.classList.remove('flex');
         }

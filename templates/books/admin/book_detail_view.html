@@ -70,13 +70,14 @@
                         <td class="p-3 text-sm text-gray-700">{{ book.pages|default:"-" }}</td>
                         <td class="p-3 text-sm text-gray-700">{{ book.language }}</td>
                         <td class="p-3 whitespace-nowrap text-sm text-gray-700">{% if book.stock %}
-                            ${{ book.stock.price }} ({{ book.stock.stock_quantity }} left)
+                            Rs {{ book.stock.price }} ({{ book.stock.stock_quantity }} left)
                         {% else %}
                             Out of stock
                         {% endif %}</td>
                         <td class="p-3 text-sm text-gray-700 whitespace-nowrap">
                             {% if book.stock and book.stock.discount_percentage %}
-                                {{ book.stock.discount_percentage }}% → ${{ book.stock.discounted_price }}
+                                {{ book.stock.discount_percentage }}% → Rs
+                                {{ book.stock.discount_amount|floatformat:"2"|floatformat:"g" }}
                             {% else %}-{% endif %}</td>
                         <td class="p-3 text-sm text-gray-700 whitespace-nowrap">{{ book.created_at|date:"Y-m-d" }}</td>
                         <td class="p-3 text-sm text-gray-700 whitespace-nowrap">{{ book.updated_at|date:"Y-m-d" }}</td>
@@ -85,7 +86,7 @@
 
                             <td class="p-3 text-sm text-gray-700">
                                 <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"><a
-                                        href="{% url 'book_vbiew' book.uuid %}">Edit</a></button>
+                                        href="{% url 'book_view' book.uuid %}">Edit</a></button>
                                 <button
                                         type="button"
                                         class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"

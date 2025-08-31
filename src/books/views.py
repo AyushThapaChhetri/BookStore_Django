@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Q
+from django.forms.models import model_to_dict
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
@@ -17,8 +18,9 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
 from pygments.lexers import q
 
+from Project_B.utils import applying_sorting, ALLOWED_SORTS
 from src.books.forms import BookForm, AuthorForm, GenreForm, PublisherForm, StockForm
-from src.books.models import Book, Stock
+from src.books.models import Book, Stock, Author, Publisher, Genre
 from src.books.pagination import paginate_queryset
 from src.cart.models import CartItem, Cart
 from src.cart.utils import calculate_cart_totals, round_decimal
@@ -64,6 +66,8 @@ def search_books(request):
     #          .prefetch_related('authors', 'genres')
     #          .distinct())  # distinct is important to avoid duplicates if multiple authors match
 
+    print("Query from search: ", query)
+
     books = search_query(query)
 
     data = []
@@ -71,11 +75,12 @@ def search_books(request):
         stock_info = None
         if hasattr(book, 'stock') and book.stock:
             stock_info = {
+                'uuid': str(book.stock.uuid),
                 'price': float(book.stock.price),
                 "stock_quantity": book.stock.stock_quantity,
                 "is_available": book.stock.is_available,
                 "discount_percentage": float(book.stock.discount_percentage),
-                "discounted_price": float(book.stock.discounted_price),
+                "discount_amount": float(book.stock.discount_amount),
                 "last_restock_date": book.stock.last_restock_date,
             }
         data.append({
@@ -263,7 +268,6 @@ class BookListView(View):
         # books = Book.objects.all().order_by('-created_at')
         books = (
             Book.objects.all()
-            .order_by('-created_at')
             .select_related('publisher', 'stock')
             .prefetch_related('authors', 'genres')
         )
@@ -271,11 +275,17 @@ class BookListView(View):
         # for key, value in first_book.items():
         #     print(key, ' : ', value)
         # author = Author.objects.filter(books__in=books)
+
+        books = applying_sorting(books, request, ALLOWED_SORTS["book"])
+
         paginated_books, limit = paginate_queryset(request, books, default_limit=10)
 
         return render(request, 'books/admin/admin_book_list.html', {'books': books,
                                                                     'paginated_books': paginated_books,
-                                                                    'limit': limit})
+                                                                    'limit': limit,
+                                                                    'add_perm': "book.add_book",
+                                                                    "sort": request.GET.get("sort", "created_desc"),
+                                                                    })
 
 
 # List all Stock (Read)
@@ -293,6 +303,7 @@ class StockListView(View):
 
         return render(request, 'books/admin/admin_stock_list.html', {'stocks': stocks,
                                                                      'paginated_stocks': paginated_stocks,
+
                                                                      'limit': limit})
 
 
@@ -493,13 +504,16 @@ class BookCheckoutPayment(View):
         shopping_cost = cart.shipping_cost
         try:
             with transaction.atomic():
-                locked_books = {}
+                # locked_books = {}
+                locked_objects = {}
                 for item in items:
                     book = Book.objects.select_for_update().get(id=item.book.id)
-                    if item.quantity > book.stock.stock_quantity:
+                    stock = Stock.objects.select_for_update().get(book=book)
+                    if item.quantity > stock.stock_quantity:
                         messages.error(request, f"Not enough stock for {book.title}")
                         return redirect('book_cart')
-                    locked_books[item.book.id] = book
+                    # locked_books[item.book.id] = book
+                    locked_objects[item.book.id] = (book, stock)
                 order = Order.objects.create(
                     user=request.user,
                     status='pending',
@@ -512,7 +526,7 @@ class BookCheckoutPayment(View):
 
                 for item in items:
                     # book = Book.objects.select_for_update().get(id=item.book.id)
-                    book = locked_books[item.book.id]
+                    book, stock = locked_objects[item.book.id]
                     OrderItem.objects.create(
                         order=order,
                         book=item.book,
@@ -522,8 +536,10 @@ class BookCheckoutPayment(View):
                     )
 
                     # Reduce stock
-                    book.stock.stock_quantity -= item.quantity
-                    book.save()
+                    print("Stock Q Before", stock.stock_quantity)
+                    stock.stock_quantity -= item.quantity
+                    stock.save(update_fields=["stock_quantity"])
+                    print("Stock Q After", stock.stock_quantity)
 
                 # Clear cart only after success
                 cart.items.all().delete()
@@ -653,6 +669,7 @@ class BookDetailStore(View):
 class BookView(View):
     def get(self, request, uuid=None):
         form = BookForm()
+        print("Uuid from bookview: ", uuid)
         # print(form)
         if uuid:
             print("Edit")
@@ -749,32 +766,120 @@ class StockView(View):
 
 
 class AuthorView(View):
-    def get(self, request):
-        if request.user.is_authenticated:
-            form = AuthorForm()
-            # print(form)
+    def get(self, request, uuid=None):
+        if not request.user.is_authenticated:
+            return JsonResponse({'error': 'Unauthorized'}, status=401)
+        if uuid:
+            print("Edit Author")
+            instance = get_object_or_404(Author, uuid=uuid)
+            form = AuthorForm(instance=instance)
+            print(form)
+            return render(request, 'books/admin/author_create_or_edit.html', {'form': form})
+
+        form = AuthorForm()
+
+        if request.headers.get("X-requested-with") == "XMLHttpRequest":
             html = render_to_string('author/components/author_form.html', {'form': form,
                                                                            'title': 'Author', 'form_type': 'authors'},
                                     request=request)
             return JsonResponse({'html': html})
-        return JsonResponse({'error': 'Unauthorized'}, status=401)
 
-    def post(self, request):
+        print(form)
+        return render(request, 'books/admin/author_create_or_edit.html', {'form': form})
+
+    def post(self, request, uuid=None):
 
         if not request.user.is_authenticated:
-            return JsonResponse({'error': 'Unauthorized'}, status=401)
+            if request.headers.get("X-requested-with") == "XMLHttpRequest":
+                return JsonResponse({'error': 'Unauthorized'}, status=401)
+            return PermissionDenied
         form = AuthorForm(request.POST, request.FILES)
+        if uuid:
+            print("Edit Author")
+            author = get_object_or_404(Author, uuid=uuid)
+            form = AuthorForm(request.POST, request.FILES, instance=author)  # attach instance here
+            if form.is_valid():
+                form.save()
+                return redirect('admin_author_list')
+            return render(request, 'books/admin/author_create_or_edit.html', {'form': form})
 
         if form.is_valid():
             author = form.save()
-            return JsonResponse({'id': author.id, 'name': author.name})
 
-        # return JsonResponse({'errors': form.errors}, status=400)
-        # Re-render form with errors
-        html = render_to_string('author/components/author_form.html',
-                                {'form': form, 'title': 'Author', 'form_type': 'authors'},
-                                request=request)
-        return JsonResponse({'html': html}, status=400)
+            if request.headers.get("X-requested-with") == "XMLHttpRequest":
+                return JsonResponse({
+                    "id": author.id,
+                    "name": author.name,
+                    "message": "Author created successfully"
+                })
+            return redirect('admin_author_list')
+
+        if request.headers.get("X-requested-with") == "XMLHttpRequest":
+            # Re-render form with errors
+            html = render_to_string('author/components/author_form.html',
+                                    {'form': form, 'title': 'Author', 'form_type': 'authors'},
+                                    request=request)
+            return JsonResponse({'html': html}, status=400)
+
+        return render(request, 'books/admin/author_create_or_edit.html', {'form': form})
+
+
+class AuthorListView(View):
+
+    def get(self, request):
+        authors = (
+            Author.objects.all()
+            .order_by('-created_at')
+        )
+
+        paginated_authors, limit = paginate_queryset(request, authors, default_limit=10)
+
+        return render(request, 'books/admin/admin_author_list.html', {
+            'paginated_authors': paginated_authors,
+            'limit': limit})
+
+
+# View specific books(Read)
+class AuthorDetailView(View):
+    def get(self, request, uuid):
+        author = get_object_or_404(
+            Author,
+            uuid=uuid
+        )
+        print(author)
+
+        print(model_to_dict(author))
+        return render(request, 'books/admin/author_detail_view.html', {'author': author})
+
+
+class PublisherListView(View):
+
+    def get(self, request):
+        publisher = (
+            Publisher.objects.all()
+            .order_by('-created_at')
+        )
+        # print(publisher.__dict__)
+        # See all field names
+        print([field.name for field in Publisher._meta.get_fields()])
+        # print(model_to_dict(publisher))
+        paginated_publisher, limit = paginate_queryset(request, publisher, default_limit=10)
+
+        return render(request, 'books/admin/admin_publisher_list.html', {
+            'paginated_publisher': paginated_publisher,
+            'limit': limit})
+
+
+class PublisherDetailView(View):
+    def get(self, request, uuid):
+        publisher = get_object_or_404(
+            Publisher,
+            uuid=uuid
+        )
+        print(publisher)
+
+        print(model_to_dict(publisher))
+        return render(request, 'books/admin/publisher_detail_view.html', {'publisher': publisher})
 
 
 class PublisherView(View):
@@ -802,6 +907,36 @@ class PublisherView(View):
                                 {'form': form, 'title': 'Publisher', 'form_type': 'publishers'},
                                 request=request)
         return JsonResponse({'html': html}, status=400)
+
+
+class GenreListView(View):
+
+    def get(self, request):
+        genre = (
+            Genre.objects.all()
+            .order_by('-created_at')
+        )
+        # print(genre.__dict__)
+        # See all field names
+        print([field.name for field in Genre._meta.get_fields()])
+        # print(model_to_dict(genre))
+        paginated_genre, limit = paginate_queryset(request, genre, default_limit=10)
+
+        return render(request, 'books/admin/admin_genre_list.html', {
+            'paginated_genre': paginated_genre,
+            'limit': limit})
+
+
+class GenreDetailView(View):
+    def get(self, request, uuid):
+        genre = get_object_or_404(
+            Genre,
+            uuid=uuid
+        )
+        print(genre)
+
+        print(model_to_dict(genre))
+        return render(request, 'books/admin/genre_detail_view.html', {'genre': genre})
 
 
 class GenreView(View):
