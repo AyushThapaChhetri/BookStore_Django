@@ -45,26 +45,6 @@ def search_query(query):
 
 def search_books(request):
     query = request.GET.get('q', '').strip()
-    # books = Book.objects.filter(
-    #     Q(title__icontains=query) |
-    #     Q(author__icontains=query) |
-    #     Q(publisher__icontains=query)
-    # )
-
-    # data = list(books.values(
-    #     'uuid', 'title', 'author', 'publisher', 'description',
-    #     'pages', 'language', 'created_at', 'updated_at'
-    # ))
-    # return JsonResponse({'books': data})
-
-    # books = (Book.objects.filter(
-    #     Q(title__icontains=query) |
-    #     Q(authors__name__icontains=query) |  # ManyToManyField lookup
-    #     Q(publisher__name__icontains=query)  # ForeignKey lookup
-    # )
-    #          .select_related('publisher', 'stock')
-    #          .prefetch_related('authors', 'genres')
-    #          .distinct())  # distinct is important to avoid duplicates if multiple authors match
 
     print("Query from search: ", query)
 
@@ -102,6 +82,83 @@ def search_books(request):
         })
 
     return JsonResponse({'books': data})
+
+
+def search_authors(request):
+    query = request.GET.get('q', '').strip()
+    # print("search authors hit", query)
+    authors = Author.objects.filter(
+        Q(name__icontains=query) |
+        Q(nationality__icontains=query) |
+        Q(bio__icontains=query)
+    ).distinct()
+
+    # print('Authors', authors)
+    data = []
+    for author in authors:
+        data.append({
+            'uuid': str(author.uuid),
+            'name': author.name,
+            'bio': author.bio,
+            'birth_date': author.birth_date,
+            'death_date': author.death_date,
+            'nationality': author.nationality,
+            'website': author.website,
+            'profile_image': author.profile_image.url if author.profile_image else None,
+            'created_at': author.created_at,
+            'updated_at': author.updated_at,
+        })
+    # print('Authors all data', data)
+    return JsonResponse({'authors': data})
+
+
+def search_publishers(request):
+    query = request.GET.get('q', '').strip()
+
+    publishers = Publisher.objects.filter(
+        Q(name__icontains=query) |
+        Q(address__icontains=query) |
+        Q(contact_email__icontains=query)
+    ).distinct()
+
+    data = []
+    for publisher in publishers:
+        data.append({
+            'uuid': str(publisher.uuid),
+            'name': publisher.name,
+            'founded_year': publisher.founded_year,
+            'website': publisher.website,
+            'address': publisher.address,
+            'contact_email': publisher.contact_email,
+            'description': publisher.description,
+            'created_at': publisher.created_at,
+            'updated_at': publisher.updated_at,
+        })
+
+    return JsonResponse({'publishers': data})
+
+
+def search_genres(request):
+    query = request.GET.get('q', '').strip()
+
+    genres = Genre.objects.filter(
+        Q(name__icontains=query) |
+        Q(description__icontains=query) |
+        Q(parent_genre__name__icontains=query)
+    ).select_related('parent_genre').distinct()
+
+    data = []
+    for genre in genres:
+        data.append({
+            'uuid': str(genre.uuid),
+            'name': genre.name,
+            'description': genre.description,
+            'parent_genre': genre.parent_genre.name if genre.parent_genre else None,
+            'created_at': genre.created_at,
+            'updated_at': genre.updated_at,
+        })
+
+    return JsonResponse({'genres': data})
 
 
 @require_POST
