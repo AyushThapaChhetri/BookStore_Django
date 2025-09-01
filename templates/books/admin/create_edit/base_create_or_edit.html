@@ -1,7 +1,7 @@
 {% extends 'base/admin/admin_base.html' %}
 {% load form_tags %}
 {% block title %}
-    {% if form.instance.pk %}Edit Author{% else %}New Author{% endif %}
+    {% if form.instance.pk %}Edit{% else %}New {% endif %} {% block form_title %}Default title{% endblock %}
 {% endblock %}
 
 {% block content %}
@@ -10,7 +10,9 @@
         {% include 'components/form_popup.html' %}
         <form method="post" class="w-[90%] lg:w-[50%] " id="bookForm" enctype="multipart/form-data">
             <h2 class="mb-5 text-2xl font-extrabold leading-none tracking-tight text-gray-500 md:text-4xl ">
-                {% if form.instance.pk %}Edit Author{% else %}New Author {% endif %}</h2>
+                {% if form.instance.pk %}Edit {% else %}New  {% endif %}{% block form_heading %}Default
+                title{% endblock %}
+            </h2>
             {% csrf_token %}
             {% for field in form %}
                 <div class="relative z-0 w-full mb-5 group">
@@ -169,7 +171,8 @@
                 </button>
                 <button type="button"
                         class="text-blue-700 cursor-pointer hover:text-white border border-blue-700 hover:ring-transparent hover:bg-blue-200 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">
-                    <a href="{% url 'admin_author_list' %}">Cancel</a></button>
+                    <a href="{% block cancel_createEdit_url %}#{% endblock %}">Cancel</a></button>
+                {#            'admin_author_list'#}
             </div>
         </form>
 

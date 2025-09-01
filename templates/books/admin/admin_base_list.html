@@ -43,23 +43,40 @@
                                 <form class="max-w-sm mx-auto" method="get">
                                     <select id="sortBy" name="sort" onchange="this.form.submit()"
                                             class="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg  focus:ring-blue-500 focus:border-blue-500 block w-fit p-2.5">
-                                        <option value="name_asc"
-                                                {% if request.GET.sort == "name_asc" %}selected{% endif %}>
-                                            {% block sort_title_asc %}Name {% endblock %}(A–Z)
-                                        </option>
-                                        <option value="name_desc"
-                                                {% if request.GET.sort == "name_desc" %}selected{% endif %}>
-                                            {% block sort_title_desc %}Name {% endblock %}(Z–A)
-                                        </option>
-                                        <option value="created_desc"
-                                                {% if request.GET.sort == "created_desc" %}selected{% endif %}>Created
-                                            (Newest)
-                                        </option>
-                                        <option value="created_asc"
-                                                {% if request.GET.sort == "created_asc" %}selected{% endif %}>Created
-                                            (Oldest)
-                                        </option>
-
+                                        {#                                        <option value="name_asc"#}
+                                        {#                                                {% if request.GET.sort == "name_asc" %}selected{% endif %}>#}
+                                        {#                                            {% block sort_title_asc %}Name {% endblock %}(A–Z)#}
+                                        {#                                        </option>#}
+                                        {#                                        <option value="name_desc"#}
+                                        {#                                                {% if request.GET.sort == "name_desc" %}selected{% endif %}>#}
+                                        {#                                            {% block sort_title_desc %}Name {% endblock %}(Z–A)#}
+                                        {#                                        </option>#}
+                                        {#                                        <option value="created_desc"#}
+                                        {#                                                {% if request.GET.sort == "created_desc" %}selected{% endif %}>Created#}
+                                        {#                                            (Newest)#}
+                                        {#                                        </option>#}
+                                        {#                                        <option value="created_asc"#}
+                                        {#                                                {% if request.GET.sort == "created_asc" %}selected{% endif %}>Created#}
+                                        {#                                            (Oldest)#}
+                                        {#                                        </option>#}
+                                        {% block sort_options %}
+                                            <option value="name_asc"
+                                                    {% if request.GET.sort == "name_asc" %}selected{% endif %}>
+                                                Name (A–Z)
+                                            </option>
+                                            <option value="name_desc"
+                                                    {% if request.GET.sort == "name_desc" %}selected{% endif %}>
+                                                Name (Z–A)
+                                            </option>
+                                            <option value="created_desc"
+                                                    {% if request.GET.sort == "created_desc" %}selected{% endif %}>
+                                                Created (Newest)
+                                            </option>
+                                            <option value="created_asc"
+                                                    {% if request.GET.sort == "created_asc" %}selected{% endif %}>
+                                                Created (Oldest)
+                                            </option>
+                                        {% endblock %}
                                     </select>
                                 </form>
                             </div>

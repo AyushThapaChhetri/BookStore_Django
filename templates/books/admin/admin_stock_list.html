@@ -14,7 +14,41 @@
     quickly assess which books are ready for purchase or restocking.
 {% endblock %}
 
+
 {% block search_placeholder %}Search Titles, Publisher{% endblock %}
+
+{% block sort_options %}
+    <option value="price_asc" {% if request.GET.sort == "price_asc" %}selected{% endif %}>
+        Price (Low → High)
+    </option>
+    <option value="price_desc" {% if request.GET.sort == "price_desc" %}selected{% endif %}>
+        Price (High → Low)
+    </option>
+    <option value="quantity_desc" {% if request.GET.sort == "quantity_desc" %}selected{% endif %}>
+        Stock (High → Low)
+    </option>
+    <option value="quantity_asc" {% if request.GET.sort == "quantity_asc" %}selected{% endif %}>
+        Stock (Low → High)
+    </option>
+    <option value="available_first" {% if request.GET.sort == "available_first" %}selected{% endif %}>
+        Available First
+    </option>
+    <option value="unavailable_first" {% if request.GET.sort == "unavailable_first" %}selected{% endif %}>
+        Unavailable First
+    </option>
+    <option value="restock_desc" {% if request.GET.sort == "restock_desc" %}selected{% endif %}>
+        Recently Restocked
+    </option>
+    <option value="restock_asc" {% if request.GET.sort == "restock_asc" %}selected{% endif %}>
+        Oldest Restock
+    </option>
+    <option value="created_desc" {% if request.GET.sort == "created_desc" %}selected{% endif %}>
+        Created (Newest)
+    </option>
+    <option value="created_asc" {% if request.GET.sort == "created_asc" %}selected{% endif %}>
+        Created (Oldest)
+    </option>
+{% endblock %}
 
 {% block add_perm %}stocks.add_stock{% endblock %}
 {% block sort_title_asc %}Titles{% endblock %}

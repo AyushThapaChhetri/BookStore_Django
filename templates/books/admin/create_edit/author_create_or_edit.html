@@ -1,0 +1,7 @@
+{% extends 'books/admin/create_edit/base_create_or_edit.html' %}
+
+{% block form_title %}Author{% endblock %}
+{% block form_heading %}Author{% endblock %}
+
+
+{% block cancel_createEdit_url %}{% url 'admin_author_list' %}{% endblock %}

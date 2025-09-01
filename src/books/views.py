@@ -351,11 +351,15 @@ class StockListView(View):
     def get(self, request):
         stocks = (
             Stock.objects.all()
-            .order_by('-created_at')
             .select_related('book')
 
         )
 
+        # print("Stocks : ", stocks)
+
+        stocks = applying_sorting(stocks, request, ALLOWED_SORTS["stock"])
+
+        # print("After applying sorting Stocks : ", stocks)
         paginated_stocks, limit = paginate_queryset(request, stocks, default_limit=10)
 
         return render(request, 'books/admin/admin_stock_list.html', {'stocks': stocks,
@@ -742,10 +746,20 @@ class BookView(View):
             print("Delete")
             if not request.user.has_perm('books.delete_book'):
                 raise PermissionDenied
-            book = get_object_or_404(Book, uuid=uuid)
-            book.delete(user=request.user)
-            return redirect('admin-book-list')
 
+            try:
+                with transaction.atomic():
+                    book = get_object_or_404(Book, uuid=uuid)
+                    book.delete(user=request.user)
+
+                    if hasattr(book, 'stock') and book.stock:
+                        book.stock.delete(user=request.user)
+
+                    return redirect('admin-book-list')
+
+            except Exception as e:
+                messages.error(request, f"An error occurred: {str(e)}")
+                return redirect('admin-book-list')
         # Edit
         if uuid:
             print("Edit")
@@ -831,7 +845,7 @@ class AuthorView(View):
             instance = get_object_or_404(Author, uuid=uuid)
             form = AuthorForm(instance=instance)
             print(form)
-            return render(request, 'books/admin/author_create_or_edit.html', {'form': form})
+            return render(request, 'books/admin/create_edit/author_create_or_edit.html', {'form': form})
 
         form = AuthorForm()
 
@@ -842,7 +856,7 @@ class AuthorView(View):
             return JsonResponse({'html': html})
 
         print(form)
-        return render(request, 'books/admin/author_create_or_edit.html', {'form': form})
+        return render(request, 'books/admin/create_edit/author_create_or_edit.html', {'form': form})
 
     def post(self, request, uuid=None):
 
@@ -858,7 +872,7 @@ class AuthorView(View):
             if form.is_valid():
                 form.save()
                 return redirect('admin_author_list')
-            return render(request, 'books/admin/author_create_or_edit.html', {'form': form})
+            return render(request, 'books/admin/create_edit/author_create_or_edit.html', {'form': form})
 
         if form.is_valid():
             author = form.save()
@@ -878,7 +892,7 @@ class AuthorView(View):
                                     request=request)
             return JsonResponse({'html': html}, status=400)
 
-        return render(request, 'books/admin/author_create_or_edit.html', {'form': form})
+        return render(request, 'books/admin/create_edit/author_create_or_edit.html', {'form': form})
 
 
 class AuthorListView(View):
@@ -886,8 +900,10 @@ class AuthorListView(View):
     def get(self, request):
         authors = (
             Author.objects.all()
-            .order_by('-created_at')
+
         )
+
+        authors = applying_sorting(authors, request, ALLOWED_SORTS["author"])
 
         paginated_authors, limit = paginate_queryset(request, authors, default_limit=10)
 
@@ -914,12 +930,12 @@ class PublisherListView(View):
     def get(self, request):
         publisher = (
             Publisher.objects.all()
-            .order_by('-created_at')
         )
         # print(publisher.__dict__)
         # See all field names
         print([field.name for field in Publisher._meta.get_fields()])
         # print(model_to_dict(publisher))
+        publisher = applying_sorting(publisher, request, ALLOWED_SORTS["publisher"])
         paginated_publisher, limit = paginate_queryset(request, publisher, default_limit=10)
 
         return render(request, 'books/admin/admin_publisher_list.html', {
@@ -939,31 +955,108 @@ class PublisherDetailView(View):
         return render(request, 'books/admin/publisher_detail_view.html', {'publisher': publisher})
 
 
-class PublisherView(View):
-    def get(self, request):
-        if request.user.is_authenticated:
-            form = PublisherForm()
-            html = render_to_string('author/components/author_form.html', {'form': form,
-                                                                           'title': 'Publisher',
-                                                                           'form_type': 'publisher'}, request=request)
-            return JsonResponse({'html': html})
-        return JsonResponse({'error': 'Unauthorized'}, status=401)
+#
+# class PublisherView(View):
+#     def get(self, request):
+#         if request.user.is_authenticated:
+#             form = PublisherForm()
+#             html = render_to_string('author/components/author_form.html', {'form': form,
+#                                                                            'title': 'Publisher',
+#                                                                            'form_type': 'publisher'}, request=request)
+#             return JsonResponse({'html': html})
+#         return JsonResponse({'error': 'Unauthorized'}, status=401)
+#
+#     def post(self, request):
+#         if not request.user.is_authenticated:
+#             return JsonResponse({'error': 'Unauthorized'}, status=401)
+#         form = PublisherForm(request.POST, request.FILES)
+#
+#         if form.is_valid():
+#             publisher = form.save()
+#             return JsonResponse({'id': publisher.id, 'name': publisher.name})
+#
+#
+#         html = render_to_string('author/components/author_form.html',
+#                                 {'form': form, 'title': 'Publisher', 'form_type': 'publishers'},
+#                                 request=request)
+#         return JsonResponse({'html': html}, status=400)
 
-    def post(self, request):
+class PublisherView(View):
+    def get(self, request, uuid=None):
         if not request.user.is_authenticated:
             return JsonResponse({'error': 'Unauthorized'}, status=401)
+
+        if uuid:
+            print("Edit Publisher")
+            instance = get_object_or_404(Publisher, uuid=uuid)
+            form = PublisherForm(instance=instance)
+            return render(
+                request,
+                'books/admin/create_edit/publisher_create_or_edit.html',
+                {'form': form}
+            )
+
+        form = PublisherForm()
+
+        if request.headers.get("X-requested-with") == "XMLHttpRequest":
+            html = render_to_string(
+                'publisher/components/publisher_form.html',
+                {'form': form, 'title': 'Publisher', 'form_type': 'publishers'},
+                request=request
+            )
+            return JsonResponse({'html': html})
+
+        return render(
+            request,
+            'books/admin/create_edit/publisher_create_or_edit.html',
+            {'form': form}
+        )
+
+    def post(self, request, uuid=None):
+        if not request.user.is_authenticated:
+            if request.headers.get("X-requested-with") == "XMLHttpRequest":
+                return JsonResponse({'error': 'Unauthorized'}, status=401)
+            return PermissionDenied
+
         form = PublisherForm(request.POST, request.FILES)
+
+        if uuid:
+            print("Edit Publisher")
+            publisher = get_object_or_404(Publisher, uuid=uuid)
+            form = PublisherForm(request.POST, request.FILES, instance=publisher)
+            if form.is_valid():
+                form.save()
+                return redirect('admin_publisher_list')
+            return render(
+                request,
+                'books/admin/create_edit/publisher_create_or_edit.html',
+                {'form': form}
+            )
 
         if form.is_valid():
             publisher = form.save()
-            return JsonResponse({'id': publisher.id, 'name': publisher.name})
 
-        # return JsonResponse({'errors': form.errors}, status=400)
-        # Re-render form with errors
-        html = render_to_string('author/components/author_form.html',
-                                {'form': form, 'title': 'Publisher', 'form_type': 'publishers'},
-                                request=request)
-        return JsonResponse({'html': html}, status=400)
+            if request.headers.get("X-requested-with") == "XMLHttpRequest":
+                return JsonResponse({
+                    "id": publisher.id,
+                    "name": publisher.name,
+                    "message": "Publisher created successfully"
+                })
+            return redirect('admin_publisher_list')
+
+        if request.headers.get("X-requested-with") == "XMLHttpRequest":
+            html = render_to_string(
+                'publisher/components/publisher_form.html',
+                {'form': form, 'title': 'Publisher', 'form_type': 'publishers'},
+                request=request
+            )
+            return JsonResponse({'html': html}, status=400)
+
+        return render(
+            request,
+            'books/admin/create_edit/publisher_create_or_edit.html',
+            {'form': form}
+        )
 
 
 class GenreListView(View):
@@ -971,12 +1064,12 @@ class GenreListView(View):
     def get(self, request):
         genre = (
             Genre.objects.all()
-            .order_by('-created_at')
         )
         # print(genre.__dict__)
         # See all field names
         print([field.name for field in Genre._meta.get_fields()])
         # print(model_to_dict(genre))
+        genre = applying_sorting(genre, request, ALLOWED_SORTS["genre"])
         paginated_genre, limit = paginate_queryset(request, genre, default_limit=10)
 
         return render(request, 'books/admin/admin_genre_list.html', {
@@ -997,28 +1090,64 @@ class GenreDetailView(View):
 
 
 class GenreView(View):
-    def get(self, request):
-        if request.user.is_authenticated:
-            print('Genre')
-            form = GenreForm()
+    def get(self, request, uuid=None):
+        if not request.user.is_authenticated:
+            return JsonResponse({'error': 'Unauthorized'}, status=401)
+
+        print("Uuid from bookview: ", uuid)
+
+        if uuid:
+            print("Edit genre")
+            genre = get_object_or_404(Genre, uuid=uuid)
+            form = GenreForm(instance=genre)
+            print(form)
+            return render(request, 'books/admin/create_edit/genre_create_or_edit.html', {'form': form})
+
+        form = GenreForm()
+
+        if request.headers.get("X-requested-with") == "XMLHttpRequest":
             html = render_to_string('author/components/author_form.html',
                                     {'form': form, 'title': 'Genre', 'form_type': 'genres'},
                                     request=request)
-            return JsonResponse({'html': html, 'title': 'Genre'})
-        return JsonResponse({'error': 'Unauthorized'}, status=401)
+            return JsonResponse({'html': html})
 
-    def post(self, request):
+        print("Create")
+        print(form)
+        return render(request, 'books/admin/create_edit/genre_create_or_edit.html', {'form': form})
+
+    def post(self, request, uuid=None):
         if not request.user.is_authenticated:
-            return JsonResponse({'error': 'Unauthorized'}, status=401)
+            if request.headers.get("X-requested-with") == "XMLHttpRequest":
+                return JsonResponse({'error': 'Unauthorized'}, status=401)
+            return PermissionDenied
         form = GenreForm(request.POST, request.FILES)
+
+        if uuid:
+            print("Edit Genre")
+            genre = get_object_or_404(Genre, uuid=uuid)
+            form = GenreForm(request.POST, request.FILES, instance=genre)  # attach instance here
+            if form.is_valid():
+                form.save()
+                return redirect('admin_genre_list')
+            return render(request, 'books/admin/create_edit/genre_create_or_edit.html', {'form': form})
 
         if form.is_valid():
             genre = form.save()
-            return JsonResponse({'id': genre.id, 'name': genre.name})
+            if request.headers.get("X-requested-with") == "XMLHttpRequest":
+                return JsonResponse({
+                    "id": genre.id,
+                    "uuid": genre.uuid,
+                    "name": genre.name,
+                    "message": "Genre created successfully"
+                })
 
-        # return JsonResponse({'errors': form.errors}, status=400)
-        # Re-render form with errors
-        html = render_to_string('author/components/author_form.html',
-                                {'form': form, 'title': 'Genre', 'form_type': 'genres'},
-                                request=request)
-        return JsonResponse({'html': html}, status=400)
+            return redirect('admin_genre_list')
+
+        if request.headers.get("X-requested-with") == "XMLHttpRequest":
+            # Re-render form with errors
+            html = render_to_string('author/components/author_form.html',
+                                    {'form': form, 'title': 'Genre', 'form_type': 'genres'},
+                                    request=request)
+            return JsonResponse({'html': html}, status=400)
+
+        return render(request, 'books/admin/create_edit/genre_create_or_edit.html', {'form': form})

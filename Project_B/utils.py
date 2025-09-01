@@ -26,5 +26,26 @@ ALLOWED_SORTS = {
         "created_asc": "created_at",
         "created_desc": "-created_at",
     },
+
+    "genre": {
+        "name_asc": "name",
+        "name_desc": "-name",
+        "created_asc": "created_at",
+        "created_desc": "-created_at",
+    },
     # add more models here as needed
+
+    "stock": {
+        "price_asc": "price",
+        "price_desc": "-price",
+        "quantity_asc": "stock_quantity",
+        "quantity_desc": "-stock_quantity",
+        "available_first": "-is_available",  # available items first
+        "unavailable_first": "is_available",  # unavailable items first
+        "restock_asc": "last_restock_date",
+        "restock_desc": "-last_restock_date",
+        "created_asc": "created_at",
+        "created_desc": "-created_at",
+    },
+
 }
