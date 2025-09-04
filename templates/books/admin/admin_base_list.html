@@ -43,22 +43,7 @@
                                 <form class="max-w-sm mx-auto" method="get">
                                     <select id="sortBy" name="sort" onchange="this.form.submit()"
                                             class="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg  focus:ring-blue-500 focus:border-blue-500 block w-fit p-2.5">
-                                        {#                                        <option value="name_asc"#}
-                                        {#                                                {% if request.GET.sort == "name_asc" %}selected{% endif %}>#}
-                                        {#                                            {% block sort_title_asc %}Name {% endblock %}(A–Z)#}
-                                        {#                                        </option>#}
-                                        {#                                        <option value="name_desc"#}
-                                        {#                                                {% if request.GET.sort == "name_desc" %}selected{% endif %}>#}
-                                        {#                                            {% block sort_title_desc %}Name {% endblock %}(Z–A)#}
-                                        {#                                        </option>#}
-                                        {#                                        <option value="created_desc"#}
-                                        {#                                                {% if request.GET.sort == "created_desc" %}selected{% endif %}>Created#}
-                                        {#                                            (Newest)#}
-                                        {#                                        </option>#}
-                                        {#                                        <option value="created_asc"#}
-                                        {#                                                {% if request.GET.sort == "created_asc" %}selected{% endif %}>Created#}
-                                        {#                                            (Oldest)#}
-                                        {#                                        </option>#}
+
                                         {% block sort_options %}
                                             <option value="name_asc"
                                                     {% if request.GET.sort == "name_asc" %}selected{% endif %}>
@@ -84,14 +69,18 @@
                     </div>
 
                 {% endblock %}
-                {% block add_button %}
-                    {#                    {% if add_perm and request.user|has_perm:add_perm %}#}
-                    <button class="w-fit h-fit bg-indigo-800 hover:bg-indigo-500 text-white font-bold py-2 px-4 rounded">
-                        <a href="{% block add_url %}#{% endblock %}">Add {% block entity_name %}
-                            Entity{% endblock %}</a>
-                    </button>
-                    {#                    {% endif %}#}
-                {% endblock %}
+                {% if not is_recycle_bin %}
+                    {% block add_button %}
+                        {#                    {% if add_perm and request.user|has_perm:add_perm %}#}
+
+                        <button class="w-fit h-fit bg-indigo-800 hover:bg-indigo-500 text-white font-bold py-2 px-4 rounded">
+                            <a href="{% block add_url %}#{% endblock %}">Add {% block entity_name %}
+                                Entity{% endblock %}</a>
+                        </button>
+                        {#                    {% endif %}#}
+                    {% endblock %}
+                {% endif %}
+
             </div>
         </div>
         <div class="overflow-y-hidden rounded-lg shadow">
@@ -218,6 +207,7 @@
             // Base search functionality
             const searchInput = document.getElementById('searchInput');
             const tableBody = document.getElementById('listTableBody');
+            const is_recycle_bin = {{ is_recycle_bin|yesno:"true,false"}}
 
             // Debounce function to delay execution
             function debounce(func, delay) {
@@ -238,7 +228,7 @@
 
                 try {
                     const response = await axios.get(`{% block search_url %}
-                    /books/search/{% endblock %}?q=${encodeURIComponent(query)}`);
+                    /books/search/{% endblock %}?q=${encodeURIComponent(query)}&deleted=${is_recycle_bin ? '1' : '0'}`);
                     renderItems(response.data.{% block response_data_key %}books{% endblock %});
                 } catch (error) {
                     console.error('Search Failed', error);
@@ -262,7 +252,9 @@
                 const modal = document.getElementById(modalType + 'Modal');
                 const form = document.getElementById(modalType + 'Form');
                 if (form) {
-                    form.action = `{% block modal_form_action %}/admin-panel/${modalType}/{% endblock %}${itemUUID}`;
+                    console.log('Item uuid:', itemUUID.trim());
+                    {#form.action = `{% block modal_form_action %}/admin-panel/${modalType}/{% endblock %}${itemUUID}`;#}
+                    form.action = `{% block modal_form_action %}{% endblock %}${itemUUID.trim()}/`;
                 }
                 if (modal) {
                     modal.classList.remove('hidden');

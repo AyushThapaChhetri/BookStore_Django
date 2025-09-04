@@ -46,6 +46,8 @@ class SafeDeleteModel(models.Model):
                     using: Database alias (optional)
                     keep_parents: Whether to keep parent objects in cascades (optional)
                 """
+        # ( date delete)
+        print("date", self.is_deleted)
         if self.is_deleted:
             raise ValueError("This object is already deleted")
 
@@ -78,6 +80,9 @@ class SafeDeleteModel(models.Model):
         """
                 Check if object is deleted.
                 """
+        # (date)
+        print('self.is_deleted', self.deleted_at)
+        print(self)
         return self.deleted_at is not None
 
     @property

@@ -1,12 +1,13 @@
 import json
 from decimal import Decimal
+from math import ceil, floor
 from uuid import UUID
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Min, Max, F
 from django.forms.models import model_to_dict
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -37,18 +38,30 @@ def hello(request):
     # return HttpResponse("Hello, %s!" % request.path)
 
 
-def search_query(query):
-    return (Book.objects.filter(Q(title__icontains=query) | Q(authors__name__icontains=query) | Q(
-        publisher__name__icontains=query)).select_related('publisher', 'stock').prefetch_related('authors',
-                                                                                                 'genres').distinct())
+# def search_query(query):
+#     return (Book.objects.filter(Q(title__icontains=query) | Q(authors__name__icontains=query) | Q(
+#         publisher__name__icontains=query)).select_related('publisher', 'stock').prefetch_related('authors',
+#                                                                                                  'genres').distinct())
+
+def search_query(query, manager=Book.objects):
+    return manager.filter(
+        Q(title__icontains=query) | Q(authors__name__icontains=query) | Q(
+            publisher__name__icontains=query)).select_related('publisher', 'stock').prefetch_related('authors',
+                                                                                                     'genres').distinct()
 
 
 def search_books(request):
     query = request.GET.get('q', '').strip()
+    # makes true or false if deleted is send with 1 value
+    deleted = request.GET.get('deleted', '0') == '1'
+
+    manager = Book.deleted_objects if deleted else Book.objects
 
     print("Query from search: ", query)
+    print("Deleted from search: ", deleted)
 
-    books = search_query(query)
+    # books = search_query(query)
+    books = search_query(query, manager)
 
     data = []
     for book in books:
@@ -77,8 +90,10 @@ def search_books(request):
             "edition": book.edition,
             "cover_image": book.cover_image.url if book.cover_image else None,
             "stock": stock_info,
-            'created_at': book.created_at,
-            'updated_at': book.updated_at,
+            'created_at': book.created_at if book.created_at else None,
+            'updated_at': book.updated_at if book.updated_at else None,
+            'deleted_by': book.deleted_by.email if book.deleted_by else None,
+            'deleted_at': book.deleted_at if book.deleted_at else None,
         })
 
     return JsonResponse({'books': data})
@@ -345,6 +360,68 @@ class BookListView(View):
                                                                     })
 
 
+class BookRecycleBinListView(View):
+    def get(self, request):
+        # Get deleted books using your soft delete manager
+        books = Book.deleted_objects.all().select_related('publisher', 'stock').prefetch_related('authors', 'genres')
+        # print('Recycled', books)
+        books = applying_sorting(books, request, ALLOWED_SORTS["book"])
+        paginated_books, limit = paginate_queryset(request, books, default_limit=10)
+        # print(books)
+        # for book in books.values():
+
+        context = {
+            'books': books,
+            'paginated_books': paginated_books,
+            'limit': limit,
+            'is_recycle_bin': True,  # Flag to indicate we're in recycle bin
+        }
+        return render(request, 'books/admin/admin_book_list.html', context)
+
+
+class BookRestoreView(View):
+    def post(self, request, uuid):
+        if not request.user.has_perm('books.change_book'):
+            raise PermissionDenied
+
+        try:
+            with transaction.atomic():
+                book = get_object_or_404(Book.deleted_objects, uuid=uuid)
+                book.restore()
+
+                book.stock.restore()
+
+        except Exception as e:
+            print(e)
+
+        messages.success(request, f"'{book.title}' has been restored successfully.")
+        return redirect('book_recycle_bin')
+
+
+class BookPermanentDeleteView(View):
+    def post(self, request, uuid):
+        if not request.user.has_perm('books.delete_book'):
+            raise PermissionDenied
+
+        book = get_object_or_404(Book.deleted_objects, uuid=uuid)
+        book_title = book.title
+
+        try:
+            with transaction.atomic():
+                # Hard delete related stock first
+                if hasattr(book, 'stock') and book.stock:
+                    book.stock.hard_delete()
+
+                # Now hard delete the book itself
+                book.hard_delete()
+
+            messages.success(request, f"'{book_title}' has been permanently deleted.")
+        except Exception as e:
+            messages.error(request, f"An error occurred: {str(e)}")
+
+        return redirect('book_recycle_bin')
+
+
 # List all Stock (Read)
 class StockListView(View):
 
@@ -392,21 +469,49 @@ class StockDetailView(View):
 class BookStore(View):
     def get(self, request):
         query = request.GET.get('q', '')
-        books = Book.objects.all()
+        min_price = request.GET.get('min_price')
+        max_price = request.GET.get('max_price')
+
+        # books = Book.objects.all()
+        # start with Book queryset
+        books = Book.objects.all().annotate(
+            price=F('stock__price'),
+            stock_quantity=F('stock__stock_quantity'),
+            is_available=F('stock__is_available'),
+            last_restock_date=F('stock__last_restock_date')
+        )
         items_count = CartItem.objects.filter(cart__user=request.user).count()
 
+        books = applying_sorting(books, request, ALLOWED_SORTS["bookstore"])
+
         if query:
-            # books = books.filter(
-            #     Q(title__icontains=query) |
-            #     Q(author__icontains=query) |
-            #     Q(publisher__icontains=query)
-            # )
             books = search_query(query)
-        #
+
+        print('before books', books)
+        if min_price and max_price:
+            try:
+                min_val = int(min_price)
+                max_val = int(max_price)
+                print("Min and max value", min_val, max_val)
+                books = books.filter(stock__price__gte=min_val, stock__price__lte=max_val)
+                print('after filter', books)
+            except ValueError:
+                pass
+
         # books = Book.objects.all().order_by('-created_at')
         paginated_books, limit = paginate_queryset(request, books, default_limit=12)
 
+        # compute min/max prices of the available stock
+        price_aggregate = Stock.objects.filter(is_available=True).aggregate(
+            min_price=Min('price'),
+            max_price=Max('price')
+        )
+        min_price_value = floor(price_aggregate['min_price']) if price_aggregate['min_price'] else 0
+        max_price_value = ceil(price_aggregate['max_price'] / 100) * 100 if price_aggregate['max_price'] else 10000
+
+        print("min and max", min_price_value, max_price_value)
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            print("hello from headers")
             cards_html = render_to_string("books/components/book_cards.html", {'paginated_books': paginated_books, })
             pagination_html = render_to_string('books/components/pagination_div.html',
                                                {'paginated_books': paginated_books})
@@ -415,6 +520,8 @@ class BookStore(View):
                 "cards": cards_html,
                 "pagination": pagination_html,
                 'items_count': items_count,
+                "min_price": min_price_value,
+                "max_price": max_price_value,
             })
 
             # return render(request, "books/components/book_cards.html", {
@@ -424,7 +531,10 @@ class BookStore(View):
 
         return render(request, 'books/book_store.html', {'books': books,
                                                          'paginated_books': paginated_books,
-                                                         'limit': limit})
+                                                         'limit': limit,
+                                                         'min_price_value': min_price_value,
+                                                         'max_price_value': max_price_value,
+                                                         })
 
         # return render(request, 'books/book_store.html', context)
 
@@ -749,11 +859,26 @@ class BookView(View):
 
             try:
                 with transaction.atomic():
-                    book = get_object_or_404(Book, uuid=uuid)
-                    book.delete(user=request.user)
+                    book = get_object_or_404(Book.all_objects, uuid=uuid)
+                    print("book found", book)
+                    # If previously restored
+                    book.refresh_from_db()  # reload deleted_at and deleted_by from DB
 
-                    if hasattr(book, 'stock') and book.stock:
-                        book.stock.delete(user=request.user)
+                    if book.is_deleted:
+                        print('aa')
+                        messages.warning(request, "This book is already deleted.")
+                    else:
+                        print('bb')
+                        try:
+                            if hasattr(book, 'stock') and book.stock:
+                                book.stock.delete(user=request.user)
+                                # time
+
+                            book.delete(user=request.user)
+                            print("gg")
+                            messages.success(request, "Book deleted successfully.")
+                        except Exception as e:
+                            print(e)
 
                     return redirect('admin-book-list')
 
@@ -954,32 +1079,6 @@ class PublisherDetailView(View):
         print(model_to_dict(publisher))
         return render(request, 'books/admin/publisher_detail_view.html', {'publisher': publisher})
 
-
-#
-# class PublisherView(View):
-#     def get(self, request):
-#         if request.user.is_authenticated:
-#             form = PublisherForm()
-#             html = render_to_string('author/components/author_form.html', {'form': form,
-#                                                                            'title': 'Publisher',
-#                                                                            'form_type': 'publisher'}, request=request)
-#             return JsonResponse({'html': html})
-#         return JsonResponse({'error': 'Unauthorized'}, status=401)
-#
-#     def post(self, request):
-#         if not request.user.is_authenticated:
-#             return JsonResponse({'error': 'Unauthorized'}, status=401)
-#         form = PublisherForm(request.POST, request.FILES)
-#
-#         if form.is_valid():
-#             publisher = form.save()
-#             return JsonResponse({'id': publisher.id, 'name': publisher.name})
-#
-#
-#         html = render_to_string('author/components/author_form.html',
-#                                 {'form': form, 'title': 'Publisher', 'form_type': 'publishers'},
-#                                 request=request)
-#         return JsonResponse({'html': html}, status=400)
 
 class PublisherView(View):
     def get(self, request, uuid=None):

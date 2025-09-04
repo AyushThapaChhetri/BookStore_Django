@@ -17,8 +17,9 @@
                                   d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>
                         </svg>
                     </div>
-                    <input type="search" name="q" id="default-search"
-                           class="block w-full p-4 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+
+                    <input type="text" name="q" id="default-search"
+                           class="block w-full p-4 ps-10 text-sm text-gray-900 border-0 shadow-lg outline-none focus:border-[0.5px]   rounded-lg bg-gray-50   "
                            placeholder="Search Title, Author, Publisher..."/>
                     <button type="submit"
                             class="text-white absolute end-2.5 bottom-2.5 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
@@ -29,9 +30,42 @@
             </div>
             <div class="flex">
                 <div class="w-[30%]">
-                    Filter section
+                    {% include 'books/components/filter_card.html' with min_price_value=min_price_value max_price_value=max_price_value %}
                 </div>
                 <div class="flex flex-col gap-4">
+                    <div class="flex justify-between">
+                        <h1 class="font-lexend text-3xl font-medium">
+                            Store
+                        </h1>
+                        <form class="max-w-sm" method="get">
+                            <select id="sortBy" name="sort" onchange="this.form.submit()"
+                                    class="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg  focus:ring-blue-500 focus:border-blue-500 block w-fit p-2.5">
+
+                                <option value="price_asc" {% if request.GET.sort == "price_asc" %}selected{% endif %}>
+                                    Price (Low → High)
+                                </option>
+                                <option value="price_desc" {% if request.GET.sort == "price_desc" %}selected{% endif %}>
+                                    Price (High → Low)
+                                </option>
+                                <option value="quantity_desc"
+                                        {% if request.GET.sort == "quantity_desc" %}selected{% endif %}>
+                                    Stock (High → Low)
+                                </option>
+                                <option value="quantity_asc"
+                                        {% if request.GET.sort == "quantity_asc" %}selected{% endif %}>
+                                    Stock (Low → High)
+                                </option>
+                                <option value="created_desc"
+                                        {% if request.GET.sort == "created_desc" %}selected{% endif %}>
+                                    Created (Newest)
+                                </option>
+                                <option value="created_asc"
+                                        {% if request.GET.sort == "created_asc" %}selected{% endif %}>
+                                    Created (Oldest)
+                                </option>
+                            </select>
+                        </form>
+                    </div>
                     <div id="store-book-items"
                          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full">
                         {% if paginated_books %}
@@ -39,13 +73,7 @@
                         {% else %}
                             No Books Available
                         {% endif %}
-                        {#                        {% if paginated_books %}#}
-                        {#                            {% for book in paginated_books %}#}
-                        {#                                {% include 'books/components/cards.html' with book=book %}#}
-                        {#                            {% endfor %}#}
-                        {#                        {% else %}#}
-                        {#                            <p class="text-gray-600 p-5">No books available.</p>#}
-                        {#                        {% endif %}#}
+
                     </div>
 
                     {% if paginated_books %}
@@ -180,6 +208,71 @@
                 alert("Something went wrong. Please try again.");
             }
         });
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            let min_range_price = document.getElementById('min_range_price');
+            let max_range_price = document.getElementById('max_range_price');
+
+            let range_input = document.querySelectorAll('.range_input input');
+            let bar = document.querySelector('.bar');
+            const gap_number = 500;
+
+            function updateBar() {
+                let min_val = parseInt(range_input[0].value);
+                let max_val = parseInt(range_input[1].value);
+
+                // Ensure gap
+                if (max_val - min_val < gap_number) {
+                    if (event.target.classList.contains('min_range')) {
+                        range_input[0].value = max_val - gap_number;
+                        min_val = max_val - gap_number;
+                    } else {
+                        range_input[1].value = min_val + gap_number;
+                        max_val = min_val + gap_number;
+                    }
+                }
+
+                // Update displayed prices
+                min_range_price.innerText = min_val;
+                max_range_price.innerText = max_val;
+
+                // Update red bar
+                const leftPercent = (min_val / range_input[0].max) * 100;
+                const rightPercent = (max_val / range_input[1].max) * 100;
+
+                //styling
+                bar.style.left = leftPercent + '%';   //where the red bar should start.
+                bar.style.width = (rightPercent - leftPercent) + '%';   //the distance between min and max (so only the middle lights up red).
+            }
+
+            range_input.forEach(input => input.addEventListener('input', updateBar));
+
+            // Initialize
+            updateBar();
+        });
+
+        const filter_price_button = document.getElementById('filter_price_button');
+        filter_price_button.addEventListener('click', async () => {
+            const minVal = document.querySelector(".min_range").value;
+            const maxVal = document.querySelector(".max_range").value;
+            try {
+                const response = await axios.get("{% url 'book_store' %}", {
+                    params: {
+                        min_price: minVal,
+                        max_price: maxVal,
+                    },
+                    headers: {"X-Requested-With": "XMLHttpRequest"}
+                })
+
+                // Update DOM with returned data
+
+                storeContent.innerHTML = response.data.cards;
+                paginationContent.innerHTML = response.data.pagination;
+            } catch (error) {
+                console.error("Error fetching filtered books:", error);
+            }
+        })
 
     </script>
 {% endblock %}

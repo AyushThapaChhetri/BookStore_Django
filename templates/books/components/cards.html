@@ -1,8 +1,15 @@
 {% load static %}
-<div class="flex flex-col justify-between gap-2 w-full max-w-sm bg-white border border-gray-200 rounded-lg hover:shadow-lg "
+<div
+        class="group flex  flex-col h-fit hover:h-auto hover:justify-between relative gap-2 w-full max-w-sm bg-white border border-gray-200 rounded-lg hover:shadow-lg transition-all duration-300 hover:scale-[1.02] hover:min-h-[500px] "
         {#     onclick="window.location='{% url 'book_detail_store' book.uuid %}'#}
-     data-href="{% url 'book_detail_store' book.uuid %}"
+        data-href="{% url 'book_detail_store' book.uuid %}"
 >
+    {% if book.stock.discount_percentage > 0 %}
+        <div class="flex absolute bg-red-700 px-2 py-[2px] rounded-br-md">
+
+            <span class="font-lexend text-md font-light text-white "> - {{ book.stock.discount_percentage }}%</span>
+        </div>
+    {% endif %}
     {#    <a href="#">#}
     {#        <img class="p-8 rounded-t-lg" src="{{ book.cover.url }}" alt="{{ book.title }}"/>#}
     {#    </a>#}
@@ -18,10 +25,21 @@
              alt="No cover available"
         />
     {% endif %}
-    <div class="flex flex-col gap-2 px-5 pb-5">
+    <div class="flex flex-col grow gap-2 px-5 pb-5">
         <a href="#">
-            <h5 class="text-xl font-semibold line-clamp-2 tracking-tight text-gray-900 ">{{ book.title }}</h5>
+            <h5 class="font-lexend text-md font-semibold line-clamp-1 group-hover:line-clamp-2 transition-all duration-300 tracking-tight text-gray-900 ">{{ book.title }}</h5>
         </a>
+        <span class="font-lexend text-md font-medium {% if book.stock.is_available %}text-gray-700{% else %}text-red-700{% endif %} ">{% if book.stock.is_available %}
+            <div class="flex items-center gap-2">
+
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3"
+                 stroke="currentColor" class="size-4 text-sky-800 ">
+  <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/>
+</svg>
+
+            In stock
+            </div>
+        {% else %}Out of Stock{% endif %} </span>
         {#        <div class="flex items-center mt-2.5 mb-5">#}
         {#            <div class="flex items-center space-x-1 rtl:space-x-reverse">#}
         {#                <svg class="w-4 h-4 text-yellow-300" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"#}
@@ -47,22 +65,30 @@
         {#            </div>#}
         {#            <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-sm  ">5.0</span>#}
         {#        </div>#}
-        <div class="flex items-center justify-between">
-            <span class="text-xl font-bold text-gray-900">Rs {{ book.stock.price|floatformat:"-2" }}</span>
-            <button
-                    type="button"
-                    class="button_cart_add text-white
+        <div class="flex gap-2 items-center ">
+            {% if book.stock.discount_percentage > 0 %}
+                <span class="font-lexend text-md font-light text-gray-400 line-through decoration-red-800">Rs {{ book.stock.price|floatformat:"-2" }}</span>
+                <span class="font-lexend text-md font-light text-red-800 ">Rs {{ book.stock.price_after_discount_one_item|floatformat:"-2" }}</span>
+            {% else %}
+                <span class="font-lexend text-md font-light text-gray-400">Rs {{ book.stock.price|floatformat:"-2" }}</span>
+
+            {% endif %}
+
+
+        </div>
+        <button
+                type="button"
+                class="button_cart_add text-white
                    {% if book.stock.stock_quantity > 0 %}
                        bg-blue-700 hover:bg-blue-800 focus:ring-blue-300
                    {% else %}
                        bg-red-700 hover:bg-red-800 focus:ring-red-300 cursor-not-allowed
                    {% endif %}
                    focus:ring-4 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center"
-                    data-book-uuid="{{ book.uuid }}"
-                    {% if book.stock.stock_quantity <= 0 %}disabled aria-disabled="true"{% endif %}
-            >
-                {% if book.stock.stock_quantity > 0 %}Add to cart{% else %}Sold Out{% endif %}
-            </button>
-        </div>
+                data-book-uuid="{{ book.uuid }}"
+                {% if book.stock.stock_quantity <= 0 %}disabled aria-disabled="true"{% endif %}
+        >
+            {% if book.stock.stock_quantity > 0 %}Add to cart{% else %}Sold Out{% endif %}
+        </button>
     </div>
 </div>

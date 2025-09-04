@@ -13,8 +13,11 @@ urlpatterns = [
     path('detail/<uuid>', BookDetailView.as_view(), name='book_detail_view'),
     path('book/create/', BookView.as_view(), name='book_view'),
     path('book/edit/<uuid>', BookView.as_view(), name='book_view'),
-    path('book/delete/<uuid>', BookView.as_view(), name='book_delete'),
+    path('book/delete/<uuid>/', BookView.as_view(), name='book_delete'),
     path('search/', views.search_books, name='search_books'),
+    path('books/recycle-bin/', views.BookRecycleBinListView.as_view(), name='book_recycle_bin'),
+    path('books/restore/<uuid:uuid>/', views.BookRestoreView.as_view(), name='book_restore'),
+    path('book/permanent-delete/<uuid:uuid>/', views.BookPermanentDeleteView.as_view(), name='book_permanent_delete'),
 
     # author
     path('search/authors', views.search_authors, name='search_authors'),

@@ -47,5 +47,19 @@ ALLOWED_SORTS = {
         "created_asc": "created_at",
         "created_desc": "-created_at",
     },
+    "bookstore": {
+        "price_asc": "price",
+        "price_desc": "-price",
+        "quantity_asc": "stock_quantity",
+        "quantity_desc": "-stock_quantity",
+        "available_first": "-is_available",
+        "unavailable_first": "is_available",
+        "restock_asc": "last_restock_date",
+        "restock_desc": "-last_restock_date",
+        "created_asc": "created_at",
+        "created_desc": "-created_at",
+        "name_asc": "title",
+        "name_desc": "-title",
+    },
 
 }
