@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 
+from celery.schedules import crontab
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -129,6 +130,27 @@ EMAIL_HOST_USER = os.getenv('host_email')
 EMAIL_HOST_PASSWORD = os.getenv('host_password')
 DEFAULT_FROM_EMAIL = os.getenv('host_email')
 
+# celery
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'  # Match your TIME_ZONE setting
+USER_EXPIRATION_HOURS = float(os.getenv("USER_EXPIRATION_HOURS", 24))
+
+# Schedule periodic tasks with Celery Beat
+CELERY_BEAT_SCHEDULE = {
+    'cleanup-expired-users': {
+        'task': 'src.users.task.cleanup_expired_users',
+        'schedule': crontab(hour=0, minute=0),  # Run daily at midnight UTC
+        # For testing: run every 10 seconds
+        # 'schedule': 10.0,  # seconds
+    },
+}
+
+# Site URL for activation links (use domain in production)
+SITE_URL = 'http://localhost:8000'  # Change to 'https://yourdomain.com' in prod
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 

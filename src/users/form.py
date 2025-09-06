@@ -2,9 +2,9 @@ import os
 import re
 
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import SetPasswordForm as DjangoSetPasswordForm
+from django.core.exceptions import ValidationError
 from django.utils import timezone
-from tailwind.validate import ValidationError
 
 from src.users.models import User
 
@@ -29,7 +29,8 @@ def not_none_or_number(value: str | None) -> str | None:
     return value
 
 
-class UserForm(UserCreationForm):
+# class UserForm(UserCreationForm):
+class UserForm(forms.ModelForm):
     # confirmPassword = forms.CharField(widget=forms.PasswordInput)
     class Meta:
         model = User
@@ -37,9 +38,8 @@ class UserForm(UserCreationForm):
             'first_name',
             'last_name',
             'email',
-            'password1',
-            # 'confirmPassword',
-            'password2',
+            # 'password1',
+            # 'password2',
             'contact_number',
             'date_of_birth',
             'address',
@@ -49,6 +49,11 @@ class UserForm(UserCreationForm):
             # 'password' : forms.PasswordInput(),
             'date_of_birth': forms.DateInput(attrs={'type': 'date'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields.pop('password1', None)
+        self.fields.pop('password2', None)
 
     def clean_first_name(self):
         value = self.cleaned_data.get('first_name')
@@ -68,10 +73,10 @@ class UserForm(UserCreationForm):
         if not value:
             raise forms.ValidationError("Please enter a last name.")
         if len(value) < 3:
-            raise forms.ValidationError("First name must be at least 3 characters long.")
+            raise forms.ValidationError("Last name must be at least 3 characters long.")
         return value
 
-    def email(self):
+    def clean_email(self):
         value = self.cleaned_data.get('email')
         value = clean_spaces_or_none(value)
         value = not_none_or_number(value)
@@ -99,7 +104,7 @@ class UserForm(UserCreationForm):
         if not value:
             raise forms.ValidationError("Please enter a address.")
         if len(value) < 3:
-            raise forms.ValidationError("First name must be at least 3 characters long.")
+            raise forms.ValidationError("Address name must be at least 3 characters long.")
 
         return value
 
@@ -122,6 +127,25 @@ class UserForm(UserCreationForm):
             raise ValidationError("Image too large (max 2MB).")
 
         return image
+
+
+# class SetPasswordForm(forms.Form):
+#     password = forms.CharField(widget=forms.PasswordInput, label='New Password')
+#     password_confirm = forms.CharField(widget=forms.PasswordInput, label='Confirm Password')
+#
+#     def clean(self):
+#         cleaned_data = super().clean()
+#         password = cleaned_data.get('password')
+#         password_confirm = cleaned_data.get('password_confirm')
+#         if password and password_confirm and password != password_confirm:
+#             raise forms.ValidationError('Passwords do not match')
+#         return cleaned_data
+class SetPasswordForm(DjangoSetPasswordForm):
+    class Meta:
+        model = User
+        fields = [
+            'new_password1', 'new_password2'
+        ]
 
 
 class LoginForm(forms.Form):

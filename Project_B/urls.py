@@ -37,7 +37,7 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import path, include
 
-from src.users.views import UserCreateView, UserLoginView
+from src.users.views import UserCreateView, UserLoginView, activate
 from . import views
 from .views import home_view
 
@@ -53,6 +53,7 @@ urlpatterns = [
                   path('about/', views.about_view, name='about_view'),
                   path('signup/', UserCreateView.as_view(), name='signup_view'),
                   path('login/', UserLoginView.as_view(), name='login_view'),
+                  path('activate/<uidb64>/<token>/', activate, name='set_password_activate'),
                   path('reset_password/',
                        auth_views.PasswordResetView.as_view(template_name='users/password_reset_form.html'),
                        name='reset_password'),
