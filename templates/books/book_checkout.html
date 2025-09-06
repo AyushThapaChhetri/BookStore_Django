@@ -1,0 +1,141 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+    <div class="flex flex-col align-center py-10 grow items-center md:p-10 bg-gray-100 gap-4  w-full">
+        <div class="flex flex-col w-full p-2 md:w-[85%]  ">
+            <div class="flex gap-2 flex-col-reverse  md:flex-row">
+                <div class="flex flex-col w-full  md:w-[70%] p-[20px] h-fit border-[3px] rounded-md border-gray-300 ">
+                    <h2 class="text-xl border-b border-gray-500 pb-[1rem] text-center font-bold text-gray-900">
+                        Delivery Details
+                    </h2>
+                    <form id="deliveryForm" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        {% csrf_token %}
+                        {% include "components/form_input.html" with field=form.full_name %}
+                        {% include "components/form_input.html" with field=form.country %}
+                        {% include "components/form_input.html" with field=form.city %}
+                        {% include "components/form_input.html" with field=form.state %}
+                        {% include "components/form_input.html" with field=form.street_address %}
+                        {% include "components/form_input.html" with field=form.zip_code %}
+                        {% include "components/form_input.html" with field=form.phone_number %}
+
+
+                    </form>
+
+                </div>
+
+                <div class="flex flex-col justify-between grow gap-4 p-5 border-[3px] h-fit rounded-md border-gray-300">
+                    <h2 class="text-xl font-bold text-gray-900">
+                        Order Summary({{ total_quantity }})
+                    </h2>
+                    <div class="flex justify-between">
+                        <table class="w-full  text-left text-sm">
+                            <tbody>
+                            <tr>
+                                <td class="p-2 font-medium">Subtotal</td>
+                                <td class="p-2 text-right whitespace-nowrap">Rs. {{ total_price|floatformat:'-2' }}</td>
+                            </tr>
+                            <tr>
+                                <td class="p-2 font-medium">Discount</td>
+                                <td class="p-2 text-right">Rs.
+                                    {% if total_discount %}{{ total_discount }}{% else %}0{% endif %}</td>
+                            </tr>
+
+
+                            {#                            <tr>#}
+                            {#                                <td class="p-2 font-medium">Discount Coupon</td>#}
+                            {#                                <td class="p-2 text-right">Rs. 0</td>#}
+                            {#                            </tr>#}
+                            <tr>
+                                <td class="p-2 font-medium">Shipping Cost</td>
+                                <td class="p-2 text-right">Rs. 0</td>
+                            </tr>
+                            {#                            <tr>#}
+                            {#                                <td class="p-2 font-medium">Bookmarks</td>#}
+                            {#                                <td class="p-2 text-right">Rs. 0</td>#}
+                            {#                            </tr>#}
+                            {#                            <tr>#}
+                            {#                                <td class="p-2 font-medium">Gift Packaging</td>#}
+                            {#                                <td class="p-2 text-right">Rs. 0</td>#}
+                            {#                            </tr>#}
+
+
+                            <!-- Total row -->
+                            <tr class="bg-gray-100 border-t border-dashed">
+                                <td rowspan="2" class="p-4 text-lg font-bold ">
+                                    Total:<br> <span
+                                        class="text-[13px] text-gray-400 whitespace-nowrap">(VAT INCLUDED)</span>
+                                </td>
+
+                                <td class="p-2 text-right whitespace-nowrap">Rs.
+                                    {% if total_amount_after_discount %}{{ total_amount_after_discount }}{% else %}
+                                        {{ total_price|floatformat:"-2" }}{% endif %}</td>
+
+                            </tr>
+                            </tbody>
+                        </table>
+
+                    </div>
+                    <a href="#"
+                       id="btn_submit_deliveryDetails"
+                       class="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white text-center font-semibold py-2 px-4 rounded-md transition-all duration-300 shadow">
+                        Payment Options
+                    </a>
+                    <a href="{% url 'clear_cart' %}"
+                       class="bg-red-500 hover:bg-red-800 text-white text-center font-semibold py-2 px-4 rounded-md transition-all duration-300 shadow">
+                        Clear
+                    </a>
+
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block extra_js %}
+    <script>
+        const button = document.querySelector('#btn_submit_deliveryDetails');
+        button.addEventListener('click', async function (e) {
+            e.preventDefault();
+
+            const form = document.getElementById("deliveryForm");
+            const formData = new FormData(form);
+
+            // Clear previous errors
+            form.querySelectorAll("[data-field] p").forEach(p => {
+                p.textContent = "";
+                p.classList.add("hidden");
+                p.previousElementSibling.classList.remove("border-red-500");
+            });
+
+            try {
+                const response = await axios.post("{% url 'book_checkout' %}", formData, {
+                    headers: {'X-CSRFToken': formData.get("csrfmiddlewaretoken")}
+                });
+
+                if (response.data.success && response.data.redirect_url) {
+                    window.location.href = response.data.redirect_url;
+                }
+            } catch (error) {
+                if (error.response && error.response.data && error.response.data.errors) {
+                    const errors = error.response.data.errors;
+                    for (const field in errors) {
+                        const wrapper = form.querySelector(`[data-field="${field}"]`);
+                        if (wrapper) {
+                            const p = wrapper.querySelector("p");
+                            p.textContent = errors[field].join(", ");
+                            p.classList.remove("hidden");
+
+                            const input = wrapper.querySelector("input");
+                            input.classList.add("border-red-500");
+                        }
+                    }
+                } else {
+                    alert("Something went wrong!");
+                }
+            }
+        });
+
+    </script>
+
+
+
+{% endblock %}

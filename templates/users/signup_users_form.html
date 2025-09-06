@@ -1,0 +1,48 @@
+{% extends 'base/base.html' %}
+
+{% block title %}
+    {% if form.instance.pk %}Edit Profile{% else %}Sign Up{% endif %}
+{% endblock %}
+
+{% block content %}
+
+    <div class="flex flex-col items-center p-5 bg-gray-100 gap-4 h-screen overflow-auto">
+        <form method="post" class="sm:w-[90%] lg:w-[40%] " id="signupForm" enctype="multipart/form-data">
+            <h2 class="mb-5 text-2xl font-extrabold leading-none tracking-tight text-gray-500 md:text-4xl ">Signup</h2>
+            {% csrf_token %}
+            {% include "components/form_input.html" with field=form.first_name %}
+            {% include "components/form_input.html" with field=form.last_name %}
+            {% include "components/form_input.html" with field=form.email %}
+            {#            {% include "components/form_input.html" with field=form.password1 %}#}
+            {#            {% include "components/form_input.html" with field=form.password2 %}#}
+            {% include "components/form_input.html" with field=form.contact_number %}
+            {% include "components/form_input.html" with field=form.date_of_birth %}
+            {% include "components/form_input.html" with field=form.address %}
+            {% include "components/form_input.html" with field=form.profile_picture %}
+            {% url 'book_list' as book_list_url %}
+            {#            {% include 'components/button_group.html' with submit_text="SignUp" cancel_url=book_list_url cancel_text="Cancel" %}#}
+            {% include 'components/button.html' with button_text="SignUp" width_be="w-full" %}
+
+            <div class="mt-4">
+                <p class="text-center">
+                    Already have an account?
+                    <a href="{% url 'login_view' %}" class="text-blue-500 hover:text-blue-700">
+                        Login
+                    </a>
+                </p>
+            </div>
+        </form>
+        {#        <script>#}
+        {#            const form = document.getElementById('signupForm');#}
+        {#            const submitBtn = document.getElementById('submitBtn');#}
+        {##}
+        {#            form.addEventListener('submit', () => {#}
+        {#                submitBtn.disabled = true;#}
+        {#                submitBtn.innerText = 'Submitting...';#}
+        {#            });#}
+        {#        </script>#}
+    </div>
+
+{% endblock %}
+
+

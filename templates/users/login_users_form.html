@@ -1,0 +1,94 @@
+{% extends 'base/base.html' %}
+
+{% block title %}
+    Login
+{% endblock %}
+
+{% block content %}
+    <div class="flex flex-col items-center p-5 bg-gray-100 gap-4 h-screen">
+        <form method="post" autocomplete="off" class="w-[90%] lg:w-[40%]" id="loginForm">
+            <h2 class="mb-5 text-2xl font-extrabold leading-none tracking-tight text-gray-500 md:text-4xl ">Login</h2>
+            {% csrf_token %}
+
+            {% if messages %}
+                {% for message in messages %}
+                    {% if 'error' in message.tags %}
+                        <div class="flex items-center p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 border-1 border-red-500"
+                             role="alert">
+                            <svg class="shrink-0 inline w-4 h-4 me-3" aria-hidden="true"
+                                 xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
+                            </svg>
+                            <span class="sr-only">{{ message.tags|title }}</span>
+                            <div>
+                                <span class="font-medium">{{ message.tags|title }}:</span> {{ message }}
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+
+
+            {% for field in form %}
+                <div class="relative z-0 w-full mb-5 group">
+                    <input
+                            type="{{ field.field.widget.input_type }}"
+                            name="{{ field.html_name }}"
+                            id="{{ field.id_for_label }}"
+                            value="{{ field.value|default_if_none:'' }}"
+                            autocomplete="{% if field.name == 'password' %}new-password{% elif field.name == 'email' %}new-email{% else %}off{% endif %}"
+                            class="block py-2.5 px-0 w-full text-[16px] text-gray-900 bg-transparent border-0 border-b-2 {% if field.errors %} border-red-500 {% endif %}border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                            placeholder=" "
+                            {% if field.field.required %}required{% endif %}
+                    />
+                    <label
+                            for="{{ field.id_for_label }}"
+                            class="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:start-0 peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6"
+                    >
+                        {{ field.label }}
+                    </label>
+
+                    {% if field.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ field.errors }}</p>
+                        {% for error in field.errors %}
+                            <p class="text-red-500 text-sm mt-1">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            {% endfor %}
+            <div class="flex flex-col gap-4">
+                <a href="{% url 'reset_password' %}" class="text-blue-500 hover:text-blue-700">Forgot Password?</a>
+                {% include 'components/button.html' with button_text="Login" %}
+            </div>
+
+            <div class="mt-4">
+                <p class="text-center">
+                    Don't have an account?
+                    <a href="{% url 'signup_view' %}" class="text-blue-500 hover:text-blue-700">
+                        Sign Up
+                    </a>
+                </p>
+            </div>
+        </form>
+
+    </div>
+
+
+    <script>
+        // Clear inputs on page load if redirected or after login
+        window.addEventListener("DOMContentLoaded", function () {
+            const emailInput = document.querySelector('input[name="email"]');
+            const passwordInput = document.querySelector('input[name="password"]');
+
+            {#if (emailInput) {#}
+            {#    emailInput.value = "";#}
+            {##}
+
+            if (passwordInput) passwordInput.value = "";
+        });
+
+
+    </script>
+{% endblock %}
+
+

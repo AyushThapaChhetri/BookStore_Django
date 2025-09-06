@@ -31,18 +31,42 @@ Including another URLconf
 #     ]
 
 
-from django.contrib import admin
-from django.urls import path,include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.contrib import admin
+from django.contrib.auth import views as auth_views
+from django.urls import path, include
+
+from src.users.views import UserCreateView, UserLoginView, activate
+from . import views
+from .views import home_view
 
 urlpatterns = [
-    # path('',views.home),
-    path('', include('src.books.urls')),
-    path('admin/', admin.site.urls),
-    path('books/', include('src.books.urls')),
-] + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)
-
+                  # path('',views.home),
+                  path('', home_view, name='home'),
+                  path('admin/', admin.site.urls),
+                  path('books/', include('src.books.urls')),
+                  path('admin-panel/', include('src.books.admin_urls')),
+                  path('users/', include('src.users.urls')),
+                  path('carts/', include('src.cart.urls')),
+                  path('delivery/', include('src.shipping.urls')),
+                  path('about/', views.about_view, name='about_view'),
+                  path('signup/', UserCreateView.as_view(), name='signup_view'),
+                  path('login/', UserLoginView.as_view(), name='login_view'),
+                  path('activate/<uidb64>/<token>/', activate, name='set_password_activate'),
+                  path('reset_password/',
+                       auth_views.PasswordResetView.as_view(template_name='users/password_reset_form.html'),
+                       name='reset_password'),
+                  path('reset_password_sent/',
+                       auth_views.PasswordResetDoneView.as_view(template_name='users/password_reset_done.html'),
+                       name='password_reset_done'),
+                  path('reset/<uidb64>/<token>/',
+                       auth_views.PasswordResetConfirmView.as_view(template_name='users/password_reset_confirm.html'),
+                       name='password_reset_confirm'),
+                  path('reset_password_complete/',
+                       auth_views.PasswordResetCompleteView.as_view(template_name='users/password_reset_complete.html'),
+                       name='password_reset_complete'),
+              ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:
     # Include django_browser_reload URLs only in DEBUG mode

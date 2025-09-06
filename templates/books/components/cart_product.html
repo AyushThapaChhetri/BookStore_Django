@@ -1,0 +1,117 @@
+{% load static %}
+<div class="flex max-h-[300px] pb-2 box-border gap-2 border-b-2 border-gray-200">
+    <div class="flex  w-[150px] border-1  border-gray-200">
+        {#        <img class="p-8 rounded-t-lg"#}
+        {#             src="{{ book.cover.url }}" alt="hello"#}
+        {#        />#}
+        {% if item.book.cover_image %}
+            <img class="p-8 rounded-t-lg"
+                 src="{{ item.book.cover_image.url }}"
+                 alt="{{ item.book.title }}"
+            />
+
+        {% else %}
+            <!-- Optional placeholder image -->
+            <img class="p-8 rounded-t-lg"
+                 src="{% static 'images/no_book_cover.png' %}"
+                 alt="No cover available"
+            />
+        {% endif %}
+    </div>
+    <div class="flex flex-col justify-between grow gap-2">
+        <div class="flex flex-col md:flex-row justify-between ">
+            <div class="flex flex-col max-w-[170px] lg:max-w-[290px]">
+                <p class="line-clamp-2 font-bold">
+                    {{ item.book.title }}
+
+                </p>
+                <p class="line-clamp-1">
+                    by {% for author in item.book.authors.all %}{{ author.name }}{% if not forloop.last %},
+                {% endif %}{% endfor %}
+                </p>
+            </div>
+            <p class="font-bold p-[2px]">Rs {{ item.book.stock.price|floatformat:"-2" }}</p>
+        </div>
+        <div class="flex flex-row-reverse sm:flex-row  gap-1 justify-between">
+            <div class="flex flex-col  justify-between">
+                {#            <form class="max-w-xs ">#}
+                <label for="quantity-input"
+                       class="hidden mb-2 text-sm font-medium text-gray-900 sm:block ">Choose
+                    quantity:</label>
+                <div class="relative flex items-center max-w-[6rem]  sm:max-w-[8rem]">
+                    <button type="button" id="decrement-button"
+                            data-input-counter-decrement="quantity-input"
+                            onclick="updateQuantity('{{ item.uuid|escapejs }}', 'decrement')"
+                            class="bg-gray-100  hover:bg-gray-200 {% if item.quantity > item.book.stock_quantity %}border-2 border-red-700{% else %}border border-gray-700{% endif %}  rounded-s-lg p-2 sm:p-3 h-9 sm:h-11 focus:ring-gray-100  focus:ring-2 focus:outline-none">
+                        <svg class="w-3 h-3  {% if item.quantity > item.book.stock_quantity %} text-red-900{% else %} text-gray-900{% endif %} "
+                             aria-hidden="true"
+                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 2">
+                            <path stroke="currentColor" stroke-linecap="round"
+                                  stroke-linejoin="round" stroke-width="2" d="M1 1h16"/>
+                        </svg>
+                    </button>
+                    <input type="text"
+                            {#                           id="quantity-input"#}
+                           id="quantity-{{ item.uuid }}"
+                           data-input-counter
+                            {#                           data-input-counter-min="1" data-input-counter-max="50"#}
+                           aria-describedby="helper-text-explanation"
+                           class="bg-gray-50 {% if item.quantity > item.book.stock_quantity %}border-y-2 border-red-700 text-red-700{% else %}border-y border-gray-700{% endif %} h-9 sm:h-11 py-1.5 sm:py-2.5 min-w-[28px] sm:min-w-[40px] text-center text-gray-900 text-sm focus:ring-blue-500 focus:border-blue-500 block w-full "
+                           placeholder="1" value="{{ item.quantity }}" required readonly/>
+                    {#                    <div class="bg-gray-50 flex justify-center items-center border-y h-11 w-[40px] border-gray-900">#}
+                    {#                        {{ item.quantity }}#}
+                    {#                    </div>#}
+                    <button type="button" id="increment-button"
+                            data-input-counter-increment="quantity-input"
+                            onclick="updateQuantity('{{ item.uuid|escapejs }}', 'increment')"
+                            class="bg-gray-100  hover:bg-gray-200  {% if item.quantity > item.book.stock_quantity %}border-2 border-red-700{% else %}border border-gray-700{% endif %} rounded-e-lg p-2 sm:p-3 h-9 sm:h-11 focus:ring-gray-100  focus:ring-2 focus:outline-none">
+                        <svg class="w-3 h-3 {% if item.quantity > item.book.stock_quantity %} text-red-900{% else %} text-gray-900{% endif %} "
+                             aria-hidden="true"
+                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 18">
+                            <path stroke="currentColor" stroke-linecap="round"
+                                  stroke-linejoin="round" stroke-width="2" d="M9 1v16M1 9h16"/>
+                        </svg>
+                    </button>
+                </div>
+                <p id="helper-text-explanation"
+                   class="mt-2 text-sm
+                    {% if item.book.stock_quantity == 0 or item.quantity > item.book.stock_quantity %}
+                        text-red-600
+                  {% else %}
+                      text-gray-500
+                  {% endif %}
+                    hidden sm:block">
+                    {% if item.book.stock.stock_quantity > 0 %}
+                        <span class="font-bold">{{ item.book.stock.stock_quantity }}</span> in stock
+                    {% else %}
+                        {{ item.book.stock_quantity }} Out of stock{% if item.quantity == 1 %}! Please remove this item
+                    {% endif %}
+                    {% endif %}
+                </p>
+                {#            </form>#}
+            </div>
+            <div class="flex items-center">
+
+
+                <button
+                        type="button"
+                        onclick="removeItem('{{ item.uuid|escapejs }}')"
+                        {#                        class="border border-gray-500  hover:border-red-500 text-gray-500 hover:bg-red-500 hover:text-white  font-bold py-2 px-4 rounded transition-colors duration-200"#}
+                        class="flex items-center gap-1
+           text-gray-500 hover:text-red-500
+           sm:border sm:border-gray-500 sm:hover:border-red-500
+           sm:hover:bg-red-500 sm:hover:text-white sm:font-bold
+           sm:py-2 sm:px-3 sm:rounded sm:transition-colors sm:duration-200"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                         stroke="currentColor" class="size-6 sm:hidden">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/>
+                    </svg>
+                    <span class="hidden sm:inline">Remove</span>
+                </button>
+
+            </div>
+        </div>
+    </div>
+</div>

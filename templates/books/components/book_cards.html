@@ -1,0 +1,7 @@
+{% if paginated_books %}
+    {% for book in paginated_books %}
+        {% include 'books/components/cards.html' with book=book %}
+    {% endfor %}
+{% else %}
+    <p class="text-gray-600 p-5">No books available.</p>
+{% endif %}

@@ -1,0 +1,328 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block content %}
+    <div class="flex flex-col  grow items-center px-2 py-10 justify-between md:p-10 bg-gray-100 gap-4  w-full">
+
+        <div class="flex flex-col gap-2 items-center md:items-start md:flex-row md:justify-center md:w-[85%] ">
+
+            <div class="flex flex-col h-fit w-[250px] justify-between  gap-4 p-5 border-[3px] rounded-md border-gray-300">
+                {#                <img class="p-8 rounded-t-lg" src="{% if books %}{{ books.cover_image }}{% endif %}"#}
+                {#                     alt="{% if books %}{{ books.title }}{% endif %}"/>#}
+                {% if books.cover_image %}
+                    <img class=" rounded-t-lg"
+                         src="{{ books.cover_image.url }}"
+                         alt="{{ books.title }}"
+                    />
+
+                {% else %}
+                    <!-- Optional placeholder image -->
+                    <img class=""
+                         src="{% static 'images/no_book_cover.png' %}"
+                         alt="No cover available"
+                    />
+                {% endif %}
+
+            </div>
+            <div class="flex flex-col h-fit justify-between lg:w-[50%]  gap-4 p-5 border-[3px] rounded-md border-gray-300">
+                <div class="flex flex-col gap-2 border-b-[1.5px] p-2 border-gray-300">
+
+                    <h1 class="text-2xl font-bold text-gray-900">
+
+                        {% if books %}
+                            {{ books.title }}
+                        {% endif %}
+                    </h1>
+                    <p>
+                        <span class="text-gray-400">by</span>
+                        {% if books %}{% for author in books.authors.all %}{{ author.name }} {% if not forloop.last %},
+                        {% endif %}{% endfor %}{% endif %}
+                    </p>
+                    <p>
+                        Sold by <span class="text-blue-800 font-medium">Books Addiction</span>
+                    </p>
+                </div>
+                <div class="flex flex-col gap-2 border-b-[1.5px] p-2 pb-[20px] border-gray-300">
+                    <h1 class="text-2xl pb-[30px] font-bold text-gray-900">
+                        Description
+                    </h1>
+                    <p>
+
+                        {% if books %}
+                            {{ books.description }}
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="flex flex-col gap-2  p-2 ">
+                    <h1 class="text-2xl pb-[30px] font-bold text-gray-900">
+                        Other Info
+                    </h1>
+                    <div class="flex flex-wrap gap-4">
+                        <div class="flex flex-col border-[1px] border-gray-200 rounded-md  py-2 px-4 items-center bg-gray-200">
+                            Page Count
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                 stroke="currentColor" class="size-6">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                      d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"/>
+                            </svg>
+                            {% if books %}
+                                {% if not books.pages %}
+                                    0
+                                {% else %}
+                                    {{ books.pages }}
+                                {% endif %}
+                            {% endif %}
+                            Pages
+                        </div>
+                        <div class="flex flex-col border-[1px] border-gray-200 rounded-md  py-2 px-4 items-center bg-gray-200">
+                            Language
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                 stroke="currentColor" class="size-6">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                      d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"/>
+                            </svg>
+                            {% if books %}
+
+                                {{ books.language }}
+
+                            {% endif %}
+                        </div>
+                        <div class="flex flex-col border-[1px] border-gray-200 rounded-md  py-1 px-4 items-center bg-gray-200">
+                            Stock Left
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                 stroke="currentColor" class="size-6">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                      d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"/>
+                            </svg>
+                            {% if books %}
+
+                                {{ books.stock.stock_quantity }}
+
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex flex-col h-fit w-[250px] justify-between  gap-4 p-5 border-[3px] rounded-md border-gray-300">
+                <h2 class="text-xl font-bold text-gray-900">
+                    Get Book
+                </h2>
+                <div class="flex justify-between">
+                    <p class="text-lg text-gray-600">
+                        Rs
+
+                        {% if books %}
+                            {% if not books.stock.price %}
+                                0
+                            {% else %}
+                                {{ books.stock.price|floatformat:"-2" }}
+                            {% endif %}
+                        {% endif %}
+                    </p>
+
+                </div>
+
+                <div class="flex flex-col gap-4 justify-between">
+                    <div class="flex flex-col  justify-between">
+                        {#            <form class="max-w-xs ">#}
+                        <label for="quantity-input"
+                               class="hidden mb-2 text-sm font-medium text-gray-900 sm:block ">Choose
+                            quantity:</label>
+                        <div class="relative flex items-center max-w-[6rem]  sm:max-w-[8rem]">
+                            <button type="button" id="decrement-button"
+                                    data-input-counter-decrement="quantity-input"
+                                    onclick="updateQuantity('{{ cart_item_uuid|escapejs }}', 'decrement')"
+                                    class="bg-gray-100  hover:bg-gray-200 border border-gray-700 rounded-s-lg p-2 sm:p-3 h-9 sm:h-11 focus:ring-gray-100  focus:ring-2 focus:outline-none">
+                                <svg class="w-3 h-3 text-gray-900 " aria-hidden="true"
+                                     xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 2">
+                                    <path stroke="currentColor" stroke-linecap="round"
+                                          stroke-linejoin="round" stroke-width="2" d="M1 1h16"/>
+                                </svg>
+                            </button>
+                            <input type="text"
+                                    {#                           id="quantity-input"#}
+                                   id="quantity-{{ cart_item_uuid }}"
+                                   data-cart-item-uuid="{{ cart_item_uuid }}"
+                                   data-input-counter
+                                    {#                           data-input-counter-min="1" data-input-counter-max="50"#}
+                                   aria-describedby="helper-text-explanation"
+                                   class="bg-gray-50 border-y border-gray-900 h-9 sm:h-11 py-1.5 sm:py-2.5 min-w-[28px] sm:min-w-[40px] text-center text-gray-900 text-sm focus:ring-blue-500 focus:border-blue-500 block w-full "
+                                   placeholder="1" value="{{ quantity }}" required readonly/>
+                            {#                    <div class="bg-gray-50 flex justify-center items-center border-y h-11 w-[40px] border-gray-900">#}
+                            {#                        {{ item.quantity }}#}
+                            {#                    </div>#}
+                            <button type="button" id="increment-button"
+                                    data-input-counter-increment="quantity-input"
+                                    onclick="updateQuantity('{{ cart_item_uuid|escapejs }}', 'increment')"
+                                    class="bg-gray-100  hover:bg-gray-200 border border-gray-700 rounded-e-lg p-2 sm:p-3 h-9 sm:h-11 focus:ring-gray-100  focus:ring-2 focus:outline-none">
+                                <svg class="w-3 h-3 text-gray-900 " aria-hidden="true"
+                                     xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 18">
+                                    <path stroke="currentColor" stroke-linecap="round"
+                                          stroke-linejoin="round" stroke-width="2" d="M9 1v16M1 9h16"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <p id="helper-text-explanation"
+                           class="mt-2 text-sm text-gray-500"><span
+                                class="font-bold">{{ books.stock.stock_quantity }}</span> in stock</p>
+                        {#            </form>#}
+                    </div>
+                    <button
+                            type="button"
+                            class="button_cart_add text-white
+           {% if books.stock.stock_quantity > 0 %}
+               bg-blue-700 hover:bg-blue-800 focus:ring-blue-300
+           {% else %}
+               bg-red-700 hover:bg-red-800 focus:ring-red-300 cursor-not-allowed
+           {% endif %}
+           focus:ring-4 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center"
+                            data-book-uuid="{{ books.uuid }}"
+                            {% if books.stock.stock_quantity <= 0 %}disabled aria-disabled="true"{% endif %}
+                    >
+                        {% if books.stock.stock_quantity > 0 %}
+                            Add to cart
+                        {% else %}
+                            Sold Out
+                        {% endif %}
+                    </button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        axios.defaults.xsrfCookieName = "csrftoken";
+        axios.defaults.xsrfHeaderName = "X-CSRFToken";
+        const incBtn = document.getElementById("increment-button");
+        const decBtn = document.getElementById("decrement-button");
+
+        async function updateQuantity(itemUuid, action) {
+            console.log("Item UUid: ", itemUuid);
+
+            if (!itemUuid || itemUuid === "None" || itemUuid === "null" || itemUuid === "undefined") {
+
+                alert("Please place Item in cart");
+                return;
+            }
+
+
+            const input = document.getElementById(`quantity-${itemUuid}`)
+            let quantity = parseInt(input.value);
+            if (action === "increment" && quantity < 50) {
+                quantity++;
+                console.log("After increment: ", quantity);
+            } else if (action === "decrement" && quantity > 1) {
+                quantity--;
+                console.log("After decrement: ", quantity);
+
+            }
+
+            console.log("Quantity: ", quantity);
+
+            try {
+                const res = await axios.post(
+                    `/books/cart/update/${itemUuid}/`
+                    {#"{% url 'add_to_cart' itemUuid %}"#}
+                    , {quantity});
+
+                console.log("Quantity updated:", res.data);
+
+                // Update input with actual quantity from server
+                if (res.data.success) {
+                    input.value = res.data.quantity;
+                } else {
+                    alert(res.data.error);
+                }
+            } catch (err) {
+                console.error("Error updating quantity:", err);
+            }
+        }
+
+        async function removeItem(itemUuid) {
+            try {
+                const res = await axios.post(`/books/cart/remove/${itemUuid}/`);
+                console.log("Item removed:", res.data);
+                location.reload();
+            } catch (err) {
+                console.error("Error removing item:", err);
+            }
+        }
+
+
+        document.querySelectorAll('.button_cart_add').forEach(button => {
+            button.addEventListener('click', async (e) => {
+                e.stopPropagation(); // prevents card click
+                e.preventDefault(); // prevents default anchor behavior
+
+                const bookUuid = button.dataset.bookUuid;
+
+                try {
+                    const response = await axios.post(
+                        "{% url 'add_to_cart' %}",
+                        new URLSearchParams({book_uuid: bookUuid}),
+                        {
+                            headers: {
+                                'X-CSRFToken': '{{ csrf_token }}',
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            }
+                        }
+                    );
+
+                    const data = response.data;
+
+                    if (data.success) {
+                        if (data.created) {
+                            const cartItemUuid = response.data.cart_item_uuid;
+                            const cartItemCount = response.data.cart_items_count;
+                            const cartCount = document.getElementById("cart-count");
+                            console.log("Item count: ", cartItemCount);
+                            if (cartCount) {
+                                cartCount.textContent = cartItemCount;
+                            }
+
+                            if (incBtn) {
+                                incBtn.setAttribute("onclick", `updateQuantity('${cartItemUuid}', 'increment')`);
+                            }
+
+                            if (decBtn) {
+                                decBtn.setAttribute("onclick", `updateQuantity('${cartItemUuid}', 'decrement')`);
+                            }
+                            // update input
+                            const qtyInput = document.querySelector("[data-cart-item-uuid]");
+                            if (qtyInput) {
+                                qtyInput.id = `quantity-${cartItemUuid}`;
+                                qtyInput.setAttribute("data-cart-item-uuid", cartItemUuid);
+                            }
+
+                            console.log("Updated buttons with new UUID:", cartItemUuid);
+
+                            // First time addition
+                            button.textContent = "Added";
+                            setTimeout(() => {
+                                button.outerHTML = `<a href="{% url 'book_cart' %}"
+                            class="bg-blue-700 text-white text-center px-5 py-2.5 rounded-lg text-sm">
+                            View Cart
+                        </a>`;
+                            }, 1500);
+                        } else {
+                            // Already in cart
+                            button.outerHTML = `<a href="{% url 'book_cart' %}"
+                        class="bg-blue-700 text-white text-center  px-5 py-2.5 rounded-lg text-sm">
+                        View Cart
+                    </a>`;
+                        }
+                    } else {
+                        alert(data.message);
+                    }
+                } catch (error) {
+                    console.error("Error adding to cart:", error);
+                    alert("Something went wrong. Please try again.");
+                }
+            });
+        });
+
+    </script>
+{% endblock %}

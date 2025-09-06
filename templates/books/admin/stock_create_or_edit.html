@@ -1,0 +1,324 @@
+{% extends 'base/admin/admin_base.html' %}
+{% load form_tags %}
+{% block title %}
+    {% if form.instance.pk %}Edit Stock{% else %}New Stock{% endif %}
+{% endblock %}
+
+{% block content %}
+    <div class="flex flex-col items-center p-5  gap-4 grow">
+        {#            <form method="post" class="sm:w-[90%] lg:w-[500px] mx-auto">#}
+
+        <form method="post" class="w-[90%] lg:w-[50%] " id="bookForm" enctype="multipart/form-data">
+            <h2 class="mb-5 text-2xl font-extrabold leading-none tracking-tight text-gray-500 md:text-4xl ">
+                {% if form.instance.pk %}Edit Stock{% else %}Add  New Stock {% endif %}</h2>
+            {% csrf_token %}
+            {% for field in form %}
+                {% if field|widget_type == "hidden" %}
+
+                    {{ field }}   {# just render it, no wrapper, no label #}
+
+                {% else %}
+
+                    <div class="relative z-0 w-full mb-5 group">
+
+
+                        {% if field|widget_type == "checkbox" %}
+                            <!-- Checkbox -->
+                            <div class="flex items-center gap-2">
+                                <input
+                                        type="checkbox"
+                                        name="{{ field.html_name }}"
+                                        id="{{ field.id_for_label }}"
+                                        {% if field.value %}checked{% endif %}
+                                        class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                />
+                                <label for="{{ field.id_for_label }}" class="text-sm text-gray-600">
+                                    {{ field.label }}
+                                </label>
+                            </div>
+                        {% elif field|widget_type == "file" %}
+                            <!-- File Input -->
+                            <input
+                                    type="file"
+                                    name="{{ field.html_name }}"
+                                    id="{{ field.id_for_label }}"
+                                    class="block py-2.5 px-0 w-full text-[16px] text-gray-900 bg-transparent border-0 border-b-2 {% if field.errors %}border-red-500{% else %}border-gray-300{% endif %} appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                            />
+                            <label
+                                    for="{{ field.id_for_label }}"
+                                    class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6"
+                            >
+                                {{ field.label }}
+                            </label>
+                            {% if field.value %}
+                                <p class="mt-2 text-sm text-gray-600">
+                                    Currently:
+                                    <a href="{{ field.value.url }}" target="_blank" class="text-blue-600 underline">
+                                        {{ field.value.name }}
+                                    </a>
+                                </p>
+                            {% endif %}
+
+                        {% elif field|widget_type == "textarea" %}
+                            <!-- Textarea -->
+                            <textarea
+                                    name="{{ field.html_name }}"
+                                    id="{{ field.id_for_label }}"
+                                    rows="5"
+                                    class="block py-2.5 px-0 w-full text-[16px] text-gray-900 bg-transparent border-0 border-b-2 {% if field.errors %}border-red-500{% else %}border-gray-300{% endif %} appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer resize-vertical"
+                                    placeholder=" "
+                            >{{ field.value|default_if_none:'' }}</textarea>
+                            <label
+                                    for="{{ field.id_for_label }}"
+                                    class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6"
+                            >
+                                {{ field.label }}
+                            </label>
+
+                        {% elif field|widget_type == "select" %}
+
+                            <div class="flex flex-row mb-4 gap-2">
+                                <div class="flex flex-col grow ">
+                                    <!-- Single Select -->
+                                    <select
+                                            name="{{ field.html_name }}"
+                                            id="{{ field.id_for_label }}"
+                                            class="block py-2.5 px-0 w-full text-[16px] text-gray-900 bg-transparent border-0 border-b-2 {% if field.errors %}border-red-500{% else %}border-gray-300{% endif %} appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                                    >
+
+                                        {% for choice_value, choice_label in field.field.choices %}
+                                            <option value="{{ choice_value }}"
+                                                    {% if choice_value|stringformat:"s" == field.value|stringformat:"s" %}selected{% endif %}>
+                                                {{ choice_label }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <label
+                                            for="{{ field.id_for_label }}"
+                                            class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6"
+                                    >
+                                        {{ field.label }}
+                                    </label>
+                                </div>
+
+                                <button class="h-fit p-1 border-[0.2px] border-gray-200 shadow-xl rounded-md active:bg-blue-200 active:border-white active:text-white"
+                                        type="button"
+                                        onclick="openModal('{{ field.name }}', '{{ field.id_for_label }}')">
+
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                         stroke-width="1.5"
+                                         stroke="currentColor" class="size-5">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                              d="M12 4.5v15m7.5-7.5h-15"/>
+                                    </svg>
+                                </button>
+
+                            </div>
+
+                        {% elif field|widget_type == "select_multiple" %}
+                            <div class="flex flex-row gap-2">
+                                <div class="flex flex-col grow ">
+
+
+                                    <!-- Multiple Select -->
+                                    <select
+                                            name="{{ field.html_name }}"
+                                            id="{{ field.id_for_label }}"
+                                            multiple
+                                            class="block py-2.5 px-2 w-full text-[16px] text-gray-900 bg-white border-2 {% if field.errors %}border-red-500{% else %}border-gray-300{% endif %} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent min-h-[100px]"
+                                    >
+                                        {% for choice_value, choice_label in field.field.choices %}
+                                            <option value="{{ choice_value }}"
+                                                    {% if choice_value|stringformat:"s" in field.value|stringformat:"s" %}selected{% endif %}>
+                                                {{ choice_label }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <label
+                                            for="{{ field.id_for_label }}"
+                                            class="block text-sm font-medium text-gray-500 mb-1"
+                                    >
+                                        {{ field.label }} (Hold Ctrl/Cmd to select multiple)
+                                    </label>
+
+                                </div>
+                                <button class="h-fit p-1 border-[0.2px] border-gray-200 shadow-xl rounded-md active:bg-blue-200 active:border-white active:text-white"
+                                        type="button"
+                                        onclick="openModal('{{ field.name }}', '{{ field.id_for_label }}')">
+
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                         stroke-width="1.5"
+                                         stroke="currentColor" class="size-5">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                              d="M12 4.5v15m7.5-7.5h-15"/>
+                                    </svg>
+                                </button>
+
+                            </div>
+
+
+
+                        {% else %}
+
+                            <!-- Regular Input Fields -->
+                            <input
+                                    type="{{ field|input_type }}"
+                                    name="{{ field.html_name }}"
+                                    id="{{ field.id_for_label }}"
+                            {% for attr, val in field.field.widget.attrs.items %}
+                                {{ attr }}="{{ val }}"
+                            {% endfor %}
+                            value="{{ field.value|default_if_none:'' }}"
+                            class="
+                            block py-2.5 px-0 w-full text-[16px] text-gray-900 bg-transparent border-0 border-b-2
+                            {% if field.errors %}border-red-500{% else %}border-gray-300{% endif %}
+                             appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                            placeholder=" "
+                            />
+                            <label
+                                    for="{{ field.id_for_label }}"
+                                    class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6"
+                            >
+                                {{ field.label }}
+                            </label>
+                        {% endif %}
+
+                        {% if field.errors %}
+                            {% for error in field.errors %}
+                                <p class="text-red-500 text-sm mt-1">{{ error }}</p>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% endfor %}
+
+            <div class="flex flex-row m-0 p-0 gap-3">
+                <button
+                        type="submit"
+                        id="submitBtn"
+                        class="text-white bg-blue-700 cursor-pointer hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-fulfitl sm:w-auto px-5 py-2.5 text-center"
+                >
+                    Submit
+                </button>
+                <button type="button"
+                        class="text-blue-700 cursor-pointer hover:text-white border border-blue-700 hover:ring-transparent hover:bg-blue-200 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">
+                    <a href="{% url 'admin-stock-list' %}">Cancel</a></button>
+            </div>
+        </form>
+
+    </div>
+{% endblock %}
+
+
+{% block extra_js %}
+    <script>
+        const formPopup = document.getElementById('formPopupModal');
+        const form_Container_popup = document.getElementById('form-Container-popup');
+
+        async function openModal(fieldName, selectFieldId) {
+            console.log("Hello");
+            console.log('field id', selectFieldId)
+            console.log('name', fieldName);
+            try {
+                {#const endpoint = "{% url 'create_author' %}";#}
+                console.log('why');
+                const response = await axios.get(`/admin-panel/${fieldName}`);
+                {#const response = await axios.get(endpoint);#}
+
+                // Save both for later use in submit
+                form_Container_popup.dataset.fieldName = fieldName;
+                form_Container_popup.dataset.selectFieldId = selectFieldId;
+
+                formPopup.classList.remove("hidden");
+                form_Container_popup.innerHTML = response.data.html;
+
+            } catch (e) {
+                console.log("error", e);
+                alert(e);
+            }
+
+
+        }
+
+        function closeLogoutModal() {
+            console.log("logout");
+            formPopup.classList.add("hidden")
+        }
+
+
+        async function submitPopupForm() {
+
+            const fieldName = form_Container_popup.dataset.fieldName;
+            const selectFieldId = form_Container_popup.dataset.selectFieldId;
+
+            console.log("fieldName 1", fieldName);
+            console.log("selectFieldId after submission 1", selectFieldId);
+
+
+            const popupForm = form_Container_popup.querySelector("form");
+
+            if (!popupForm) {
+                console.error("Popup form not found!");
+                return;
+            }
+
+            const formData = new FormData(popupForm);
+            console.log("Before try");
+            try {
+                {#console.log("Inside try", `/books/${fieldName}`);#}
+                const response = await axios.post(`/admin-panel/${fieldName}`, formData, {
+                    headers: {
+                        'X-CSRFToken': formData.get("csrfmiddlewaretoken"),
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+
+                console.log('Saved: ', response.data);
+                formPopup.classList.add("hidden");
+
+                const selectField = document.getElementById(selectFieldId);
+                if (selectField) {
+                    const newOption = document.createElement('option');
+                    newOption.value = response.data.id;
+                    newOption.textContent = response.data.name;
+
+                    if (selectField.multiple) {
+                        // multiple select (genres, tags…)
+                        newOption.selected = true; // add but don’t deselect others
+                    } else {
+                        // single select (author, publisher…)
+                        newOption.selected = true;
+                        // optionally deselect old selection
+                        [...selectField.options].forEach(opt => opt.selected = false);
+                    }
+
+                    selectField.appendChild(newOption);
+                }
+
+                // Optionally, update your select field in the main form with the new author
+                {#const selectField = document.getElementById(fieldName);#}
+                {#const newOption = document.createElement("option");#}
+                {#newOption.value = response.data.id; // returned from Django#}
+                {#newOption.textContent = response.data.name; // returned from Django#}
+                {#newOption.selected = true;#}
+                {#selectField.appendChild(newOption);#}
+            } catch (err) {
+                console.error("Error submitting popup form", err);
+
+                if (err.response && err.response.status === 400) {
+                    // Replace popup content with the returned form including errors
+
+                    if (err.response.data.html) {
+
+                        form_Container_popup.innerHTML = err.response.data.html;
+                    }
+
+                }
+            }
+        }
+
+
+    </script>
+{% endblock %}
+
+

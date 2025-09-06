@@ -1,0 +1,23 @@
+{#<button class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-full transition-all duration-300 shadow">#}
+{#    <a href="{{ url_to_visit }}">{{ button_text|default:"Get Started" }}</a>#}
+{#</button>#}
+{#<button class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-full transition-all duration-300 shadow">#}
+{#    <a href="{{ url_to_visit }}">{{ button_text|default:"Get Started" }}</a>#}
+{#</button>#}
+{##}
+
+{% if url_to_visit %}
+    <!-- Link button -->
+    <a href="{{ url_to_visit }}"
+       class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-full transition-all duration-300 shadow">
+        {{ button_text|default:"Get Started" }}
+    </a>
+{% else %}
+    <!-- Submit button -->
+    <button type="submit"
+            {#            class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-sm transition-all duration-300 shadow">#}
+            class="{{ bg_color|default:'bg-blue-600 hover:bg-blue-700' }} {{ width_be|default:'w-auto' }} text-white font-semibold py-2 px-4 rounded-sm transition-all duration-300 shadow"
+            id="submitBtn">
+        {{ button_text|default:"Submit" }}
+    </button>
+{% endif %}

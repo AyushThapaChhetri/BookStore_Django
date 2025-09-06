@@ -1,0 +1,149 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+    <div class="flex flex-col align-center grow items-center md:p-10 bg-gray-100 gap-4  w-full">
+        <div class="flex flex-col w-[85%]  rounded-md">
+            <h1 class="text-4xl border-b border-gray-500 py-[1rem] text-center font-bold text-green-700">
+                Order Success
+            </h1>
+            <div class="flex flex-col gap-4   p-[2rem]">
+                <div class="flex flex-col items-center  text-sm text-green-800 border border-green-300 rounded-lg bg-green-50 "
+                >
+
+                    <div class="flex flex-col p-4 grow text-center item-center">
+                        <span class="font-medium text-xl">Book Addiction</span><br>
+
+                        Thank you for placing your order with Book Addiction.<br>
+                        We have successfully received your order. We will contact you soon for further processing and
+                        delivery.<br><br>
+
+                        Your order number: {% if order %}{{ order.uuid }}{% else %}Order not Placed{% endif %}
+                    </div>
+
+                </div>
+                <div class="flex flex-col md:flex-row gap-4 items-center md:justify-center md:items-start">
+                    <div class="flex flex-col justify-between w-[300px] h-fit gap-4 p-5 border-[3px] rounded-md border-gray-300">
+
+                        <h2 class="text-xl font-bold text-gray-900">
+                            Delivery details
+                        </h2>
+
+
+                        <table class="w-full text-left text-sm">
+                            <tbody>
+                            <tr>
+                                <td class="p-2 font-medium">Full Name</td>
+                                <td class="p-2">{{ order.shipping_address.full_name }}</td>
+                            </tr>
+                            <tr>
+                                <td class="p-2 font-medium">Email</td>
+                                <td class="p-2">{{ request.user.email }}</td>
+                            </tr>
+                            <tr>
+                                <td class="p-2 font-medium">Mobile</td>
+                                <td class="p-2">{{ order.shipping_address.phone_number }}</td>
+                            </tr>
+
+                            <tr>
+                                <td class="p-2 font-medium">Country</td>
+                                <td class="p-2">{{ order.shipping_address.country }}</td>
+                            </tr>
+                            <tr>
+                                <td class="p-2 font-medium">City</td>
+                                <td class="p-2">{{ order.shipping_address.city }}</td>
+                            </tr>
+                            <tr>
+                                <td class="p-2 font-medium">Street Address</td>
+                                <td class="p-2">{{ order.shipping_address.street_address }}</td>
+                            </tr>
+                            {% if order.shipping_address.state %}
+                                <tr>
+                                    <td class="p-2 font-medium">State</td>
+                                    <td class="p-2">{{ order.shipping_address.state }}</td>
+                                </tr>
+                            {% endif %}
+                            <tr>
+                                <td class="p-2 font-medium">Zip Code</td>
+                                <td class="p-2">{{ order.shipping_address.zip_code }}</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="flex flex-col justify-between h-fit w-fit gap-4 p-5 border-[3px] rounded-md border-gray-300">
+                        <h2 class="text-xl font-bold text-gray-900">
+                            Order Summary({{ order_items.count }})
+                        </h2>
+                        <div class="flex flex-col justify-between">
+                            <table class="w-full border-y  text-left text-sm">
+                                <tbody>
+                                {% for item in order_items %}
+                                    <tr>
+                                        <td colspan="2"
+                                            class="font-medium py-2 px-4  line-clamp-2 lg:line-clamp-1">{{ item.book.title }}
+
+                                        </td>
+                                        <td colspan="2" class="py-2 px-4 font-medium">{{ item.quantity }}</td>
+                                        <td colspan="2" class="py-2 px-4  text-right">Rs. {% if item.unit_price %}
+                                            {{ item.unit_price }}{% else %}0{% endif %}</td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                            <table class="w-full  text-left text-sm">
+                                <tbody>
+                                <tr>
+                                    <td class="p-2 font-medium">Subtotal</td>
+                                    <td class="p-2 text-right">Rs. {% if subtotal %} {{ subtotal }}{% else %}
+                                        0{% endif %}</td>
+                                </tr>
+
+
+                                <tr>
+                                    <td class="p-2 font-medium">Discount</td>
+                                    <td class="p-2 text-right">Rs.
+                                        {% if discount %}{{ discount }}{% else %}0{% endif %}</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2 font-medium">Shipping Cost</td>
+                                    <td class="p-2 text-right">Rs.
+                                        {% if shipping_cost %}{{ shipping_cost }}{% else %}0{% endif %}</td>
+                                </tr>
+                                {#                                <tr>#}
+                                {#                                    <td class="p-2 font-medium">Bookmarks</td>#}
+                                {#                                    <td class="p-2 text-right">Rs. 0</td>#}
+                                {#                                </tr>#}
+                                {#                                <tr>#}
+                                {#                                    <td class="p-2 font-medium">Gift Packaging</td>#}
+                                {#                                    <td class="p-2 text-right">Rs. 0</td>#}
+                                {#                                </tr>#}
+
+
+                                <!-- Total row -->
+                                <tr class="bg-gray-100 border-t border-dashed">
+                                    <td rowspan="2" class="p-4 text-lg font-bold ">
+                                        Total:<br> <span class="text-[13px] text-gray-400">(VAT INCLUDED)</span>
+                                    </td>
+                                    <td class="p-2 text-right">Rs. {% if total_price %} {{ total_price }}{% else %}
+                                        0{% endif %}</td>
+                                </tr>
+                                </tbody>
+                            </table>
+
+                        </div>
+                    </div>
+                </div>
+
+                <a href="{% url 'book_store' %}" class="flex gap-2 items-center justify-center hover:text-blue-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                         stroke-width="1.5" stroke="currentColor" class="size-4">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/>
+                    </svg>
+                    Continue Shopping
+                </a>
+            </div>
+
+        </div>
+    </div>
+
+{% endblock %}

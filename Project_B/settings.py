@@ -10,13 +10,14 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
-from pathlib import Path
 import os
+from pathlib import Path
+
+from celery.schedules import crontab
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -27,8 +28,7 @@ SECRET_KEY = 'django-insecure-eq%okkp^+6a%-5$-%10gcn$)jkhz-av2zx91-7+(m74ek1ecn-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -42,8 +42,12 @@ INSTALLED_APPS = [
     'src.books',
     'src.core',
     'src.users',
-     'tailwind',
-     'theme'
+    'src.orders',
+    'src.cart',
+    'src.shipping',
+    # 'src.users.apps.UsersConfig',
+    'tailwind',
+    'theme'
 ]
 AUTH_USER_MODEL = 'users.User'
 
@@ -59,8 +63,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'Project_B.middleware.PermissionMiddleware',
 ]
-
 
 if DEBUG:
     # Add django_browser_reload only in DEBUG mode
@@ -84,13 +88,13 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'src.cart.context_processors.cart_items_count',
             ],
         },
     },
 ]
 
 WSGI_APPLICATION = 'Project_B.wsgi.application'
-
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -117,7 +121,36 @@ DATABASES = {
     }
 }
 
+# smtp configurations
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv('host_email')
+EMAIL_HOST_PASSWORD = os.getenv('host_password')
+DEFAULT_FROM_EMAIL = os.getenv('host_email')
 
+# celery
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'  # Match your TIME_ZONE setting
+USER_EXPIRATION_HOURS = float(os.getenv("USER_EXPIRATION_HOURS", 24))
+
+# Schedule periodic tasks with Celery Beat
+CELERY_BEAT_SCHEDULE = {
+    'cleanup-expired-users': {
+        'task': 'src.users.task.cleanup_expired_users',
+        'schedule': crontab(hour=0, minute=0),  # Run daily at midnight UTC
+        # For testing: run every 10 seconds
+        # 'schedule': 10.0,  # seconds
+    },
+}
+
+# Site URL for activation links (use domain in production)
+SITE_URL = 'http://localhost:8000'  # Change to 'https://yourdomain.com' in prod
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
@@ -136,7 +169,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
@@ -148,28 +180,24 @@ USE_I18N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
-
 
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/' # URL prefix for static files
+STATIC_URL = '/static/'  # URL prefix for static files
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'Project_B/static')]  # Directory where your own static files are placed
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
 
 MEDIA_URL = '/media/'  # URL prefix to access media files
 MEDIA_ROOT = os.path.join(BASE_DIR, 'Project_B/media')  # Actual folder where uploaded files will be saved

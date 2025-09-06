@@ -1,0 +1,276 @@
+{% extends 'base/admin/admin_base.html' %}
+{% load permissions %}
+
+{% block title %}
+    {% block list_title %}Default List{% endblock %}
+{% endblock %}
+
+{% block content %}
+    <div class="flex flex-col h-full p-5 md:px-15 bg-blue-100 gap-4">
+        <div class="flex flex-col space-between justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900 mb-4">
+                    {% block list_heading %}Default Heading{% endblock %}
+                </h1>
+                <p class="italic text-gray-500">
+                    {% block list_description %}Default description.{% endblock %}
+                </p>
+            </div>
+
+            <div class="flex flex-col gap-4 md:flex-row md:justify-between md:items-center">
+                {% block search_and_filters %}
+                    <div class="flex gap-4 flex-col lg:flex-row">
+                        <form class="w-full md:w-[300px]">
+                            <label for="searchInput"
+                                   class="mb-2 text-sm font-medium text-gray-900 sr-only">Search</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                                    <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true"
+                                         xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                              stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>
+                                    </svg>
+                                </div>
+                                <input type="search" id="searchInput"
+                                       class="block w-full p-4 ps-10 text-[16px] text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
+                                       placeholder="{% block search_placeholder %}Search{% endblock %}" required/>
+                            </div>
+                        </form>
+
+                        <div class="flex flex-column flex-wrap gap-4 md:gap-20">
+                            <div class="flex flex-row  items-center gap-2 w-fit">
+                                <p>Sort by: </p>
+                                <form class="max-w-sm mx-auto" method="get">
+                                    <select id="sortBy" name="sort" onchange="this.form.submit()"
+                                            class="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg  focus:ring-blue-500 focus:border-blue-500 block w-fit p-2.5">
+
+                                        {% block sort_options %}
+                                            <option value="name_asc"
+                                                    {% if request.GET.sort == "name_asc" %}selected{% endif %}>
+                                                Name (A–Z)
+                                            </option>
+                                            <option value="name_desc"
+                                                    {% if request.GET.sort == "name_desc" %}selected{% endif %}>
+                                                Name (Z–A)
+                                            </option>
+                                            <option value="created_desc"
+                                                    {% if request.GET.sort == "created_desc" %}selected{% endif %}>
+                                                Created (Newest)
+                                            </option>
+                                            <option value="created_asc"
+                                                    {% if request.GET.sort == "created_asc" %}selected{% endif %}>
+                                                Created (Oldest)
+                                            </option>
+                                        {% endblock %}
+                                    </select>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                {% endblock %}
+                {% if not is_recycle_bin %}
+                    {% block add_button %}
+                        {#                    {% if add_perm and request.user|has_perm:add_perm %}#}
+
+                        <button class="w-fit h-fit bg-indigo-800 hover:bg-indigo-500 text-white font-bold py-2 px-4 rounded">
+                            <a href="{% block add_url %}#{% endblock %}">Add {% block entity_name %}
+                                Entity{% endblock %}</a>
+                        </button>
+                        {#                    {% endif %}#}
+                    {% endblock %}
+                {% endif %}
+
+            </div>
+        </div>
+        <div class="overflow-y-hidden rounded-lg shadow">
+            <table class="w-full">
+                <thead class="bg-gray-50 border-b-2 border-gray-200">
+                <tr>
+                    {% block table_headers %}
+                        <th class="min-w-48 p-3 text-sm font-semibold tracking-wide text-left">Default Header</th>
+                    {% endblock %}
+                    <th class="p-3 text-sm font-semibold tracking-wide text-left">Actions</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100" id="listTableBody">
+                {% block table_body %}
+                    <tr>
+                        <td colspan="{% block columns_count %}1{% endblock %}" class="text-center p-4 text-gray-500">
+                            No Rows Found
+                        </td>
+                    </tr>
+                {% endblock %}
+                </tbody>
+            </table>
+        </div>
+
+        {% block pagination %}
+            {% if paginated_items %}
+                <div class="w-full flex flex-wrap flex-column justify-between items-center">
+                    Page {{ paginated_items.number }} of {{ paginated_items.paginator.num_pages }}
+
+                    <div class="flex flex-column flex-wrap gap-4 md:gap-20">
+                        <div class="flex flex-row items-center gap-2 w-fit">
+                            <p>Show: </p>
+                            <form class="max-w-sm mx-auto" method="get">
+                                <select id="rowsPerPage" name="limit" onchange="this.form.submit()"
+                                        class="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-fit p-2.5">
+                                    <option value="10" {% if limit == 10 %}selected{% endif %}>10</option>
+                                    <option value="20" {% if limit == 20 %}selected{% endif %}>20</option>
+                                    <option value="30" {% if limit == 30 %}selected{% endif %}>30</option>
+                                    <option value="40" {% if limit == 40 %}selected{% endif %}>40</option>
+                                    <option value="50" {% if limit == 50 %}selected{% endif %}>50</option>
+                                </select>
+                            </form>
+                        </div>
+                        <div class="flex flex-column">
+                            <!-- First Page -->
+                            <div class="flex p-1 border border-gray-300 items-center">
+                                {% if paginated_items.has_previous %}
+                                    <a href="?page=1&limit={{ limit }}">
+                                {% else %}
+                                    <a class="pointer-event-none text-gray-300">
+                                {% endif %}
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                     stroke-width="1.5"
+                                     stroke="currentColor" class="size-6">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                          d="m18.75 4.5-7.5 7.5 7.5 7.5m-6-15L5.25 12l7.5 7.5"/>
+                                </svg>
+                                </a>
+                            </div>
+
+                            <!-- Previous Page -->
+                            <div class="flex p-1 border border-gray-300 items-center">
+                                {% if paginated_items.has_previous %}
+                                    <a href="?page={{ paginated_items.previous_page_number }}&limit={{ limit }}">
+                                {% else %}
+                                    <a class="pointer-event-none text-gray-300">
+                                {% endif %}
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                     stroke-width="1.5"
+                                     stroke="currentColor" class="size-6">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                          d="M15.75 19.5 8.25 12l7.5-7.5"/>
+                                </svg>
+                                </a>
+                            </div>
+
+                            <div class="flex py-1 px-3 border border-gray-300 items-center">
+                                {{ paginated_items.number }}
+                            </div>
+
+                            <!-- Next Page -->
+                            <div class="flex p-1 border border-gray-300 items-center">
+                                {% if paginated_items.has_next %}
+                                    <a href="?page={{ paginated_items.next_page_number }}&limit={{ limit }}">
+                                {% else %}
+                                    <a class="pointer-event-none text-gray-300">
+                                {% endif %}
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                     stroke-width="1.5"
+                                     stroke="currentColor" class="size-6">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/>
+                                </svg>
+                                </a>
+                            </div>
+
+                            <!-- Last Page -->
+                            <div class="flex p-1 border border-gray-300 items-center">
+                                {% if paginated_items.has_next %}
+                                    <a href="?page={{ paginated_items.paginator.num_pages }}&limit={{ limit }}">
+                                {% else %}
+                                    <a class="pointer-event-none text-gray-300">
+                                {% endif %}
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                     stroke-width="1.5"
+                                     stroke="currentColor" class="size-6">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                          d="m5.25 4.5 7.5 7.5-7.5 7.5m6-15 7.5 7.5-7.5 7.5"/>
+                                </svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        {% endblock %}
+
+        {% block modals %}
+            <!-- Default modal can be overridden by child templates -->
+        {% endblock %}
+
+    </div> <!-- closes .flex-col.space-between -->
+    {% block base_script %}
+        <script>
+            // Base search functionality
+            const searchInput = document.getElementById('searchInput');
+            const tableBody = document.getElementById('listTableBody');
+            const is_recycle_bin = {{ is_recycle_bin|yesno:"true,false"}}
+
+            // Debounce function to delay execution
+            function debounce(func, delay) {
+                let timeout;
+                return (...args) => {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func(...args), delay);
+                }
+            }
+
+            // This function should be implemented by child templates
+            function renderItems(items) {
+                console.warn('renderItems function should be implemented by child template');
+            }
+
+            const handleSearch = debounce(async () => {
+                const query = searchInput.value.trim();
+
+                try {
+                    const response = await axios.get(`{% block search_url %}
+                    /books/search/{% endblock %}?q=${encodeURIComponent(query)}&deleted=${is_recycle_bin ? '1' : '0'}`);
+                    renderItems(response.data.{% block response_data_key %}books{% endblock %});
+                } catch (error) {
+                    console.error('Search Failed', error);
+                }
+            }, 1000)
+
+            {#console.log("hello");#}
+            if (searchInput) {
+                searchInput.addEventListener('input', handleSearch);
+                {#console.log(searchInput);#}
+                searchInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                    }
+                });
+            }
+
+            // Base modal functions - can be overridden
+            function openModal(itemUUID, modalType = 'delete') {
+                {#console.log("clicked model", itemUUID, modalType);#}
+                const modal = document.getElementById(modalType + 'Modal');
+                const form = document.getElementById(modalType + 'Form');
+                if (form) {
+                    console.log('Item uuid:', itemUUID.trim());
+                    {#form.action = `{% block modal_form_action %}/admin-panel/${modalType}/{% endblock %}${itemUUID}`;#}
+                    form.action = `{% block modal_form_action %}{% endblock %}${itemUUID.trim()}/`;
+                }
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                }
+            }
+
+            function closeModal(modalType = 'delete') {
+                const modal = document.getElementById(modalType + 'Modal');
+                if (modal) {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                }
+            }
+        </script>
+    {% endblock %}
+{% endblock %}
+
+

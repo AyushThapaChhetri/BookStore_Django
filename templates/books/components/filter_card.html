@@ -1,0 +1,44 @@
+{% load static %}
+
+<div class="flex flex-col gap-4 border-1 border-gray-200 w-[95%] rounded-md p-2 bg-white">
+    <div class="flex flex-col gap-4 border-b-1 border-gray-300 p-4">
+
+        <p class="font-lexend text-lg font-medium">
+            Filter by price
+        </p>
+
+        {#        <div class="price_range_input">#}
+        {#            <div class="min">#}
+        {#                <p>min</p>#}
+        {#                <input type="number" class="min_price" value="1500">#}
+        {#            </div>#}
+        {#            <div class="max">#}
+        {#                <p>max</p>#}
+        {#                <input type="number" class="max_price" value="1500">#}
+        {#            </div>#}
+        {#        </div>#}
+
+        <div class="progress_bar">
+            <div class="bar"></div>
+        </div>
+        <div class="range_input">
+            <input type="range" class="min_range" value="0"
+                   min="0" max="{{ max_price_value }}"
+                   step="100">
+            <input type="range" class="max_range" value="{{ max_price_value }}"
+                   min="0" max="{{ max_price_value }}"
+                   step="100">
+        </div>
+        
+        <p class="font-lexend text-sm font-light">
+            <span class="font-light text-gray-400">Price:</span> Rs <span id="min_range_price">0</span> - Rs <span
+                id="max_range_price">40000</span>
+        </p>
+        <button id="filter_price_button" type="button" name="delete"
+                class="px-4 py-2 bg-sky-100 font-medium text-xs text-red-400 rounded hover:bg-gray-400 hover:text-blue-700">
+            FILTER
+        </button>
+    </div>
+
+
+</div>

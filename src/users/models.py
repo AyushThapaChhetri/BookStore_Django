@@ -16,12 +16,22 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
+    def create_staff(self,email,password=None,**extra_fields):
+        extra_fields.setdefault('is_staff',True)
+        extra_fields.setdefault('is_superuser',False)
+        if not extra_fields.get('is_staff'):
+            raise ValueError('Users must have is_staff=True')
+        if not extra_fields.get('is_superuser'):
+            raise ValueError('Users')
+        return self.create_user(email,password,**extra_fields)
+
     def create_superuser(self,email,password=None, **extra_fields):
+        # If 'is_staff' is already set, it will not overwrite it.
         extra_fields.setdefault('is_staff', True) #Can log into admin
         extra_fields.setdefault('is_superuser', True) #Has all permissions
-        if extra_fields.get('is_staff'):
+        if not extra_fields.get('is_staff'):
             raise ValueError('Superuser must have is_staff=True.')
-        if extra_fields.get('is_superuser'):
+        if not extra_fields.get('is_superuser'):
             raise ValueError('Superuser must have is_superuser=True.')
         return self.create_user(email,password,**extra_fields)
 
