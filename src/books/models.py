@@ -2,6 +2,8 @@ from decimal import ROUND_HALF_UP, Decimal
 
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
+from django.db.models import UniqueConstraint
+from django.db.models.functions import Lower
 
 from src.core.models import AbstractBaseModel
 
@@ -11,7 +13,7 @@ class Author(AbstractBaseModel):
     bio = models.TextField(blank=True, null=True)
     birth_date = models.DateField(null=True, blank=True)
     death_date = models.DateField(null=True, blank=True)
-    nationality = models.CharField(max_length=225, blank=True, null=True, db_index=True)
+    nationality = models.CharField(max_length=225, db_index=True)
     website = models.URLField(blank=True, null=True)
     profile_image = models.ImageField(upload_to='author_profiles', blank=True)
 
@@ -22,6 +24,14 @@ class Author(AbstractBaseModel):
         ordering = ['name']
         indexes = [
             models.Index(fields=['name', 'nationality']),  # fast composite lookup
+        ]
+        constraints = [
+            UniqueConstraint(
+                Lower('name'),
+                Lower('nationality'),
+
+                name='unique_author_name_nationality_ci'
+            )
         ]
 
 
@@ -38,6 +48,12 @@ class Publisher(AbstractBaseModel):
 
     class Meta:
         ordering = ['name']
+        constraints = [
+            UniqueConstraint(
+                Lower('name'),
+                name='unique_publisher_name_ci'
+            )
+        ]
 
 
 class Genre(AbstractBaseModel):
@@ -61,7 +77,7 @@ class Book(AbstractBaseModel):
     language = models.CharField(max_length=225, default='English', db_index=True)
     cover_image = models.ImageField(upload_to='book_covers', blank=True)
     isbn = models.CharField(max_length=13, unique=True, blank=True, null=True, db_index=True)
-    publication_date = models.DateField(null=True, blank=True, db_index=True)
+    publication_date = models.DateField(null=True)
     edition = models.CharField(max_length=50, blank=True, null=True)
 
     # Relationship for normalization
@@ -78,6 +94,12 @@ class Book(AbstractBaseModel):
         ordering = ['title']
         indexes = [
             models.Index(fields=['title', 'publication_date']),
+        ]
+        constraints = [
+            UniqueConstraint(
+                fields=['title', 'publication_date', 'publisher'],
+                name='unique_book_title_pubdate_publisher'
+            )
         ]
 
 
