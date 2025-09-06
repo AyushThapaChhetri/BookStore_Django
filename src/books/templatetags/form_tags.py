@@ -3,7 +3,7 @@
 from django import template
 from django.forms.widgets import (
     Textarea, Select, SelectMultiple,
-    FileInput, ClearableFileInput, HiddenInput, CheckboxInput
+    FileInput, ClearableFileInput, HiddenInput, CheckboxInput, DateInput
 )
 
 register = template.Library()
@@ -28,6 +28,8 @@ def widget_type(field):
         return 'hidden'
     elif isinstance(widget, CheckboxInput):
         return 'checkbox'
+    elif isinstance(widget, DateInput):
+        return 'date'
     else:
         return 'input'
 

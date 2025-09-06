@@ -77,7 +77,7 @@ class Book(AbstractBaseModel):
     language = models.CharField(max_length=225, default='English', db_index=True)
     cover_image = models.ImageField(upload_to='book_covers', blank=True)
     isbn = models.CharField(max_length=13, unique=True, blank=True, null=True, db_index=True)
-    publication_date = models.DateField(null=True)
+    publication_date = models.DateField(null=False, blank=False)
     edition = models.CharField(max_length=50, blank=True, null=True)
 
     # Relationship for normalization

@@ -1099,7 +1099,7 @@ class PublisherView(View):
 
         if request.headers.get("X-requested-with") == "XMLHttpRequest":
             html = render_to_string(
-                'publisher/components/publisher_form.html',
+                'author/components/author_form.html',
                 {'form': form, 'title': 'Publisher', 'form_type': 'publishers'},
                 request=request
             )
@@ -1145,7 +1145,7 @@ class PublisherView(View):
 
         if request.headers.get("X-requested-with") == "XMLHttpRequest":
             html = render_to_string(
-                'publisher/components/publisher_form.html',
+                'author/components/author_form.html',
                 {'form': form, 'title': 'Publisher', 'form_type': 'publishers'},
                 request=request
             )

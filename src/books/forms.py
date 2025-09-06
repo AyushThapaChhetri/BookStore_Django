@@ -123,7 +123,11 @@ class PublisherForm(forms.ModelForm):
         ]
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4}),
-            'address': forms.Textarea(attrs={'rows': 3}),
+            # 'address': forms.Textarea(attrs={'rows': 3}),
+            'address': forms.TextInput(attrs={
+                'placeholder': 'Address',
+            }),
+
         }
 
     def clean_name(self):
