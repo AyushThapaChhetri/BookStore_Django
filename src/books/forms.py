@@ -200,7 +200,12 @@ class BookForm(forms.ModelForm):
             'cover_image': forms.ClearableFileInput(),
             'authors': forms.SelectMultiple(),
             'genres': forms.SelectMultiple(),
-            'publication_date': forms.DateInput(attrs={'type': 'date'}),
+            # 'publication_date': forms.DateInput(attrs={'type': 'date'}),
+            'publication_date': forms.DateInput(
+                attrs={'type': 'date'},
+                format='%Y-%m-%d'
+            ),
+
         }
 
     def clean_title(self):
@@ -278,6 +283,28 @@ class BookForm(forms.ModelForm):
             raise ValidationError("Publication date cannot be in the future.")
 
         return pub_date
+
+    def clean(self):
+        cleaned_data = super().clean()
+        title = cleaned_data.get('title')
+        publication_date = cleaned_data.get('publication_date')
+        publisher = cleaned_data.get('publisher')
+
+        if title and publication_date and publisher:
+            qs = Book.objects.filter(
+                title__iexact=title,
+                publication_date=publication_date,
+                publisher=publisher,
+            )
+            # If you’re editing an existing Book → self.instance.pk is the primary key of that Book.,updating a book, you don’t want Django to think your current record is a “duplicate of itself”.
+            if self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+
+            # Returns True if there’s at least one row matching.
+            if qs.exists():
+                self.add_error('title', 'A book with this Title, Publication Date, and Publisher already exists.')
+
+        return cleaned_data
 
 
 class StockForm(forms.ModelForm):

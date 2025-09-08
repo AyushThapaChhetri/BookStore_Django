@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block content %}
-    <div class="flex flex-col grow items-center justify-between md:p-10 bg-gray-100 gap-4  w-full">
+    <div class="flex flex-col grow  items-center justify-between p-4 md:p-10 bg-gray-100 gap-4  w-full">
         {#        <div class="flex flex-row flex-wrap bg-yellow-500 w-full h-fit border-2 border-gray-800 gap-2 ">#}
         <div class="flex flex-col w-full gap-4 h-full max-w-[1536px]">
             <div class="w-full">
@@ -29,42 +29,108 @@
                 {#                </form>#}
             </div>
             <div class="flex grow ">
-                <div class="w-[30%]">
-                    {% include 'books/components/filter_card.html' with min_price_value=min_price_value max_price_value=max_price_value %}
+                <div class="filter-container w-[30%] md:block hidden">
+                    {% include 'books/components/filter_card.html' with min_price_value=min_price_value max_price_value=max_price_value  prefix="notDrawer" %}
                 </div>
                 <div class="flex flex-col  gap-4 w-full  ">
                     <div class="flex justify-between">
-                        <h1 class="font-lexend text-3xl font-medium">
-                            Store
-                        </h1>
-                        <form class="max-w-sm" method="get">
-                            <select id="sortBy" name="sort" onchange="this.form.submit()"
-                                    class="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg  focus:ring-blue-500 focus:border-blue-500 block w-fit p-2.5">
+                        <div class="flex flex-col gap-2">
+                            <h1 class="font-lexend text-3xl font-medium">
+                                Store
+                            </h1>
+                            <!-- drawer init and toggle -->
+                            <div class="text-center md:hidden block">
+                                <button class="flex items-center gap-2 text-gray-800 hover:text-white  hover:bg-gray-300
+                                focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-2 py-2.5 mb-2"
+                                        type="button" data-drawer-target="drawer-example"
+                                        data-drawer-show="drawer-example" aria-controls="drawer-example">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                         stroke-width="1.5" stroke="currentColor" class="size-6">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                              d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/>
+                                    </svg>
 
-                                <option value="price_asc" {% if request.GET.sort == "price_asc" %}selected{% endif %}>
-                                    Price (Low → High)
-                                </option>
-                                <option value="price_desc" {% if request.GET.sort == "price_desc" %}selected{% endif %}>
-                                    Price (High → Low)
-                                </option>
-                                <option value="quantity_desc"
-                                        {% if request.GET.sort == "quantity_desc" %}selected{% endif %}>
-                                    Stock (High → Low)
-                                </option>
-                                <option value="quantity_asc"
-                                        {% if request.GET.sort == "quantity_asc" %}selected{% endif %}>
-                                    Stock (Low → High)
-                                </option>
-                                <option value="created_desc"
-                                        {% if request.GET.sort == "created_desc" %}selected{% endif %}>
-                                    Created (Newest)
-                                </option>
-                                <option value="created_asc"
-                                        {% if request.GET.sort == "created_asc" %}selected{% endif %}>
-                                    Created (Oldest)
-                                </option>
-                            </select>
-                        </form>
+                                    Show drawer
+                                </button>
+                            </div>
+
+                            <!-- drawer component -->
+                            <div id="drawer-example"
+                                 class="fixed top-0 left-0 z-40 h-screen p-4 overflow-y-auto transition-transform -translate-x-full bg-white w-80 dark:bg-gray-100"
+                                 tabindex="-1" aria-labelledby="drawer-label">
+                                <h5 id="drawer-label "
+                                    class="inline-flex  items-center mb-4 text-base font-semibold
+                                    text-gray-500 dark:text-gray-600 gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                         stroke-width="1.5" stroke="currentColor" class="size-6">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                              d="M6 13.5V3.75m0 9.75a1.5 1.5 0 0 1 0 3m0-3a1.5 1.5 0 0 0 0 3m0 3.75V16.5m12-3V3.75m0 9.75a1.5 1.5 0 0 1 0 3m0-3a1.5 1.5 0 0 0 0 3m0 3.75V16.5m-6-9V3.75m0 3.75a1.5 1.5 0 0 1 0 3m0-3a1.5 1.5 0 0 0 0 3m0 9.75V10.5"/>
+                                    </svg>
+
+                                    Filter
+                                </h5>
+                                <button type="button" data-drawer-hide="drawer-example" aria-controls="drawer-example"
+                                        class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 absolute top-2.5 end-2.5 flex items-center justify-center dark:hover:bg-gray-600 dark:hover:text-white">
+                                    <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                                         fill="none" viewBox="0 0 14 14">
+                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                              stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                                    </svg>
+                                    <span class="sr-only">Close menu</span>
+                                </button>
+
+                                {#                                <p class="mb-6 text-sm text-gray-500 dark:text-gray-400">Filter by price</p>#}
+                                <div class="filter-container">
+
+                                    {% include 'books/components/filter_card.html' with min_price_value=min_price_value max_price_value=max_price_value prefix="drawer" %}
+
+                                    {#                                    <a href="#"#}
+                                    {#                                       class="px-4 py-2 text-sm font-medium text-center text-gray-900 bg-white border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">Learn#}
+                                    {#                                        more</a>#}
+                                    {#                                    <a href="#"#}
+                                    {#                                       class="inline-flex items-center px-4 py-2 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">Get#}
+                                    {#                                        access#}
+                                    {#                                        <svg class="rtl:rotate-180 w-3.5 h-3.5 ms-2" aria-hidden="true"#}
+                                    {#                                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">#}
+                                    {#                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"#}
+                                    {#                                                  stroke-width="2" d="M1 5h12m0 0L9 1m4 4L9 9"/>#}
+                                    {#                                        </svg>#}
+                                    {#                                    </a>#}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <form class="max-w-sm" method="get">
+                                <select id="sortBy" name="sort" onchange="this.form.submit()"
+                                        class="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg  focus:ring-blue-500 focus:border-blue-500 block w-fit p-2.5">
+
+                                    <option value="price_asc"
+                                            {% if request.GET.sort == "price_asc" %}selected{% endif %}>
+                                        Price (Low → High)
+                                    </option>
+                                    <option value="price_desc"
+                                            {% if request.GET.sort == "price_desc" %}selected{% endif %}>
+                                        Price (High → Low)
+                                    </option>
+                                    <option value="quantity_desc"
+                                            {% if request.GET.sort == "quantity_desc" %}selected{% endif %}>
+                                        Stock (High → Low)
+                                    </option>
+                                    <option value="quantity_asc"
+                                            {% if request.GET.sort == "quantity_asc" %}selected{% endif %}>
+                                        Stock (Low → High)
+                                    </option>
+                                    <option value="created_desc"
+                                            {% if request.GET.sort == "created_desc" %}selected{% endif %}>
+                                        Created (Newest)
+                                    </option>
+                                    <option value="created_asc"
+                                            {% if request.GET.sort == "created_asc" %}selected{% endif %}>
+                                        Created (Oldest)
+                                    </option>
+                                </select>
+                            </form>
+                        </div>
                     </div>
                     <div id="store-book-items"
                          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4   min-h-[500px]">
@@ -168,13 +234,13 @@
                         button.textContent = "Added";
                         setTimeout(() => {
                             button.outerHTML = `<a href="{% url 'book_cart' %}"
-                        class="bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm">
+                        class="bg-blue-700 text-white text-center px-5 py-2.5 rounded-lg text-sm">
                         View Cart
                     </a>`;
                         }, 1500);
                     } else {
                         button.outerHTML = `<a href="{% url 'book_cart' %}"
-                    class="bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm">
+                    class="bg-blue-700 text-white text-center px-5 py-2.5 rounded-lg text-sm">
                     View Cart
                 </a>`;
                     }
@@ -210,70 +276,143 @@
             }
         });
 
-
         document.addEventListener('DOMContentLoaded', () => {
-            let min_range_price = document.getElementById('min_range_price');
-            let max_range_price = document.getElementById('max_range_price');
+            // Select both filter containers (drawer + notDrawer)
+            const filterContainers = document.querySelectorAll('.filter-container');
 
-            let range_input = document.querySelectorAll('.range_input input');
-            let bar = document.querySelector('.bar');
-            const gap_number = 500;
+            // Loop through each filter block separately
+            filterContainers.forEach(container => {
+                // Get elements inside this container only (avoids conflicts)
+                let min_range_price = container.querySelector('.min_range_price');
+                let max_range_price = container.querySelector('.max_range_price');
+                let range_input = container.querySelectorAll('.range_input input');
+                let bar = container.querySelector('.bar');
+                const gap_number = 500;
 
-            function updateBar() {
-                let min_val = parseInt(range_input[0].value);
-                let max_val = parseInt(range_input[1].value);
+                function updateBar(event) {
+                    let min_val = parseInt(range_input[0].value);
+                    let max_val = parseInt(range_input[1].value);
 
-                // Ensure gap
-                if (max_val - min_val < gap_number) {
-                    if (event.target.classList.contains('min_range')) {
-                        range_input[0].value = max_val - gap_number;
-                        min_val = max_val - gap_number;
-                    } else {
-                        range_input[1].value = min_val + gap_number;
-                        max_val = min_val + gap_number;
+                    // Ensure minimum gap
+                    if (max_val - min_val < gap_number) {
+                        if (event && event.target.classList.contains('min_range')) {
+                            range_input[0].value = max_val - gap_number;
+                            min_val = max_val - gap_number;
+                        } else {
+                            range_input[1].value = min_val + gap_number;
+                            max_val = min_val + gap_number;
+                        }
                     }
+
+                    // Update displayed prices
+                    min_range_price.innerText = min_val;
+                    max_range_price.innerText = max_val;
+
+                    // Update red progress bar
+                    const leftPercent = (min_val / range_input[0].max) * 100;
+                    const rightPercent = (max_val / range_input[1].max) * 100;
+
+                    bar.style.left = leftPercent + '%';
+                    bar.style.width = (rightPercent - leftPercent) + '%';
                 }
 
-                // Update displayed prices
-                min_range_price.innerText = min_val;
-                max_range_price.innerText = max_val;
+                // Attach event listeners for this filter set
+                range_input.forEach(input => input.addEventListener('input', updateBar));
 
-                // Update red bar
-                const leftPercent = (min_val / range_input[0].max) * 100;
-                const rightPercent = (max_val / range_input[1].max) * 100;
+                // Initialize bar when page loads
+                updateBar();
+            });
 
-                //styling
-                bar.style.left = leftPercent + '%';   //where the red bar should start.
-                bar.style.width = (rightPercent - leftPercent) + '%';   //the distance between min and max (so only the middle lights up red).
-            }
+            // FILTER button — apply to whichever filter is currently visible
+            document.querySelectorAll('.filter_price_button').forEach(button => {
+                button.addEventListener('click', async (e) => {
+                    const container = e.target.closest('.filter-container'); // find which block the button belongs to
+                    const minVal = container.querySelector(".min_range").value;
+                    const maxVal = container.querySelector(".max_range").value;
 
-            range_input.forEach(input => input.addEventListener('input', updateBar));
+                    try {
+                        const response = await axios.get("{% url 'book_store' %}", {
+                            params: {
+                                min_price: minVal,
+                                max_price: maxVal,
+                            },
+                            headers: {"X-Requested-With": "XMLHttpRequest"}
+                        });
 
-            // Initialize
-            updateBar();
+                        // Update DOM with returned data
+                        storeContent.innerHTML = response.data.cards;
+                        paginationContent.innerHTML = response.data.pagination;
+                    } catch (error) {
+                        console.error("Error fetching filtered books:", error);
+                    }
+                });
+            });
         });
 
-        const filter_price_button = document.getElementById('filter_price_button');
-        filter_price_button.addEventListener('click', async () => {
-            const minVal = document.querySelector(".min_range").value;
-            const maxVal = document.querySelector(".max_range").value;
-            try {
-                const response = await axios.get("{% url 'book_store' %}", {
-                    params: {
-                        min_price: minVal,
-                        max_price: maxVal,
-                    },
-                    headers: {"X-Requested-With": "XMLHttpRequest"}
-                })
 
-                // Update DOM with returned data
+        {#document.addEventListener('DOMContentLoaded', () => {#}
+        {#    let min_range_price = document.getElementById('min_range_price');#}
+        {#    let max_range_price = document.getElementById('max_range_price');#}
+        {##}
+        {#    let range_input = document.querySelectorAll('.range_input input');#}
+        {#    let bar = document.querySelector('.bar');#}
+        {#    const gap_number = 500;#}
+        {##}
+        {#    function updateBar() {#}
+        {#        let min_val = parseInt(range_input[0].value);#}
+        {#        let max_val = parseInt(range_input[1].value);#}
+        {##}
+        {#        // Ensure gap#}
+        {#        if (max_val - min_val < gap_number) {#}
+        {#            if (event.target.classList.contains('min_range')) {#}
+        {#                range_input[0].value = max_val - gap_number;#}
+        {#                min_val = max_val - gap_number;#}
+        {#            } else {#}
+        {#                range_input[1].value = min_val + gap_number;#}
+        {#                max_val = min_val + gap_number;#}
+        {#            }#}
+        {#        }#}
+        {##}
+        {#        // Update displayed prices#}
+        {#        min_range_price.innerText = min_val;#}
+        {#        max_range_price.innerText = max_val;#}
+        {##}
+        {#        // Update red bar#}
+        {#        const leftPercent = (min_val / range_input[0].max) * 100;#}
+        {#        const rightPercent = (max_val / range_input[1].max) * 100;#}
+        {##}
+        {#        //styling#}
+        {#        bar.style.left = leftPercent + '%';   //where the red bar should start.#}
+        {#        bar.style.width = (rightPercent - leftPercent) + '%';   //the distance between min and max (so only the middle lights up red).#}
+        {#    }#}
+        {##}
+        {#    range_input.forEach(input => input.addEventListener('input', updateBar));#}
+        {##}
+        {#    // Initialize#}
+        {#    updateBar();#}
 
-                storeContent.innerHTML = response.data.cards;
-                paginationContent.innerHTML = response.data.pagination;
-            } catch (error) {
-                console.error("Error fetching filtered books:", error);
-            }
-        })
+        {##}
+        {#const filter_price_button = document.getElementById('filter_price_button');#}
+        {#filter_price_button.addEventListener('click', async () => {#}
+        {#    const minVal = document.querySelector(".min_range").value;#}
+        {#    const maxVal = document.querySelector(".max_range").value;#}
+        {#    try {#}
+        {#        const response = await axios.get("{% url 'book_store' %}", {#}
+        {#            params: {#}
+        {#                min_price: minVal,#}
+        {#                max_price: maxVal,#}
+        {#            },#}
+        {#            headers: {"X-Requested-With": "XMLHttpRequest"}#}
+        {#        })#}
+        {##}
+        {#        // Update DOM with returned data#}
+        {##}
+        {#        storeContent.innerHTML = response.data.cards;#}
+        {#        paginationContent.innerHTML = response.data.pagination;#}
+        {#    } catch (error) {#}
+        {#        console.error("Error fetching filtered books:", error);#}
+        {#    }#}
+
 
     </script>
 {% endblock %}

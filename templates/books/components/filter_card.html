@@ -25,17 +25,24 @@
             <input type="range" class="min_range" value="0"
                    min="0" max="{{ max_price_value }}"
                    step="100">
+
             <input type="range" class="max_range" value="{{ max_price_value }}"
                    min="0" max="{{ max_price_value }}"
                    step="100">
         </div>
-        
+
         <p class="font-lexend text-sm font-light">
-            <span class="font-light text-gray-400">Price:</span> Rs <span id="min_range_price">0</span> - Rs <span
-                id="max_range_price">40000</span>
+            {#            <span class="font-light text-gray-400">Price:</span> Rs <span id="min_range_price">0</span> -#}
+            {#            Rs <span#}
+            {#                id="max_range_price">40000</span>#}
+            <span class="font-light text-gray-400">Price:</span> Rs <span class="min_range_price">0</span> -
+            Rs <span
+                class="max_range_price">40000</span>
         </p>
-        <button id="filter_price_button" type="button" name="delete"
-                class="px-4 py-2 bg-sky-100 font-medium text-xs text-red-400 rounded hover:bg-gray-400 hover:text-blue-700">
+        <button
+                {#                id="filter_price_button" #}
+                type="button" name="delete"
+                class="filter_price_button px-4 py-2 bg-sky-100 font-medium text-xs text-red-400 rounded hover:bg-gray-400 hover:text-blue-700">
             FILTER
         </button>
     </div>

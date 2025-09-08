@@ -648,6 +648,7 @@ class BookCheckoutPayment(View):
     def post(self, request):
         payment_method = request.POST.get('payment_method')
         if not payment_method:
+            messages.error(request, 'Please Select Payment Options')
             return redirect('book_payment')
 
         # Get card

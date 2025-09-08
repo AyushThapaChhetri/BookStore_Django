@@ -60,11 +60,17 @@ class UserCreateView(View):
 
 def activate(request, uidb64, token):
     token_generator = AccountActivationTokenGenerator()
+    actual_user = request.user
     try:
         uid = force_str(urlsafe_base64_decode(uidb64))
         user = User.objects.get(pk=uid)
         print("UID:", uid, "Token:", token)
         print("User:", user)
+        if actual_user.is_authenticated:
+            print('User is already authenticated.', user)
+            messages.error(request, 'Account is logged in. Please Logout First!')
+            return redirect('home')
+
     except (TypeError, ValueError, OverflowError, User.DoesNotExist):
         user = None
 
@@ -103,21 +109,59 @@ class UserLoginView(View):
         if form.is_valid():
             email = form.cleaned_data.get('email')
             password = form.cleaned_data.get('password')
-            user = authenticate(request, email=email, password=password)
-            if user is not None:
-                login(request, user)
-                messages.success(request, "Login successful!")
-                return redirect('home')
+            try:
+                user_obj = User.objects.get(email=email)
+            except User.DoesNotExist:
+                user_obj = None
+
+                # Check if user exists and has usable password
+            if user_obj:
+                if not user_obj.has_usable_password() and not user_obj.is_active:
+                    messages.error(request, 'Account is not registered yet.Please check your email.')
+                    return render(request, 'users/login_users_form.html', {'form': form})
+
+                # Now authenticate only if password is usable
+                user = authenticate(request, email=email, password=password)
+                if user:
+                    login(request, user)
+                    messages.success(request, "Login successful!")
+                    return redirect('home')
+                else:
+                    messages.error(request, "Invalid email or password.")
+                    return render(request, 'users/login_users_form.html', {'form': form})
             else:
                 messages.error(request, "Invalid email or password.")
-                # return redirect('login_view')
                 return render(request, 'users/login_users_form.html', {'form': form})
-                # form.add_error(None,'Invalid email or password')
-        print(form.errors)
-        # return render(request, 'users/login_users_form.html', {'form': form})
+
+                # If form invalid
         messages.error(request, 'Please correct the form')
-        # return redirect('login_view')
         return render(request, 'users/login_users_form.html', {'form': form})
+        #     try:
+        #         print('h1')
+        #         inactiveuser_detail = User.objects.get(email=email)
+        #         print('h2')
+        #         if not inactiveuser_detail.has_usable_password() and not inactiveuser_detail.is_active:
+        #             print('h3')
+        #             messages.error(request, 'Account is not Registered yet, Please Check your Email')
+        #             print('h4')
+        #     except User.DoesNotExist:
+        #         user_obj = None
+        #
+        #     user = authenticate(request, email=email, password=password)
+        #     if user is not None:
+        #         login(request, user)
+        #         messages.success(request, "Login successful!")
+        #         return redirect('home')
+        #     else:
+        #         messages.error(request, "Invalid email or password.")
+        #
+        #         return render(request, 'users/login_users_form.html', {'form': form})
+        #
+        # print(form.errors)
+        #
+        # messages.error(request, 'Please correct the form')
+        #
+        # return render(request, 'users/login_users_form.html', {'form': form})
 
 
 class UserLogoutView(View):

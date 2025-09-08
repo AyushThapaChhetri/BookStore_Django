@@ -138,7 +138,9 @@
                                 type="date"
                                 name="{{ field.html_name }}"
                                 id="{{ field.id_for_label }}"
-                                value="{{ field.value|default_if_none:''|date:'Y-m-d' }}"
+
+                                value="{{ field.value|date_input_value }}"
+                                {#                                value="{{ field.value|default_if_none:''|date:'Y-m-d' }}"#}
                                 class="block py-2.5 px-0 w-full text-[16px] text-gray-900 bg-transparent border-0 border-b-2
                {% if field.errors %}border-red-500{% else %}border-gray-300{% endif %}
                appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"

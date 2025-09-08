@@ -73,9 +73,15 @@
                     {% block add_button %}
                         {#                    {% if add_perm and request.user|has_perm:add_perm %}#}
 
-                        <button class="w-fit h-fit bg-indigo-800 hover:bg-indigo-500 text-white font-bold py-2 px-4 rounded">
-                            <a href="{% block add_url %}#{% endblock %}">Add {% block entity_name %}
-                                Entity{% endblock %}</a>
+                        <button
+                                type="button"
+                                class="w-fit h-fit bg-indigo-800 hover:bg-indigo-500 text-white font-bold py-2 px-4 rounded"
+                                onclick="window.location.href='{% block add_url %}#{% endblock %}'"
+                        >
+                            {#                            <a href="{% block add_url %}#{% endblock %}">#}
+                            Add {% block entity_name %}
+                            Entity{% endblock %}
+                            {#                            </a>#}
                         </button>
                         {#                    {% endif %}#}
                     {% endblock %}

@@ -61,9 +61,10 @@ class UserForm(forms.ModelForm):
         value = not_none_or_number(value)
         if not value:
             raise forms.ValidationError("Please enter a first name.")
-        if len(value) < 3:
-            raise forms.ValidationError("First name must be at least 3 characters long.")
-
+        if not re.fullmatch(r"^[A-Za-zÀ-ÖØ-öø-ÿ' ]+$", value):
+            raise forms.ValidationError("First name may only contain letters, spaces, and apostrophes.")
+        if len(value) < 2 or len(value) > 100:
+            raise forms.ValidationError("First name must be between 2 and 100 characters long.")
         return value
 
     def clean_last_name(self):
@@ -72,8 +73,10 @@ class UserForm(forms.ModelForm):
         value = not_none_or_number(value)
         if not value:
             raise forms.ValidationError("Please enter a last name.")
-        if len(value) < 3:
-            raise forms.ValidationError("Last name must be at least 3 characters long.")
+        if not re.fullmatch(r"^[A-Za-zÀ-ÖØ-öø-ÿ']+$", value):
+            raise forms.ValidationError("Last name may only contain letters and apostrophes (no spaces).")
+        if len(value) < 2 or len(value) > 50:
+            raise forms.ValidationError("Last name must be between 2 and 50 characters long.")
         return value
 
     def clean_email(self):
@@ -82,6 +85,8 @@ class UserForm(forms.ModelForm):
         value = not_none_or_number(value)
         if not value:
             raise forms.ValidationError("Please enter a email.")
+        if not re.fullmatch(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$", value):
+            raise forms.ValidationError("Enter a valid email address.")
         return value
 
     def clean_date_of_birth(self):

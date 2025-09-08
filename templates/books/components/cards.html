@@ -10,7 +10,7 @@
 
 {#         hover:scale-105  hover:z-10#}
          group-hover:absolute group-hover:top-0 group-hover:left-0 group-hover:right-0
-           group-hover:min-h-[550px] group-hover:z-50
+           group-hover:min-h-fit group-hover:z-50
 
 "
 
@@ -103,6 +103,16 @@
                 >
                     {% if book.stock.stock_quantity > 0 %}Add to cart{% else %}Sold Out{% endif %}
                 </button>
+                <div class="group-hover:block hidden flex gap-2 items-center ">
+                    {% if book.publisher %}
+                        <span class="font-lexend text-md font-bold text-gray-800">Publisher: <span
+                                class="font-lexend text-md font-light text-gray-400">{{ book.publisher }}</span></span>
+
+                    {% endif %}
+
+
+                </div>
+
             </div>
         </div>
     </div>

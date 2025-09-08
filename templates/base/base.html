@@ -24,7 +24,7 @@
         {% for message in messages %}
             {% if message.tags == "success" %}
                 <div id="toast-success"
-                     class="flex absolute top-20 right-1 lg:right-20 lg:top-20 items-center w-full max-w-xs p-4 mb-4 text-gray-500 bg-white rounded-lg shadow-sm dark:text-gray-400 dark:bg-gray-800"
+                     class="flex absolute z-50  top-20 right-1 lg:right-20 lg:top-20 items-center w-full max-w-xs p-4 mb-4 text-gray-500 bg-white rounded-lg shadow-sm dark:text-gray-400 dark:bg-gray-800"
                      role="alert">
                     <div class="inline-flex items-center justify-center shrink-0 w-8 h-8 text-green-500 bg-green-100 rounded-lg dark:bg-green-800 dark:text-green-200">
                         <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
@@ -34,7 +34,7 @@
                         </svg>
                         <span class="sr-only">Check icon</span>
                     </div>
-                    <div class="ms-3 text-sm font-normal">Hello {{ message }}</div>
+                    <div class="ms-3 text-sm font-normal p-2">{{ message }}</div>
                     <button type="button"
                             class="ms-auto -mx-1.5 -my-1.5 bg-white text-gray-400 hover:text-gray-900 rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 hover:bg-gray-100 inline-flex items-center justify-center h-8 w-8 dark:text-gray-500 dark:hover:text-white dark:bg-gray-800 dark:hover:bg-gray-700"
                             data-dismiss-target="#toast-success" aria-label="Close">
@@ -49,7 +49,7 @@
                 </div>
             {% elif message.tags == "error" %}
                 <div id="toast-danger"
-                     class="flex absolute top-20 right-1 lg:right-20 lg:top-20 items-center w-full max-w-xs p-4 mb-4 text-gray-500 bg-white rounded-lg shadow-sm dark:text-gray-400 dark:bg-gray-800"
+                     class="flex absolute z-50  top-20 right-1 lg:right-20 lg:top-20 items-center w-full max-w-xs p-4 mb-4 text-gray-500 bg-white rounded-lg shadow-sm dark:text-gray-400 dark:bg-gray-800"
                      role="alert">
                     <div class="inline-flex items-center justify-center shrink-0 w-8 h-8 text-red-500 bg-red-100 rounded-lg dark:bg-red-800 dark:text-red-200">
                         <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
@@ -59,7 +59,7 @@
                         </svg>
                         <span class="sr-only">Error icon</span>
                     </div>
-                    <div class="ms-3 text-sm font-normal">{{ message }}</div>
+                    <div class="ms-3 text-sm font-normal p-2">{{ message }}</div>
                     <button type="button"
                             class="ms-auto -mx-1.5 -my-1.5 bg-white text-gray-400 hover:text-gray-900 rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 hover:bg-gray-100 inline-flex items-center justify-center h-8 w-8 dark:text-gray-500 dark:hover:text-white dark:bg-gray-800 dark:hover:bg-gray-700"
                             data-dismiss-target="#toast-danger" aria-label="Close">
@@ -74,7 +74,7 @@
                 </div>
             {% elif message.tags == "warning" %}
                 <div id="toast-warning"
-                     class="flex absolute top-20 right-1 lg:right-20 lg:top-20 items-center w-full max-w-xs p-4 text-gray-500 bg-white rounded-lg shadow-sm dark:text-gray-400 dark:bg-gray-800"
+                     class="flex absolute z-50  top-20 right-1 lg:right-20 lg:top-20 items-center w-full max-w-xs p-4 text-gray-500 bg-white rounded-lg shadow-sm dark:text-gray-400 dark:bg-gray-800"
                      role="alert">
                     <div class="inline-flex items-center justify-center shrink-0 w-8 h-8 text-orange-500 bg-orange-100 rounded-lg dark:bg-orange-700 dark:text-orange-200">
                         <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
@@ -83,7 +83,7 @@
                         </svg>
                         <span class="sr-only">Warning icon</span>
                     </div>
-                    <div class="ms-3 text-sm font-normal">{{ message }}</div>
+                    <div class="ms-3 text-sm font-normal p-2">{{ message }}</div>
                     <button type="button"
                             class="ms-auto -mx-1.5 -my-1.5 bg-white text-gray-400 hover:text-gray-900 rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 hover:bg-gray-100 inline-flex items-center justify-center h-8 w-8 dark:text-gray-500 dark:hover:text-white dark:bg-gray-800 dark:hover:bg-gray-700"
                             data-dismiss-target="#toast-warning" aria-label="Close">
@@ -385,6 +385,8 @@
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script src="{% static 'cart/js/helpers.js' %}"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>
+<script src="{% static 'core/js/prevent-multi-form-submit.js' %}"></script>
+<script src="{% static 'core/js/toast-timeout.js' %}"></script>
 <script>
     function openLogoutModal() {
         document.getElementById("logoutModal").classList.remove("hidden");
@@ -394,26 +396,7 @@
         document.getElementById("logoutModal").classList.add("hidden");
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        document.querySelectorAll('form').forEach(form => {
-            const submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
-            if (!submitBtn) return;
 
-            form.addEventListener('submit', () => {
-                submitBtn.disabled = true;
-                submitBtn.innerText = 'Submitting...';
-            });
-        });
-    });
-    document.addEventListener("DOMContentLoaded", () => {
-        const toasts = document.querySelectorAll("#toast-success, #toast-danger,#toast-warning");
-        toasts.forEach((toast) => {
-
-            setTimeout(() => {
-                toast.remove();
-            }, 3000);
-        });
-    });
 </script>
 {% block extra_js %}{% endblock %}
 

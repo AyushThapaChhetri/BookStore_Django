@@ -44,7 +44,7 @@
                                 <tr>
                                     <td class="p-2 font-medium" colspan="3">Sub Total</td>
                                     <td id="sub-total-shopping_cart" class="p-2 text-right" colspan="1">
-                                        Rs {{ total_price|floatformat:"-2" }}</td>
+                                        Rs. {{ total_price|floatformat:"-2" }}</td>
                                 </tr>
                                 <tr>
 
@@ -120,7 +120,7 @@
                     // Format numbers (2 decimals if not whole number)
                     const formatMoney = (val) => {
                         let num = parseFloat(val) || 0; // convert string → number
-                        return "Rs " + (num % 1 === 0 ? num : num.toFixed(2));
+                        return "Rs. " + (num % 1 === 0 ? num : num.toFixed(2));
                     };
 
                     subtotal.innerHTML = formatMoney(itemSubtotal);
