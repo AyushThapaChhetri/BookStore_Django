@@ -1,13 +1,12 @@
 import json
 from decimal import Decimal
-from math import ceil, floor
 from uuid import UUID
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models import Q, Min, Max, F
+from django.db.models import Q, F
 from django.forms.models import model_to_dict
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -23,6 +22,7 @@ from Project_B.utils import applying_sorting, ALLOWED_SORTS
 from src.books.forms import BookForm, AuthorForm, GenreForm, PublisherForm, StockForm
 from src.books.models import Book, Stock, Author, Publisher, Genre
 from src.books.pagination import paginate_queryset
+from src.books.utils import searchfilter_bookStore, search_query
 from src.cart.models import CartItem, Cart
 from src.cart.utils import calculate_cart_totals, round_decimal
 from src.orders.models import Order, OrderItem
@@ -42,12 +42,6 @@ def hello(request):
 #     return (Book.objects.filter(Q(title__icontains=query) | Q(authors__name__icontains=query) | Q(
 #         publisher__name__icontains=query)).select_related('publisher', 'stock').prefetch_related('authors',
 #                                                                                                  'genres').distinct())
-
-def search_query(query, manager=Book.objects):
-    return manager.filter(
-        Q(title__icontains=query) | Q(authors__name__icontains=query) | Q(
-            publisher__name__icontains=query)).select_related('publisher', 'stock').prefetch_related('authors',
-                                                                                                     'genres').distinct()
 
 
 def search_books(request):
@@ -348,7 +342,7 @@ class BookListView(View):
         #     print(key, ' : ', value)
         # author = Author.objects.filter(books__in=books)
 
-        books = applying_sorting(books, request, ALLOWED_SORTS["book"])
+        books = applying_sorting(books, request=request, allowed_sorts=ALLOWED_SORTS["book"])
 
         paginated_books, limit = paginate_queryset(request, books, default_limit=10)
 
@@ -365,7 +359,7 @@ class BookRecycleBinListView(View):
         # Get deleted books using your soft delete manager
         books = Book.deleted_objects.all().select_related('publisher', 'stock').prefetch_related('authors', 'genres')
         # print('Recycled', books)
-        books = applying_sorting(books, request, ALLOWED_SORTS["book"])
+        books = applying_sorting(books, request, allowed_sorts=ALLOWED_SORTS["book"])
         paginated_books, limit = paginate_queryset(request, books, default_limit=10)
         # print(books)
         # for book in books.values():
@@ -434,7 +428,7 @@ class StockListView(View):
 
         # print("Stocks : ", stocks)
 
-        stocks = applying_sorting(stocks, request, ALLOWED_SORTS["stock"])
+        stocks = applying_sorting(stocks, request, allowed_sorts=ALLOWED_SORTS["stock"])
 
         # print("After applying sorting Stocks : ", stocks)
         paginated_stocks, limit = paginate_queryset(request, stocks, default_limit=10)
@@ -467,10 +461,16 @@ class StockDetailView(View):
 
 @method_decorator(never_cache, name='dispatch')
 class BookStore(View):
-    def get(self, request):
+    def get(self, request, price_aggregate=None):
         query = request.GET.get('q', '')
         min_price = request.GET.get('min_price')
         max_price = request.GET.get('max_price')
+        sort_by = request.GET.get('sort')
+        #
+        # print('query sent store:', query)
+        # print('min_price store:', min_price)
+        # print('max_price store:', max_price)
+        # print('sort_by store:', sort_by)
 
         # books = Book.objects.all()
         # start with Book queryset
@@ -482,34 +482,39 @@ class BookStore(View):
         )
         items_count = CartItem.objects.filter(cart__user=request.user).count()
 
-        books = applying_sorting(books, request, ALLOWED_SORTS["bookstore"])
+        books, min_price_value, max_price_value, db_max = searchfilter_bookStore(books, query, min_price,
+                                                                                 max_price, sort_by)
 
-        if query:
-            books = search_query(query)
-
-        print('before books', books)
-        if min_price and max_price:
-            try:
-                min_val = int(min_price)
-                max_val = int(max_price)
-                print("Min and max value", min_val, max_val)
-                books = books.filter(stock__price__gte=min_val, stock__price__lte=max_val)
-                print('after filter', books)
-            except ValueError:
-                pass
+        # books = applying_sorting(books, request, ALLOWED_SORTS["bookstore"])
+        #
+        # if query:
+        #     books = search_query(query)
+        #
+        # print('before books', books)
+        # if min_price and max_price:
+        #     try:
+        #         min_val = int(min_price)
+        #         max_val = int(max_price)
+        #         print("Min and max value", min_val, max_val)
+        #         books = books.filter(stock__price__gte=min_val, stock__price__lte=max_val)
+        #         print('after filter', books)
+        #     except ValueError:
+        #         pass
 
         # books = Book.objects.all().order_by('-created_at')
         paginated_books, limit = paginate_queryset(request, books, default_limit=12)
 
         # compute min/max prices of the available stock
-        price_aggregate = Stock.objects.filter(is_available=True).aggregate(
-            min_price=Min('price'),
-            max_price=Max('price')
-        )
-        min_price_value = floor(price_aggregate['min_price']) if price_aggregate['min_price'] else 0
-        max_price_value = ceil(price_aggregate['max_price'] / 100) * 100 if price_aggregate['max_price'] else 10000
+        # price_aggregate = Stock.objects.filter(is_available=True).aggregate(
+        #     min_price=Min('price'),
+        #     max_price=Max('price')
+        # )
+        # min_price_value = floor(price_aggregate['min_price']) if price_aggregate['min_price'] else 0
+        # max_price_value = ceil(price_aggregate['max_price'] / 100) * 100 if price_aggregate['max_price'] else 10000
 
-        print("min and max", min_price_value, max_price_value)
+        print("min and max from view:", min_price_value, max_price_value)
+
+        print("db max:", db_max)
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
             print("hello from headers")
             cards_html = render_to_string("books/components/book_cards.html", {'paginated_books': paginated_books, })
@@ -520,6 +525,8 @@ class BookStore(View):
                 "cards": cards_html,
                 "pagination": pagination_html,
                 'items_count': items_count,
+                'search_min_price_limit': 0,
+                'search_max_price_limit': db_max,
                 "min_price": min_price_value,
                 "max_price": max_price_value,
             })
@@ -1029,7 +1036,7 @@ class AuthorListView(View):
 
         )
 
-        authors = applying_sorting(authors, request, ALLOWED_SORTS["author"])
+        authors = applying_sorting(authors, request, allowed_sorts=ALLOWED_SORTS["author"])
 
         paginated_authors, limit = paginate_queryset(request, authors, default_limit=10)
 
@@ -1061,7 +1068,7 @@ class PublisherListView(View):
         # See all field names
         print([field.name for field in Publisher._meta.get_fields()])
         # print(model_to_dict(publisher))
-        publisher = applying_sorting(publisher, request, ALLOWED_SORTS["publisher"])
+        publisher = applying_sorting(publisher, request, allowed_sorts=ALLOWED_SORTS["publisher"])
         paginated_publisher, limit = paginate_queryset(request, publisher, default_limit=10)
 
         return render(request, 'books/admin/admin_publisher_list.html', {
@@ -1169,7 +1176,7 @@ class GenreListView(View):
         # See all field names
         print([field.name for field in Genre._meta.get_fields()])
         # print(model_to_dict(genre))
-        genre = applying_sorting(genre, request, ALLOWED_SORTS["genre"])
+        genre = applying_sorting(genre, request, allowed_sorts=ALLOWED_SORTS["genre"])
         paginated_genre, limit = paginate_queryset(request, genre, default_limit=10)
 
         return render(request, 'books/admin/admin_genre_list.html', {
