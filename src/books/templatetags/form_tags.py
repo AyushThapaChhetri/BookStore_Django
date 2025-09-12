@@ -1,9 +1,10 @@
 # Create this file: your_app/templatetags/form_tags.py
+from datetime import datetime, date
 
 from django import template
 from django.forms.widgets import (
     Textarea, Select, SelectMultiple,
-    FileInput, ClearableFileInput, HiddenInput, CheckboxInput
+    FileInput, ClearableFileInput, HiddenInput, CheckboxInput, DateInput
 )
 
 register = template.Library()
@@ -28,6 +29,8 @@ def widget_type(field):
         return 'hidden'
     elif isinstance(widget, CheckboxInput):
         return 'checkbox'
+    elif isinstance(widget, DateInput):
+        return 'date'
     else:
         return 'input'
 
@@ -39,3 +42,16 @@ def input_type(field):
     """
     widget = field.field.widget
     return getattr(widget, 'input_type', 'text')
+
+
+@register.filter
+def date_input_value(value):
+    """
+    Returns a string formatted as YYYY-MM-DD for <input type="date">.
+    Returns empty string if value is None or invalid.
+    """
+    if value is None:
+        return ''
+    if isinstance(value, (date, datetime)):
+        return value.strftime('%Y-%m-%d')
+    return str(value)

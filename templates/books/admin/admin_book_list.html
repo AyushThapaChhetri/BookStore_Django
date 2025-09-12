@@ -83,7 +83,7 @@
                         <form method="post" action="{% url 'book_restore' book.uuid %}">
                             {% csrf_token %}
                             <button type="submit"
-                                    class="bg-green-600 hover:bg-green-800 text-white font-medium py-2 px-4 rounded">
+                                    class="prevent-multi-click bg-green-600 hover:bg-green-800 text-white font-medium py-2 px-4 rounded">
                                 Restore
                             </button>
                         </form>
@@ -94,12 +94,23 @@
                         {#                            Hard Delete#}
                         {#                        </button>#}
                     {% else %}
-                        <button class="bg-indigo-600 hover:bg-indigo-800 text-white font-bold py-2 px-4 rounded">
-                            <a
-                                    href="{% url 'book_detail_view' book.uuid %}">View</a></button>
+                        <button type="button"
+                                class="bg-indigo-600 hover:bg-indigo-800 text-white font-bold py-2 px-4 rounded"
+                                onclick="window.location.href='{% url 'book_detail_view' book.uuid %}'"
+                        >
+                            {#                            <a href="{% url 'book_detail_view' book.uuid %}">#}
+                            View
+                            {#                            </a>#}
+                        </button>
                         {% if request.user|has_perm:"books.change_book" %}
-                            <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                                <a href="{% url 'book_view' book.uuid %}">Edit</a>
+                            <button
+                                    type="button"
+                                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                                    onclick="window.location.href='{% url 'book_view' book.uuid %}'"
+                            >
+                                {#                                <a href="{% url 'book_view' book.uuid %}">#}
+                                Edit
+                                {#                                </a>#}
                             </button>
                             <button
                                     type="button"
@@ -168,7 +179,7 @@
                     {% csrf_token %}
                     <input type="hidden" name="delete" value="1">
                     <button type="submit" name="delete"
-                            class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+                            class="prevent-multi-click px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
                         Yes, Delete
                     </button>
                 </form>
@@ -254,9 +265,9 @@
                 // Actions differ too
                 const actions = isRecycleBin
                     ? `
-                    <form method="post" action="/admin-panel/book/restore/${book.uuid}">
+                    <form method="post" action="/admin-panel/books/restore/${book.uuid}/">
                         <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
-                        <button type="submit" class="bg-green-600 hover:bg-green-800 text-white font-medium py-2 px-4 rounded">
+                        <button type="submit" class="prevent-multi-click bg-green-600 hover:bg-green-800 text-white font-medium py-2 px-4 rounded">
                             Restore
                         </button>
                     </form>
