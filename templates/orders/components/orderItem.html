@@ -1,0 +1,46 @@
+{% load static %}
+<div class=" flex flex-col
+border-[0.5px] border-gray-300 bg-gray-200
+p-2  w-full rounded-md shadow-lg
+text-xs lg:text-sm
+">
+    <p class="font-lexend font-medium mb-2"> {{ item.book.title }} </p>
+    <div class="flex flex-col lg:flex-row w-full justify-between  lg:flex-start ">
+        <div class="flex gap-8   flex-wrap lg:flex-nowrap">
+
+            <div class="flex  w-[50px] border-1  border-gray-200 rounded-lg">
+
+                {% if item.book.cover_image %}
+                    <img class=" rounded-t-lg"
+                         src="{{ item.book.cover_image.url }}"
+                         alt="{{ item.book.title }}"
+                    />
+                    {#                    <img class="rounded-t-lg"#}
+                    {#                         src="{% static 'images/no_book_cover.png' %}"#}
+                    {#                         alt="No cover available"#}
+                    {#                    />#}
+                {% else %}
+                    <!-- Optional placeholder image -->
+                    <img class="rounded-t-lg"
+                         src="{% static 'images/no_book_cover.png' %}"
+                         alt="No cover available"
+                    />
+                {% endif %}
+            </div>
+            <div>
+                <p class="text-gray-400 font-medium">Publisher <span
+                        class="text-gray-800 font-normal "> {{ item.book.publisher }}</span>
+                </p>
+                <p class="text-gray-400 font-medium">Language <span
+                        class="text-gray-800 font-normal ">{{ item.book.language }}</span></p>
+
+            </div>
+        </div>
+        <div class="flex gap-8 justify-between lg:flex-start flex-wrap lg:flex-nowrap">
+            <p class="text-gray-400 font-medium">Rs. {{ item.unit_price }} x {{ item.quantity }}</p>
+            <p class="text-red-800 font-medium">Rs. {{ item.discount_amount }}</p>
+            <p class="text-gray-800 lg:text-xl font-medium">Rs.{{ item.total_price_after_discount }}</p>
+        </div>
+
+    </div>
+</div>

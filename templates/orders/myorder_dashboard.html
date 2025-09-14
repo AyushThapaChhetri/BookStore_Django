@@ -1,0 +1,30 @@
+{% extends 'Dashboard/client/base_dashboard.html' %}
+{% load permissions %}
+{% load static tailwind_tags %}
+
+{% block title %}
+    {% block list_title %}My orders{% endblock %}
+{% endblock %}
+
+
+{% block content %}
+    <div>
+        <h1 class="font-lexend text-2xl font-bold text-gray-900 mb-4">
+            My Orders
+        </h1>
+        {#        <p class="italic text-gray-500">#}
+        {#            {% block list_description %}Default description.{% endblock %}#}
+        {#        </p>#}
+
+    </div>
+    <div class="flex flex-col gap-2">
+
+        {% for order in orders %}
+            {% include 'orders/components/order_cards.html' with order=order %}
+        {% empty %}
+            <p>You have no orders.</p>
+        {% endfor %}
+
+    </div>
+
+{% endblock %}

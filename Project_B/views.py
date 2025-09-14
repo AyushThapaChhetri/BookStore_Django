@@ -25,5 +25,9 @@ def home_view(request):
     # return render(request, 'base/base.html')
 
 
+def Dashboard(request):
+    return render(request, 'dashboard/client/base_dashboard.html')
+
+
 def about_view(request):
     return render(request, 'about/aboutpage.html')

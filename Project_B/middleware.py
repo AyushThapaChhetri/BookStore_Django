@@ -1,4 +1,4 @@
-from django.http import HttpResponseForbidden
+from django.contrib import messages
 from django.shortcuts import redirect
 
 # Define a mapping of URL prefixes to required permissions
@@ -86,11 +86,21 @@ class PermissionMiddleware:
 
         # 6. Require extra permissions for admin-panel paths
         if any(path.startswith(p) for p in ADMIN_PREFIXES):
-            required_perm = self.get_required_permission(path)
-            if required_perm and not request.user.has_perm(required_perm):
-                return HttpResponseForbidden("You don't have permission.")
+            # required_perm = self.get_required_permission(path)
+            # if required_perm and not request.user.has_perm(required_perm):
+            #     return HttpResponseForbidden("You don't have permission.")
+            if not request.user.is_superuser:
+                messages.error(request, "You are not allowed to access the admin panel.")
+                return redirect('home')
 
-        # 6. Fallback
+                # return HttpResponseForbidden("You are not allowed to access the admin panel.")
+
+        # 7. Check other permission-based URLs (optional)
+        # required_perm = self.get_required_permission(path)
+        # if required_perm and not request.user.has_perm(required_perm):
+        #     return HttpResponseForbidden("You don't have permission.")
+
+        # 8. Fallback
         return self.get_response(request)
 
     @staticmethod

@@ -39,17 +39,19 @@ from django.urls import path, include
 
 from src.users.views import UserCreateView, UserLoginView, activate
 from . import views
-from .views import home_view
+from .views import home_view, Dashboard
 
 urlpatterns = [
                   # path('',views.home),
                   path('', home_view, name='home'),
                   path('admin/', admin.site.urls),
+                  path('client/dashboard', Dashboard, name='client_dashboard'),
                   path('books/', include('src.books.urls')),
                   path('admin-panel/', include('src.books.admin_urls')),
                   path('users/', include('src.users.urls')),
                   path('carts/', include('src.cart.urls')),
                   path('delivery/', include('src.shipping.urls')),
+                  path('orders/', include('src.orders.urls')),
                   path('about/', views.about_view, name='about_view'),
                   path('signup/', UserCreateView.as_view(), name='signup_view'),
                   path('login/', UserLoginView.as_view(), name='login_view'),
