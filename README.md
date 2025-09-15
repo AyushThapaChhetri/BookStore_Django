@@ -111,7 +111,7 @@ python manage.py tailwind start
 - Shopping Cart: Add items, view cart (updates in real-time), and checkout with order tracking.
 - Recycle Bin: Soft-delete books and manage from a dedicated view.
 
-##Appendices
+## Appendices
 
 ![Image](https://github.com/user-attachments/assets/c2759713-f02a-45bd-b1c4-bd1331df5f40)
 
