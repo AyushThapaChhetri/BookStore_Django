@@ -48,6 +48,7 @@ urlpatterns = [
                   path('client/dashboard', Dashboard, name='client_dashboard'),
                   path('books/', include('src.books.urls')),
                   path('admin-panel/', include('src.books.admin_urls')),
+                  path('admin-panel/', include('src.orders.admin_urls')),
                   path('users/', include('src.users.urls')),
                   path('carts/', include('src.cart.urls')),
                   path('delivery/', include('src.shipping.urls')),
