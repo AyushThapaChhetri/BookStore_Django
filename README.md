@@ -122,3 +122,9 @@ python manage.py tailwind start
 ![Image](https://github.com/user-attachments/assets/7616e802-3fc0-4fad-8e4a-9ce51b40439b)
 
 ![Image](https://github.com/user-attachments/assets/d4fbf7e8-866f-4ee7-8864-fe710a04feac)
+
+![Image](https://github.com/user-attachments/assets/a12c5da5-f644-45a5-9227-49da83014972)
+
+![Image](https://github.com/user-attachments/assets/c841db34-bed8-4989-848b-45fbf27a2e98)
+
+![Image](https://github.com/user-attachments/assets/ea1d143f-7530-4061-93ac-5d2c26bf097f)
