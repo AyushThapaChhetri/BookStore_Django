@@ -512,9 +512,9 @@ class BookStore(View):
         # min_price_value = floor(price_aggregate['min_price']) if price_aggregate['min_price'] else 0
         # max_price_value = ceil(price_aggregate['max_price'] / 100) * 100 if price_aggregate['max_price'] else 10000
 
-        print("min and max from view:", min_price_value, max_price_value)
+        # print("min and max from view:", min_price_value, max_price_value)
 
-        print("db max:", db_max)
+        # print("db max:", db_max)
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
             print("hello from headers")
             cards_html = render_to_string("books/components/book_cards.html", {'paginated_books': paginated_books, })
