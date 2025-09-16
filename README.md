@@ -110,3 +110,21 @@ python manage.py tailwind start
 - Manage Inventory: Admins can CRUD books, stocks, authors, and publishers via the dashboard.
 - Shopping Cart: Add items, view cart (updates in real-time), and checkout with order tracking.
 - Recycle Bin: Soft-delete books and manage from a dedicated view.
+
+## Appendices
+
+![Image](https://github.com/user-attachments/assets/c2759713-f02a-45bd-b1c4-bd1331df5f40)
+
+![Image](https://github.com/user-attachments/assets/54b72c5e-3941-43be-a267-08a6d1d615cf)
+
+![Image](https://github.com/user-attachments/assets/8ae3e5c5-3f11-494d-8a9c-3a367a4f1b85)
+
+![Image](https://github.com/user-attachments/assets/7616e802-3fc0-4fad-8e4a-9ce51b40439b)
+
+![Image](https://github.com/user-attachments/assets/d4fbf7e8-866f-4ee7-8864-fe710a04feac)
+
+![Image](https://github.com/user-attachments/assets/a12c5da5-f644-45a5-9227-49da83014972)
+
+![Image](https://github.com/user-attachments/assets/c841db34-bed8-4989-848b-45fbf27a2e98)
+
+![Image](https://github.com/user-attachments/assets/ea1d143f-7530-4061-93ac-5d2c26bf097f)
