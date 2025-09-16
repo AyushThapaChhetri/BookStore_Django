@@ -159,7 +159,8 @@
                         </div>
                     </div>
                     <div id="store-book-items"
-                         class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4   min-h-[500px]">
+                         class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4  min-h-[500px]
+">
 
                         {% if paginated_books %}
                             {% include 'books/components/book_cards.html' with paginated_books=paginated_books %}
@@ -232,16 +233,16 @@
                 //  Sync filters across ALL containers
                 {#const minVal = url.searchParams.get("min_price");#}
                 {#const maxVal = url.searchParams.get("max_price");#}
-                console.log("db max", search_max_price_limit);
+                {#console.log("db max", search_max_price_limit);#}
+                {##}
+                {#console.log('min val and max value from backend: ', minVal, maxVal);#}
 
-                console.log('min val and max value from backend: ', minVal, maxVal);
-
-                if (minVal !== null && minVal !== undefined) console.log("mmmmmmmm");
-                console.log(typeof minVal);
-                console.log(typeof maxVal);
+                {#if (minVal !== null && minVal !== undefined) console.log("mmmmmmmm");#}
+                {#console.log(typeof minVal);#}
+                {#console.log(typeof maxVal);#}
 
                 if ((minVal !== null && minVal !== undefined) && maxVal) {
-                    console.log('people: ')
+                    {#console.log('people: ')#}
 
                     document.querySelectorAll('.filter-container').forEach(container => {
                         const minInput = container.querySelector(".min_range");
@@ -250,23 +251,23 @@
                         const maxRangePrice = container.querySelector(".max_range_price");
                         const bar = container.querySelector(".bar");
 
-                        console.log('where: ', maxInput.value)
+                        {#console.log('where: ', maxInput.value)#}
 
 
                         if (minInput && maxInput) {
-                            console.log('db max: ', search_max_price_limit)
+                            {#console.log('db max: ', search_max_price_limit)#}
                             minInput.value = minVal;
                             maxInput.value = maxVal;
                             minInput.min = search_min_price_limit;
                             maxInput.max = search_max_price_limit;
                             minInput.max = search_max_price_limit;
-
-                            console.log('hello minInput: ', minInput);
-                            console.log('hello maxInput: ', maxInput);
-                            console.log('hello value: ', minInput.value);
-                            console.log('hello value: ', maxInput.value);
-                            console.log('hello value max: ', minInput.max);
-                            console.log('hello value max: ', maxInput.max);
+                            {##}
+                            {#console.log('hello minInput: ', minInput);#}
+                            {#console.log('hello maxInput: ', maxInput);#}
+                            {#console.log('hello value: ', minInput.value);#}
+                            {#console.log('hello value: ', maxInput.value);#}
+                            {#console.log('hello value max: ', minInput.max);#}
+                            {#console.log('hello value max: ', maxInput.max);#}
 
 
                             if (minRangePrice) minRangePrice.innerText = minVal;
@@ -277,8 +278,8 @@
                             const leftPercent = (minVal / minInput.max) * 100;
                             const rightPercent = (maxVal / maxInput.max) * 100;
 
-                            console.log('leftPercent: ', leftPercent)
-                            console.log('rightpercent: ', rightPercent)
+                            {#console.log('leftPercent: ', leftPercent)#}
+                            {#console.log('rightpercent: ', rightPercent)#}
 
                             if (bar) {
                                 bar.style.left = leftPercent + "%";

@@ -1,0 +1,12 @@
+{# expects context: choices, selected_values, is_multiple #}
+
+{% if not is_multiple %}
+    <option value="">---------</option>
+{% endif %}
+
+{% for choice_value, choice_label in choices %}
+    <option value="{{ choice_value }}"
+            {% if choice_value in selected_values %}selected{% endif %}>
+        {{ choice_label }}
+    </option>
+{% endfor %}

@@ -4,6 +4,7 @@ import re
 
 from django import forms
 from django.core.exceptions import ValidationError
+from django.db.models import Q
 from django.utils import timezone
 
 from src.books.models import Book, Author, Genre, Publisher, Stock
@@ -72,7 +73,21 @@ class AuthorForm(forms.ModelForm):
         return bio.strip() or None
 
     def clean_nationality(self):
-        return clean_spaces_or_none(self.cleaned_data.get('nationality'))
+        name = clean_spaces_or_none(self.cleaned_data.get('name'))
+        nationality = clean_spaces_or_none(self.cleaned_data.get('nationality'))
+
+        if name and nationality:
+            # Exclude current instance when checking duplicates
+            qs = Author.objects.filter(
+                Q(name__iexact=name) & Q(nationality__iexact=nationality)
+            )
+            if self.instance and self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+
+            if qs.exists():
+                raise forms.ValidationError('This author already exists.')
+
+        return nationality
 
     def clean_birth_date(self):
         birth_date = self.cleaned_data.get('birth_date')
@@ -131,7 +146,15 @@ class PublisherForm(forms.ModelForm):
         }
 
     def clean_name(self):
-        return clean_spaces_or_none(self.cleaned_data.get('name'))
+        name = clean_spaces_or_none(self.cleaned_data.get('name'))
+        if name:
+            qs = Publisher.objects.filter(name__iexact=name)
+            if self.instance and self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+
+            if qs.exists():
+                raise ValidationError("A publisher with this name already exists.")
+        return name
 
     def clean_description(self):
         desc = self.cleaned_data.get('description', '')

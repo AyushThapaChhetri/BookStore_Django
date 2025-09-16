@@ -34,6 +34,9 @@ urlpatterns = [
     path('publisher/edit/<uuid>', PublisherView.as_view(), name='publisher_view'),
     path('publisher/detail/<uuid>', PublisherDetailView.as_view(), name='publisher_detail_view'),
 
+    # select options
+    path("<str:field_name>/options", views.field_options, name="field-options"),
+
     path('search/genres', views.search_genres, name='search_genres'),
     path('genres', GenreView.as_view(), name="create_genres"),
     path('manager/genre/list/', GenreListView.as_view(), name="admin_genre_list"),

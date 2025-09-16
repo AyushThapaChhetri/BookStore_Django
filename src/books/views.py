@@ -992,7 +992,7 @@ class AuthorView(View):
         return render(request, 'books/admin/create_edit/author_create_or_edit.html', {'form': form})
 
     def post(self, request, uuid=None):
-
+        print('Post from authors')
         if not request.user.is_authenticated:
             if request.headers.get("X-requested-with") == "XMLHttpRequest":
                 return JsonResponse({'error': 'Unauthorized'}, status=401)
@@ -1009,7 +1009,7 @@ class AuthorView(View):
 
         if form.is_valid():
             author = form.save()
-
+            print("author to be saved from the forntend popup")
             if request.headers.get("X-requested-with") == "XMLHttpRequest":
                 return JsonResponse({
                     "id": author.id,
@@ -1017,6 +1017,9 @@ class AuthorView(View):
                     "message": "Author created successfully"
                 })
             return redirect('admin_author_list')
+
+        else:
+            print("Errors:", form.errors)
 
         if request.headers.get("X-requested-with") == "XMLHttpRequest":
             # Re-render form with errors
@@ -1139,10 +1142,11 @@ class PublisherView(View):
                 'books/admin/create_edit/publisher_create_or_edit.html',
                 {'form': form}
             )
-
+        print('publisher 3')
         if form.is_valid():
             publisher = form.save()
 
+            print('publisher 4')
             if request.headers.get("X-requested-with") == "XMLHttpRequest":
                 return JsonResponse({
                     "id": publisher.id,
@@ -1150,8 +1154,17 @@ class PublisherView(View):
                     "message": "Publisher created successfully"
                 })
             return redirect('admin_publisher_list')
+        # else:
+        #     # DEBUGGING STARTS HERE
+        #     print(" Form is NOT valid!")
+        #     print("Errors:", form.errors)
+        #     print("Non-field errors:", form.non_field_errors())  # errors not tied to a specific field
+        #     for field, errors in form.errors.items():
+        #         print(f"Field: {field} -> Errors: {errors}")
 
+        print('publisher 2')
         if request.headers.get("X-requested-with") == "XMLHttpRequest":
+            print('publisher 1')
             html = render_to_string(
                 'author/components/author_form.html',
                 {'form': form, 'title': 'Publisher', 'form_type': 'publishers'},
@@ -1258,3 +1271,39 @@ class GenreView(View):
             return JsonResponse({'html': html}, status=400)
 
         return render(request, 'books/admin/create_edit/genre_create_or_edit.html', {'form': form})
+
+
+def field_options(request, field_name):
+    # Example: fetch fresh data for Authors, Publishers, etc.
+    print("hello")
+    if field_name == "authors":
+        print("author")
+        queryset = Author.objects.values_list("id", "name")
+    elif field_name == "publisher":
+        print("publisher")
+        queryset = Publisher.objects.values_list("id", "name")
+    elif field_name == "genres":
+        print("genres")
+        queryset = Genre.objects.values_list("id", "name")
+    else:
+        return JsonResponse({"html": ""}, status=400)
+
+        # detect if it's multiple
+    is_multiple = field_name in ["genres", "authors"]
+
+    # optionally get currently selected values from request
+    selected = request.GET.getlist("selected[]", [])  # or []
+
+    if not is_multiple and selected:
+        # single-select: keep only the last/first selected
+        selected = [selected[-1]]
+
+    # convert strings to integers
+    selected = [int(x) for x in selected if x.isdigit()]
+
+    html = render_to_string(
+        "author/components/field_options.html",
+        {"choices": queryset, "selected_values": selected, "is_multiple": is_multiple}
+    )
+    # print(html)
+    return JsonResponse({"html": html})

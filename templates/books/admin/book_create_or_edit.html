@@ -4,7 +4,19 @@
     {% if form.instance.pk %}Edit Book{% else %}New Book{% endif %}
 {% endblock %}
 
+
 {% block content %}
+
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
+
+    <script
+            src="https://code.jquery.com/jquery-3.7.1.js"
+            integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
+            crossorigin="anonymous"></script>
+
+ 
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
     <div class="flex flex-col items-center p-5 bg-gray-100 gap-4 flex-grow">
         {#            <form method="post" class="sm:w-[90%] lg:w-[500px] mx-auto">#}
         {% include 'components/form_popup.html' %}
@@ -63,7 +75,7 @@
                                 <select
                                         name="{{ field.html_name }}"
                                         id="{{ field.id_for_label }}"
-                                        class="block py-2.5 px-0 w-full text-[16px] text-gray-900 bg-transparent border-0 border-b-2 {% if field.errors %}border-red-500{% else %}border-gray-300{% endif %} appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                                        class="single_select_book block  py-2.5 px-0 w-full text-[16px] text-gray-900 bg-transparent border-0 border-b-2 {% if field.errors %}border-red-500{% else %}border-gray-300{% endif %} appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
                                 >
 
                                     {% for choice_value, choice_label in field.field.choices %}
@@ -75,7 +87,9 @@
                                 </select>
                                 <label
                                         for="{{ field.id_for_label }}"
-                                        class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6"
+                                        class="block text-sm font-medium text-gray-500 mb-1"
+
+                                        {#                                        class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6"#}
                                 >
                                     {{ field.label }}
                                 </label>
@@ -103,7 +117,7 @@
                                         name="{{ field.html_name }}"
                                         id="{{ field.id_for_label }}"
                                         multiple
-                                        class="block py-2.5 px-2 w-full text-[16px] text-gray-900 bg-white border-2 {% if field.errors %}border-red-500{% else %}border-gray-300{% endif %} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent min-h-[100px]"
+                                        class="multi_select_book block py-2.5 px-2 w-full text-[16px] text-gray-900 bg-white border-2 {% if field.errors %}border-red-500{% else %}border-gray-300{% endif %} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent min-h-[100px]"
                                 >
                                     {% for choice_value, choice_label in field.field.choices %}
                                         <option value="{{ choice_value }}"
@@ -203,20 +217,27 @@
 
 {% block extra_js %}
     <script>
+        $(document).ready(function () {
+            $('.multi_select_book').select2();
+        });
+
+        $(document).ready(function () {
+            $('.single_select_book').select2();
+        });
         const formPopup = document.getElementById('formPopupModal');
         const form_Container_popup = document.getElementById('form-Container-popup');
 
         async function openModal(fieldName, selectFieldId) {
-            console.log("Hello");
-            console.log('field id', selectFieldId)
-            console.log('name', fieldName);
+            {#console.log("Hello");#}
+            {#console.log('field id', selectFieldId)#}
+            {#console.log('name', fieldName);#}
             try {
-                {#const endpoint = "{% url 'create_author' %}";#}
+
 
                 const response = await axios.get((`/admin-panel/${fieldName}`), {
                     headers: {"X-Requested-With": "XMLHttpRequest"}
                 });
-                {#const response = await axios.get(endpoint);#}
+
 
                 // Save both for later use in submit
                 form_Container_popup.dataset.fieldName = fieldName;
@@ -244,9 +265,6 @@
             const fieldName = form_Container_popup.dataset.fieldName;
             const selectFieldId = form_Container_popup.dataset.selectFieldId;
 
-            console.log("fieldName 1", fieldName);
-            console.log("selectFieldId after submission 1", selectFieldId);
-
 
             const popupForm = form_Container_popup.querySelector("form");
 
@@ -256,13 +274,13 @@
             }
 
             const formData = new FormData(popupForm);
-            console.log("Before try");
+
             try {
-                {#console.log("Inside try", `/books/${fieldName}`);#}
+                console.log("Inside try", `books/${fieldName}`);
                 const response = await axios.post(`/admin-panel/${fieldName}`, formData, {
                     headers: {
                         'X-CSRFToken': formData.get("csrfmiddlewaretoken"),
-                        {#'Content-Type': 'multipart/form-data'#}
+                        'X-requested-with': 'XMLHttpRequest',
                     }
                 });
 
@@ -270,31 +288,31 @@
                 formPopup.classList.add("hidden");
 
                 const selectField = document.getElementById(selectFieldId);
+
                 if (selectField) {
-                    const newOption = document.createElement('option');
-                    newOption.value = response.data.id;
-                    newOption.textContent = response.data.name;
+                    // Get currently selected values as an array
+                    let selectedValues = Array.from(selectField.selectedOptions).map(opt => opt.value);
 
-                    if (selectField.multiple) {
-                        // multiple select (genres, tags…)
-                        newOption.selected = true; // add but don’t deselect others
-                    } else {
-                        // single select (author, publisher…)
-                        newOption.selected = true;
-                        // optionally deselect old selection
-                        [...selectField.options].forEach(opt => opt.selected = false);
-                    }
+                    // Add the newly created author
+                    selectedValues.push(response.data.id.toString());
 
-                    selectField.appendChild(newOption);
+                    const refreshResponse = await axios.get(`/admin-panel/${fieldName}/options`, {
+                        params: {selected: selectedValues},
+                        headers: {'X-Requested-With': 'XMLHttpRequest'}
+                    });
+
+                    console.log(refreshResponse.data.html)
+
+                    selectField.innerHTML = refreshResponse.data.html;
+
+
+                    //re-trigger select 2
+                    $(selectField).trigger('change');
+
+
                 }
 
-                // Optionally, update your select field in the main form with the new author
-                {#const selectField = document.getElementById(fieldName);#}
-                {#const newOption = document.createElement("option");#}
-                {#newOption.value = response.data.id; // returned from Django#}
-                {#newOption.textContent = response.data.name; // returned from Django#}
-                {#newOption.selected = true;#}
-                {#selectField.appendChild(newOption);#}
+
             } catch (err) {
                 console.error("Error submitting popup form", err);
 
@@ -308,6 +326,7 @@
 
                 }
             }
+
         }
 
 
