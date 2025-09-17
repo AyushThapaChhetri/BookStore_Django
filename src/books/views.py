@@ -466,7 +466,9 @@ class BookStore(View):
         min_price = request.GET.get('min_price')
         max_price = request.GET.get('max_price')
         sort_by = request.GET.get('sort')
-        #
+
+        print("AJAX request?", request.headers.get("x-requested-with"))
+
         # print('query sent store:', query)
         # print('min_price store:', min_price)
         # print('max_price store:', max_price)
@@ -485,41 +487,32 @@ class BookStore(View):
         books, min_price_value, max_price_value, db_max = searchfilter_bookStore(books, query, min_price,
                                                                                  max_price, sort_by)
 
-        # books = applying_sorting(books, request, ALLOWED_SORTS["bookstore"])
-        #
-        # if query:
-        #     books = search_query(query)
-        #
-        # print('before books', books)
-        # if min_price and max_price:
-        #     try:
-        #         min_val = int(min_price)
-        #         max_val = int(max_price)
-        #         print("Min and max value", min_val, max_val)
-        #         books = books.filter(stock__price__gte=min_val, stock__price__lte=max_val)
-        #         print('after filter', books)
-        #     except ValueError:
-        #         pass
-
-        # books = Book.objects.all().order_by('-created_at')
         paginated_books, limit = paginate_queryset(request, books, default_limit=12)
 
-        # compute min/max prices of the available stock
-        # price_aggregate = Stock.objects.filter(is_available=True).aggregate(
-        #     min_price=Min('price'),
-        #     max_price=Max('price')
-        # )
-        # min_price_value = floor(price_aggregate['min_price']) if price_aggregate['min_price'] else 0
-        # max_price_value = ceil(price_aggregate['max_price'] / 100) * 100 if price_aggregate['max_price'] else 10000
+        print("Paginated_books: ", paginated_books)
 
-        # print("min and max from view:", min_price_value, max_price_value)
+        query_params = request.GET.copy()
+        if 'page' in query_params:
+            query_params.pop('page')
+
+        context = {
+            'books': books,
+            'paginated_books': paginated_books,
+            'limit': limit,
+            'min_price_value': min_price_value,
+            'max_price_value': max_price_value,
+            'query_string': query_params.urlencode(),  # for pagination links
+
+        }
 
         # print("db max:", db_max)
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
             print("hello from headers")
             cards_html = render_to_string("books/components/book_cards.html", {'paginated_books': paginated_books, })
             pagination_html = render_to_string('books/components/pagination_div.html',
-                                               {'paginated_books': paginated_books})
+                                               {'paginated_books': paginated_books,
+                                                "query_string": query_params.urlencode(), 'is_ajax_page': True,
+                                                'limit': limit, })
 
             return JsonResponse({
                 "cards": cards_html,
@@ -529,6 +522,7 @@ class BookStore(View):
                 'search_max_price_limit': db_max,
                 "min_price": min_price_value,
                 "max_price": max_price_value,
+
             })
 
             # return render(request, "books/components/book_cards.html", {
@@ -536,12 +530,13 @@ class BookStore(View):
             #     "limit": limit
             # })
 
-        return render(request, 'books/book_store.html', {'books': books,
-                                                         'paginated_books': paginated_books,
-                                                         'limit': limit,
-                                                         'min_price_value': min_price_value,
-                                                         'max_price_value': max_price_value,
-                                                         })
+        return render(request, 'books/book_store.html', context)
+        # return render(request, 'books/book_store.html', {'books': books,
+        #                                                  'paginated_books': paginated_books,
+        #                                                  'limit': limit,
+        #                                                  'min_price_value': min_price_value,
+        #                                                  'max_price_value': max_price_value,
+        #                                                  })
 
         # return render(request, 'books/book_store.html', context)
 

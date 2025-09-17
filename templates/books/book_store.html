@@ -3,7 +3,6 @@
 
 {% block content %}
     <div class="flex flex-col grow  items-center justify-between p-4 md:p-10 bg-gray-100 gap-4  w-full">
-        {#        <div class="flex flex-row flex-wrap bg-yellow-500 w-full h-fit border-2 border-gray-800 gap-2 ">#}
         <div class="flex flex-col w-full gap-4 h-full max-w-[1536px]">
             <div class="w-full">
                 {#                <form method="get" class="w-full ">#}
@@ -30,6 +29,7 @@
             </div>
             <div class="flex grow ">
                 <div class="filter-container w-[30%] md:block hidden">
+                    {#                    {{ query_string }}#}
                     {% include 'books/components/filter_card.html' with min_price_value=min_price_value max_price_value=max_price_value  prefix="notDrawer" %}
                 </div>
                 <div class="flex flex-col  gap-4 w-full  ">
@@ -79,57 +79,15 @@
                                     <span class="sr-only">Close menu</span>
                                 </button>
 
-                                {#                                <p class="mb-6 text-sm text-gray-500 dark:text-gray-400">Filter by price</p>#}
                                 <div class="filter-container">
 
                                     {% include 'books/components/filter_card.html' with min_price_value=min_price_value max_price_value=max_price_value prefix="drawer" %}
 
-                                    {#                                    <a href="#"#}
-                                    {#                                       class="px-4 py-2 text-sm font-medium text-center text-gray-900 bg-white border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">Learn#}
-                                    {#                                        more</a>#}
-                                    {#                                    <a href="#"#}
-                                    {#                                       class="inline-flex items-center px-4 py-2 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">Get#}
-                                    {#                                        access#}
-                                    {#                                        <svg class="rtl:rotate-180 w-3.5 h-3.5 ms-2" aria-hidden="true"#}
-                                    {#                                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">#}
-                                    {#                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"#}
-                                    {#                                                  stroke-width="2" d="M1 5h12m0 0L9 1m4 4L9 9"/>#}
-                                    {#                                        </svg>#}
-                                    {#                                    </a>#}
                                 </div>
                             </div>
                         </div>
                         <div class="flex items-center">
-                            {#                            <form class="max-w-sm" method="get">#}
-                            {#                                <select id="sortBy" name="sort" onchange="this.form.submit()"#}
-                            {#                                        class="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg  focus:ring-blue-500 focus:border-blue-500 block w-fit p-2.5">#}
-                            {##}
-                            {#                                    <option value="price_asc"#}
-                            {#                                            {% if request.GET.sort == "price_asc" %}selected{% endif %}>#}
-                            {#                                        Price (Low → High)#}
-                            {#                                    </option>#}
-                            {#                                    <option value="price_desc"#}
-                            {#                                            {% if request.GET.sort == "price_desc" %}selected{% endif %}>#}
-                            {#                                        Price (High → Low)#}
-                            {#                                    </option>#}
-                            {#                                    <option value="quantity_desc"#}
-                            {#                                            {% if request.GET.sort == "quantity_desc" %}selected{% endif %}>#}
-                            {#                                        Stock (High → Low)#}
-                            {#                                    </option>#}
-                            {#                                    <option value="quantity_asc"#}
-                            {#                                            {% if request.GET.sort == "quantity_asc" %}selected{% endif %}>#}
-                            {#                                        Stock (Low → High)#}
-                            {#                                    </option>#}
-                            {#                                    <option value="created_desc"#}
-                            {#                                            {% if request.GET.sort == "created_desc" %}selected{% endif %}>#}
-                            {#                                        Created (Newest)#}
-                            {#                                    </option>#}
-                            {#                                    <option value="created_asc"#}
-                            {#                                            {% if request.GET.sort == "created_asc" %}selected{% endif %}>#}
-                            {#                                        Created (Oldest)#}
-                            {#                                    </option>#}
-                            {#                                </select>#}
-                            {#                            </form>#}
+
                             <select id="sortBy_item"
                                     class="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg
                    focus:ring-blue-500 focus:border-blue-500 block w-fit p-2.5">
@@ -203,7 +161,8 @@
                         min_price: url.searchParams.get("min_price") || "",
                         max_price: url.searchParams.get("max_price") || "",
                         sort: url.searchParams.get("sort") || "",
-                        page: url.searchParams.get("page") || 1
+                        page: url.searchParams.get("page") || 1,
+                        limit: url.searchParams.get("limit") || "{{ limit }}",
                     },
                     headers: {"X-Requested-With": "XMLHttpRequest"}
                 });
@@ -289,10 +248,25 @@
                     });
                 }
 
+
             } catch
                 (error) {
                 console.error("Error fetching books:", error);
             }
+        }
+
+        // --- Limit dropdown ---
+        function attachLimitListener() {
+            const limitSelect = document.getElementById("rowsPerPage");
+            if (!limitSelect) return;
+            {#console.log("Limit listener");#}
+            limitSelect.addEventListener("change", () => {
+                {#console.log("limit value", limitSelect.value)#}
+                const newUrl = new URL(window.location.href);
+                newUrl.searchParams.set("limit", limitSelect.value);
+                newUrl.searchParams.set("page", 1);
+                fetchBooks(newUrl);
+            });
         }
 
         document.addEventListener("DOMContentLoaded", () => {
@@ -314,7 +288,7 @@
                     {#fetchBooks();#}
                     const newUrl = new URL(window.location.href);
                     newUrl.searchParams.set("q", searchInput.value);
-                    newUrl.searchParams.set("page", 1);
+                    {#newUrl.searchParams.set("page", 1);#}
                     {#console.log('url: ', newUrl);#}
                     fetchBooks(newUrl);
                 }, 500);
@@ -327,13 +301,44 @@
 
                     const newUrl = new URL(window.location.href);
                     newUrl.searchParams.set("sort", sortSelect.value);
-                    newUrl.searchParams.set("page", 1);
+                    {#newUrl.searchParams.set("page", 1);#}
                     {#console.log('url: ', newUrl);#}
                     fetchBooks(newUrl);
 
 
                 });
             }
+
+
+            {#limit change#}
+
+            {#const limitSelect = document.getElementById("rowsPerPage_ajax");#}
+            {#console.log('limit select: ', limitSelect)#}
+            {#if (limitSelect) {#}
+            {##}
+            {#    console.log("Limit listener");#}
+            {#    limitSelect.addEventListener("change", () => {#}
+            {#        console.log("limit value", limitSelect.value)#}
+            {#        const newUrl = new URL(window.location.href);#}
+            {#        newUrl.searchParams.set("limit", limitSelect.value);#}
+            {#        newUrl.searchParams.set("page", 1);#}
+            {#        fetchBooks(newUrl);#}
+            {#    });#}
+
+            document.addEventListener('change', (e) => {
+                if (e.target && e.target.id === "rowsPerPage_ajax") {
+                    console.log("Limit changed:", e.target.value);
+
+                    const newUrl = new URL(window.location.href);
+                    newUrl.searchParams.set("limit", e.target.value);
+                    newUrl.searchParams.set("page", 1);
+
+                    fetchBooks(newUrl);
+                }
+            });
+
+
+            {#attachLimitListener();#}
 
             // --- Price slider and filter buttons ---
             const filterContainers = document.querySelectorAll('.filter-container');
@@ -381,7 +386,7 @@
                         const newUrl = new URL(window.location.href);
                         newUrl.searchParams.set("min_price", minVal);
                         newUrl.searchParams.set("max_price", maxVal);
-                        newUrl.searchParams.set("page", 1);
+                        {#newUrl.searchParams.set("page", 1);#}
                         {#console.log('url: ', newUrl);#}
                         fetchBooks(newUrl);
                     });
@@ -467,7 +472,8 @@
                     alert("Something went wrong. Please try again.");
                 }
             });
-        });
+        })
+        ;
 
 
     </script>
