@@ -117,7 +117,7 @@
                         </div>
                     </div>
                     <div id="store-book-items"
-                         class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4  min-h-[500px]
+                         class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4  min-h-[450px]
 ">
 
                         {% if paginated_books %}
@@ -162,7 +162,7 @@
                         max_price: url.searchParams.get("max_price") || "",
                         sort: url.searchParams.get("sort") || "",
                         page: url.searchParams.get("page") || 1,
-                        limit: url.searchParams.get("limit") || "{{ limit }}",
+                        limit: url.searchParams.get("limit") || "{{ limit }}"
                     },
                     headers: {"X-Requested-With": "XMLHttpRequest"}
                 });
@@ -386,7 +386,7 @@
                         const newUrl = new URL(window.location.href);
                         newUrl.searchParams.set("min_price", minVal);
                         newUrl.searchParams.set("max_price", maxVal);
-                        {#newUrl.searchParams.set("page", 1);#}
+
                         {#console.log('url: ', newUrl);#}
                         fetchBooks(newUrl);
                     });

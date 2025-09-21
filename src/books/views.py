@@ -467,7 +467,7 @@ class BookStore(View):
         max_price = request.GET.get('max_price')
         sort_by = request.GET.get('sort')
 
-        print("AJAX request?", request.headers.get("x-requested-with"))
+        # print("AJAX request?", request.headers.get("x-requested-with"))
 
         # print('query sent store:', query)
         # print('min_price store:', min_price)
@@ -489,11 +489,19 @@ class BookStore(View):
 
         paginated_books, limit = paginate_queryset(request, books, default_limit=12)
 
-        print("Paginated_books: ", paginated_books)
+        # print("Paginated_books: ", paginated_books)
 
         query_params = request.GET.copy()
+        # print("query_params book store bata: ", query_params)
+
         if 'page' in query_params:
             query_params.pop('page')
+
+        for key in list(query_params.keys()):
+            if all(v == "" for v in query_params.getlist(key)):
+                query_params.pop(key)
+
+        # print("query_params book store bata after: ", query_params)
 
         context = {
             'books': books,

@@ -21,7 +21,7 @@
                         <option value="24" {% if limit == 24 %}selected{% endif %}>24</option>
                     </select>
                 {% else %}
-                
+
                     <select id="rowsPerPage" name="limit" onchange="this.form.submit()"
                             class="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg
                    focus:ring-blue-500 focus:border-blue-500 block w-fit p-2.5">
@@ -37,8 +37,10 @@
                 {% if paginated_books.has_previous %}
                     {#                    <a href="?page=1&limit={{ limit }}">#}
                     {% if query_string %}
-                        <a href="?page=1&{{ query_string }}&limit={{ limit }}">
+
+                        <a href="?page=1&{{ query_string }}">
                     {% else %}
+
                         <a href="?page=1&limit={{ limit }}">
                     {% endif %}
                 {% else %}
@@ -57,8 +59,10 @@
                 {% if paginated_books.has_previous %}
                     {#                    <a href="?page={{ paginated_books.previous_page_number }}&limit={{ limit }}">#}
                     {% if query_string %}
-                        <a href="?page={{ paginated_books.previous_page_number }}&{{ query_string }}&limit={{ limit }}">
+
+                        <a href="?page={{ paginated_books.previous_page_number }}&{{ query_string }}">
                     {% else %}
+
                         <a href="?page={{ paginated_books.previous_page_number }}&limit={{ limit }}">
                     {% endif %}
                 {% else %}
@@ -82,8 +86,10 @@
             <div class="flex p-1  border border-gray-300 items-center">
                 {% if paginated_books.has_next %}
                     {% if query_string %}
-                        <a href="?page={{ paginated_books.next_page_number }}&{{ query_string }}&limit={{ limit }}">
+
+                        <a href="?page={{ paginated_books.next_page_number }}&{{ query_string }}">
                     {% else %}
+
                         <a href="?page={{ paginated_books.next_page_number }}&limit={{ limit }}">
                     {% endif %}
 
@@ -105,9 +111,12 @@
                 {% if paginated_books.has_next %}
                     {#                    <a href="?page={{ paginated_books.paginator.num_pages }}&limit={{ limit }}">#}
                     {% if query_string %}
-                        <a href="?page={{ paginated_books.next_page_number }}&{{ query_string }}&limit={{ limit }}">
+
+                        <a href="?page={{ paginated_books.paginator.num_pages }}&{{ query_string }}">
                     {% else %}
-                        <a href="?page={{ paginated_books.next_page_number }}&limit={{ limit }}">
+
+                        <a href="?page={{ paginated_books.paginator.num_pages }}&limit={{ limit }}">
+
                     {% endif %}
                 {% else %}
                     <a class="pointer-event-none text-gray-300">
