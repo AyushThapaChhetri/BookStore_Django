@@ -566,6 +566,7 @@ class BookCheckout(View):
 
         # First session
         delivery_uuid = request.session.get('delivery_uuid')
+        print(delivery_uuid, ' : Delivery UUID')
         if delivery_uuid:
             delivery_instance = DeliveryInfo.objects.filter(
                 uuid=delivery_uuid,

@@ -61,6 +61,7 @@ class DeletedObjectsManager(BaseSafeDeleteManager):
                 Restore all deleted objects.
                 Calls the QuerySet's restore() method.
                 """
+        
         return self.queryset().restore()
 
     def hard_delete_all(self):
