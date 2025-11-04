@@ -7,7 +7,8 @@ from .views import BookListView, BookView, AuthorView, PublisherView, GenreView,
 
 urlpatterns = [
     path('', BookAdminView.as_view(), name='admin-pannel'),
-    path('list/', BookListView.as_view(), name='admin-book-list'),
+    # path('list/', BookListView.as_view(), name='admin-book-list'),
+    path('manage/book/list/', BookListView.as_view(), name='admin-book-list'),
 
     # Specific actions for books
     path('detail/<uuid>', BookDetailView.as_view(), name='book_detail_view'),
@@ -22,14 +23,14 @@ urlpatterns = [
     # author
     path('search/authors', views.search_authors, name='search_authors'),
     path('authors', AuthorView.as_view(), name="create_author"),
-    path('manager/author/list/', AuthorListView.as_view(), name="admin_author_list"),
+    path('manage/author/list/', AuthorListView.as_view(), name="admin_author_list"),
     path('author/create/', AuthorView.as_view(), name='author_view'),
     path('author/edit/<uuid>', AuthorView.as_view(), name='author_view'),
     path('author/detail/<uuid>', AuthorDetailView.as_view(), name='author_detail_view'),
 
     path('search/publishers', views.search_publishers, name='search_publishers'),
     path('publisher', PublisherView.as_view(), name="create_publisher"),
-    path('manager/publisher/list/', PublisherListView.as_view(), name="admin_publisher_list"),
+    path('manage/publisher/list/', PublisherListView.as_view(), name="admin_publisher_list"),
     path('publisher/create/', PublisherView.as_view(), name='publisher_view'),
     path('publisher/edit/<uuid>', PublisherView.as_view(), name='publisher_view'),
     path('publisher/detail/<uuid>', PublisherDetailView.as_view(), name='publisher_detail_view'),
@@ -39,7 +40,7 @@ urlpatterns = [
 
     path('search/genres', views.search_genres, name='search_genres'),
     path('genres', GenreView.as_view(), name="create_genres"),
-    path('manager/genre/list/', GenreListView.as_view(), name="admin_genre_list"),
+    path('manage/genre/list/', GenreListView.as_view(), name="admin_genre_list"),
     path('genre/create/', GenreView.as_view(), name='genre_view'),
     path('genre/edit/<uuid>', GenreView.as_view(), name='genre_view'),
     path('genre/detail/<uuid>', GenreDetailView.as_view(), name='genre_detail_view'),
@@ -50,5 +51,8 @@ urlpatterns = [
     path('stock/create/', StockView.as_view(), name='stock_view'),
     path('stock/edit/<uuid>', StockView.as_view(), name='stock_view'),
     path('stock/reset/<uuid>', StockView.as_view(), name='stock_reset'),
+
+    # search books
+    path('books/search/', views.search_books, name='search_books')
 
 ]

@@ -515,7 +515,7 @@ class BookStore(View):
 
         # print("db max:", db_max)
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
-            print("hello from headers")
+            # print("hello from headers")
             cards_html = render_to_string("books/components/book_cards.html", {'paginated_books': paginated_books, })
             pagination_html = render_to_string('books/components/pagination_div.html',
                                                {'paginated_books': paginated_books,

@@ -19,6 +19,14 @@ ADMIN_PREFIXES = [
     # later if you add: "/admin-users/", "/admin-orders/", etc.
 ]
 
+CUSTOMER_ONLY_PATHS = [
+    "/books/",
+    "/carts/",
+    "/delivery/",
+    "/orders/",
+    "/about/",
+]
+
 LOGGED_IN_REDIRECT = [
     '/login/',
     '/signup/',
@@ -67,6 +75,10 @@ class PermissionMiddleware:
 
         # 2. Allow superusers
         if request.user.is_authenticated and request.user.is_superuser:
+            print("super user")
+            if any(path.startswith(p) for p in CUSTOMER_ONLY_PATHS):
+                messages.warning(request, "Superusers cannot access customer routes.")
+                return redirect('admin-book-list')
             return self.get_response(request)
 
         # Allow logged-out-only paths only for unauthenticated users
@@ -100,6 +112,13 @@ class PermissionMiddleware:
         # if required_perm and not request.user.has_perm(required_perm):
         #     return HttpResponseForbidden("You don't have permission.")
 
+        # Block staff/superusers from customer-facing routes
+        if request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser):
+            print("Hello superuser or staff")
+            if any(path.startswith(p) for p in CUSTOMER_ONLY_PATHS):
+                messages.warning(request, "Admins and staff cannot access customer routes.")
+                return redirect('admin:index')
+
         # 8. Fallback
         return self.get_response(request)
 
@@ -113,61 +132,3 @@ class PermissionMiddleware:
             if path.startswith(prefix):
                 return perm
         return None
-
-        # Redirect unauthenticated users to the login page with 'next' parameter
-        # if not request.user.is_authenticated:
-        #
-        #     # Allow if it's exactly in the public list
-        #     if path in EXEMPT_PATHS_EXACT:
-        #         return self.get_response(request)
-        #
-        #     # Allow if it starts with a public prefix (optional case)
-        #     if any(path.startswith(prefix) for prefix in EXEMPT_PATHS_PREFIX):
-        #         return self.get_response(request)
-        #
-        #     return redirect('login_view')
-        # return redirect(reverse('login_view') + '?next=' + request.path)
-
-        # Determine the required permission for this URL
-        # required_permission = self.get_required_permission(request.path)
-        #
-        # # Allow superadmins to access any URL
-        # if request.user.is_superuser:
-        #     return self.get_response(request)
-        #
-        # # If no permission is required, allow any authenticated user
-        # if required_permission is None:
-        #     return self.get_response(request)
-        #
-        # # Check if the user has the required permission
-        # if request.user.has_perm(required_permission):
-        #     return self.get_response(request)
-        # else:
-        #     # Deny access with a 403 Forbidden response if permission is missing
-        #     return HttpResponseForbidden("You don't have permission to access this page.")
-
-    # def should_skip_checks(self, path):
-    #     """
-    #     Check if permission checks should be skipped for this path.
-    #     Returns True for admin, media, and debug reload URLs.
-    #     """
-    #     # List of URL prefixes where we skip custom permission checks
-    #     skip_prefixes = [
-    #         '/admin/',  # Admin site has its own permission system
-    #         '/media/',  # Media files are typically public or handled by the server
-    #         '/__reload__/',  # Debug reload URLs for development (django-browser-reload)
-    #     ]
-    #     for prefix in skip_prefixes:
-    #         if path.startswith(prefix):
-    #             return True
-    #     return False
-    #
-    # def get_required_permission(self, path):
-    #     """
-    #     Find the required permission for the given path.
-    #     Returns the permission codename if the path matches a prefix in URL_PERMISSIONS, else None.
-    #     """
-    #     for prefix, permission in URL_PERMISSIONS:
-    #         if path.startswith(f"/{prefix}"):
-    #             return permission
-    #     return None  # No permission required if no match is found
