@@ -20,17 +20,6 @@ class UserCreateView(View):
         form = UserForm()
         return render(request, 'users/signup_users_form.html', {'form': form})
 
-    # def post(self, request):
-    #     form = UserForm(request.POST, request.FILES)
-    #     if form.is_valid():
-    #         print('before validation')
-    #         form.save()
-    #         print('after validation')
-    #         return redirect('book_list')
-    #     print('not valid')
-    #     # Optionally, print form errors to debug:
-    #     print(form.errors)
-    #     return render(request, 'users/signup_users_form.html', {'form': form})
     def post(self, request):
         form = UserForm(request.POST, request.FILES)
         if form.is_valid():
@@ -136,32 +125,6 @@ class UserLoginView(View):
                 # If form invalid
         messages.error(request, 'Please correct the form')
         return render(request, 'users/login_users_form.html', {'form': form})
-        #     try:
-        #         print('h1')
-        #         inactiveuser_detail = User.objects.get(email=email)
-        #         print('h2')
-        #         if not inactiveuser_detail.has_usable_password() and not inactiveuser_detail.is_active:
-        #             print('h3')
-        #             messages.error(request, 'Account is not Registered yet, Please Check your Email')
-        #             print('h4')
-        #     except User.DoesNotExist:
-        #         user_obj = None
-        #
-        #     user = authenticate(request, email=email, password=password)
-        #     if user is not None:
-        #         login(request, user)
-        #         messages.success(request, "Login successful!")
-        #         return redirect('home')
-        #     else:
-        #         messages.error(request, "Invalid email or password.")
-        #
-        #         return render(request, 'users/login_users_form.html', {'form': form})
-        #
-        # print(form.errors)
-        #
-        # messages.error(request, 'Please correct the form')
-        #
-        # return render(request, 'users/login_users_form.html', {'form': form})
 
 
 class UserLogoutView(View):

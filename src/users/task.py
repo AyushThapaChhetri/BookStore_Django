@@ -32,6 +32,7 @@ def send_activation_email(user_email):
 def cleanup_expired_users():
     # expiration_time = timezone.now() - timedelta(hours=24)  # 24 hours ago
     expiration_time = timezone.now() - timedelta(hours=settings.USER_EXPIRATION_HOURS)  # 24 hours ago
+    # expiration_time = timezone.now() - timedelta(seconds=settings.USER_EXPIRATION_SECONDS)
     expired_users = User.objects.filter(
         is_active=False,  # Unactivated
         password__startswith=UNUSABLE_PASSWORD_PREFIX,  # No password set (raw password is unusable before set_password)

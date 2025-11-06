@@ -9,10 +9,6 @@ URL_PERMISSIONS = [
     # Add more mappings here as your project grows (e.g., 'books/create/' or 'users/profile/')
 ]
 
-# EXEMPT_PATHS_EXACT = {'/', '/login/', '/signup/', '/reset_password/', '/reset_password_sent/', '/reset/<uuid>/<token>/',
-#                       '/reset_password_complete/', '/about/', '/activate/'}
-# EXEMPT_PATHS_PREFIX = {'/media/', '/static/', '/reset/', '/activate/', }
-
 # Only check permission under these prefixes
 ADMIN_PREFIXES = [
     "/admin-panel/",  # all book admin URLs
@@ -75,7 +71,7 @@ class PermissionMiddleware:
 
         # 2. Allow superusers
         if request.user.is_authenticated and request.user.is_superuser:
-            print("super user")
+            # print("super user")
             if any(path.startswith(p) for p in CUSTOMER_ONLY_PATHS):
                 messages.warning(request, "Superusers cannot access customer routes.")
                 return redirect('admin-book-list')
@@ -114,7 +110,7 @@ class PermissionMiddleware:
 
         # Block staff/superusers from customer-facing routes
         if request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser):
-            print("Hello superuser or staff")
+            # print("Hello superuser or staff")
             if any(path.startswith(p) for p in CUSTOMER_ONLY_PATHS):
                 messages.warning(request, "Admins and staff cannot access customer routes.")
                 return redirect('admin:index')

@@ -185,7 +185,7 @@
                 url.searchParams.set("min_price", minVal);
                 url.searchParams.set("max_price", maxVal);
 
-
+                {#updates browser url to new path without causing reload#}
                 history.pushState({}, "", url);
 
 

@@ -93,6 +93,13 @@ class UserForm(forms.ModelForm):
         dob = self.cleaned_data.get('date_of_birth')
         if dob and dob > timezone.localdate():
             raise forms.ValidationError("Date of Birth cannot be in the future.")
+
+        today = timezone.localdate()
+        # calculated months and days , if birthday has passed or not (-1 if still birthday not yet passed)
+        age_in_years = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+
+        if age_in_years < 7:
+            raise forms.ValidationError("You must be at least 7 years old to signup.")
         return dob
 
     def clean_contact_number(self):
@@ -100,6 +107,7 @@ class UserForm(forms.ModelForm):
         value = clean_spaces_or_none(value)
         if value and not re.fullmatch(r'\d{7,20}', value):
             raise forms.ValidationError("Enter a valid contact number (digits only, 7-20 digits).")
+
         return value
 
     def clean_address(self):

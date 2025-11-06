@@ -64,6 +64,7 @@
                         class="peer-focus:font-medium absolute text-sm text-gray-500 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6"
                 >
                     {{ field.label }}
+                  
                 </label>
 
             {% elif field|widget_type == "select_multiple" %}
@@ -91,6 +92,7 @@
                         >
                             {{ field.label }} (Hold Ctrl/Cmd to select multiple)
                         </label>
+
 
                     </div>
                     <button class="h-fit border-1 border-gray-400 shadow-lg rounded-md active:bg-blue-200 active:border-white active:text-white"
@@ -123,6 +125,7 @@
                 >
                     {{ field.label }}
                 </label>
+
             {% endif %}
 
             {% if field.errors %}

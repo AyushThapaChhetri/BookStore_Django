@@ -14,7 +14,7 @@
             integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
             crossorigin="anonymous"></script>
 
- 
+
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <div class="flex flex-col items-center p-5 bg-gray-100 gap-4 flex-grow">
@@ -118,10 +118,12 @@
                                         id="{{ field.id_for_label }}"
                                         multiple
                                         class="multi_select_book block py-2.5 px-2 w-full text-[16px] text-gray-900 bg-white border-2 {% if field.errors %}border-red-500{% else %}border-gray-300{% endif %} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent min-h-[100px]"
+                                        class=" block py-2.5 px-2 w-full text-[16px] text-gray-900 bg-white border-2 {% if field.errors %}border-red-500{% else %}border-gray-300{% endif %} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent min-h-[100px]"
                                 >
                                     {% for choice_value, choice_label in field.field.choices %}
                                         <option value="{{ choice_value }}"
-                                                {% if choice_value|stringformat:"s" in field.value|stringformat:"s" %}selected{% endif %}>
+                                                {% if field.value and choice_value in field.value %}selected{% endif %}>
+
                                             {{ choice_label }}
                                         </option>
                                     {% endfor %}
@@ -301,7 +303,7 @@
                         headers: {'X-Requested-With': 'XMLHttpRequest'}
                     });
 
-                    console.log(refreshResponse.data.html)
+                    console.log(refreshResponse.data.html, " : Refresh Response ")
 
                     selectField.innerHTML = refreshResponse.data.html;
 

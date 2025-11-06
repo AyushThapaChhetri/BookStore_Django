@@ -81,15 +81,20 @@
                                 </label>
                             </div>
 
-                            <button class="h-fit p-1 border-[0.2px] border-gray-200 shadow-xl rounded-md active:bg-blue-200 active:border-white active:text-white"
-                                    type="button" onclick="openModal('{{ field.name }}', '{{ field.id_for_label }}')">
 
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                     stroke-width="1.5"
-                                     stroke="currentColor" class="size-5">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
-                                </svg>
-                            </button>
+                            {% if field.html_name != 'parent_genre' %}
+                                <button class="h-fit p-1 border-[0.2px] border-gray-200 shadow-xl rounded-md active:bg-blue-200 active:border-white active:text-white"
+                                        type="button"
+                                        onclick="openModal('{{ field.name }}', '{{ field.id_for_label }}')">
+
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                         stroke-width="1.5"
+                                         stroke="currentColor" class="size-5">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                              d="M12 4.5v15m7.5-7.5h-15"/>
+                                    </svg>
+                                </button>
+                            {% endif %}
 
                         </div>
 
@@ -265,13 +270,6 @@
                     selectField.appendChild(newOption);
                 }
 
-                // Optionally, update your select field in the main form with the new author
-                {#const selectField = document.getElementById(fieldName);#}
-                {#const newOption = document.createElement("option");#}
-                {#newOption.value = response.data.id; // returned from Django#}
-                {#newOption.textContent = response.data.name; // returned from Django#}
-                {#newOption.selected = true;#}
-                {#selectField.appendChild(newOption);#}
             } catch (err) {
                 console.error("Error submitting popup form", err);
 

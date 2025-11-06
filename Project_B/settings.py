@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
+from datetime import timedelta
 from pathlib import Path
 
 from celery.schedules import crontab
@@ -138,14 +139,15 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'  # Match your TIME_ZONE setting
 USER_EXPIRATION_HOURS = float(os.getenv("USER_EXPIRATION_HOURS", 24))
+# USER_EXPIRATION_SECONDS = int(os.environ.get("USER_EXPIRATION_SECONDS", 3600 * 24))
 
 # Schedule periodic tasks with Celery Beat
 CELERY_BEAT_SCHEDULE = {
     'cleanup-expired-users': {
         'task': 'src.users.task.cleanup_expired_users',
-        'schedule': crontab(hour=0, minute=0),  # Run daily at midnight UTC
+        # 'schedule': crontab(hour=0, minute=0),  # Run daily at midnight UTC
         # For testing: run every 10 seconds
-        # 'schedule': 10.0,  # seconds
+        'schedule': 10.0,  # seconds
     },
 }
 

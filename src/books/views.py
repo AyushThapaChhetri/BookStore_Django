@@ -463,6 +463,7 @@ class StockDetailView(View):
 class BookStore(View):
     def get(self, request, price_aggregate=None):
         query = request.GET.get('q', '')
+        # print('hello')
         min_price = request.GET.get('min_price')
         max_price = request.GET.get('max_price')
         sort_by = request.GET.get('sort')
@@ -483,6 +484,7 @@ class BookStore(View):
             last_restock_date=F('stock__last_restock_date')
         )
         items_count = CartItem.objects.filter(cart__user=request.user).count()
+        print(items_count, ": Item count")
 
         books, min_price_value, max_price_value, db_max = searchfilter_bookStore(books, query, min_price,
                                                                                  max_price, sort_by)
@@ -1230,6 +1232,7 @@ class GenreView(View):
         form = GenreForm()
 
         if request.headers.get("X-requested-with") == "XMLHttpRequest":
+            print('genre ajax')
             html = render_to_string('author/components/author_form.html',
                                     {'form': form, 'title': 'Genre', 'form_type': 'genres'},
                                     request=request)

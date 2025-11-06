@@ -135,3 +135,18 @@ class Stock(AbstractBaseModel):
         if self.stock_quantity is not None:
             self.is_available = self.stock_quantity > 0
         super().save(*args, **kwargs)
+
+
+class StockMgmt(models.Model):
+    # quantty 80
+    # date
+    # publiser #wholeseller
+
+    pass
+
+
+class StockMgmtHistory:
+    # sell date 20
+    # quantity
+    # StockMgmt
+    pass
