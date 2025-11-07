@@ -1,0 +1,28 @@
+{% extends 'books/admin/admin_base_list.html' %}
+{% block content %}
+    <h2>Current Stock Overview</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>Book</th>
+            <th>Current Price</th>
+            <th>Discount (%)</th>
+            <th>Total Quantity</th>
+            <th>Available</th>
+            <th>Last Restock</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for s in stocks %}
+            <tr>
+                <td><a href="{% url 'stock_detail' s.id %}">{{ s.book.title }}</a></td>
+                <td>{{ s.current_price }}</td>
+                <td>{{ s.current_discount_percentage }}</td>
+                <td>{{ s.total_remaining_quantity }}</td>
+                <td>{{ s.is_available|yesno:"Yes,No" }}</td>
+                <td>{{ s.last_restock_date|date:"Y-m-d" }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

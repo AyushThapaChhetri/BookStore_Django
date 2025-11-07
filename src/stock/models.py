@@ -1,0 +1,154 @@
+from decimal import Decimal, ROUND_HALF_UP
+
+from django.conf import settings
+from django.core.validators import MinValueValidator, MaxValueValidator
+from django.db import models
+from django.db.models import Sum
+from django.utils import timezone
+
+from src.books.models import Book, Publisher
+from src.core.models import AbstractBaseModel
+
+
+# Create your models here.
+
+class Stock(AbstractBaseModel):
+    book = models.OneToOneField(Book, on_delete=models.CASCADE, related_name='stock')
+    current_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00,
+                                        validators=[MinValueValidator(0.00)])
+    current_discount_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0.00,
+                                                      validators=[MinValueValidator(0), MaxValueValidator(100)])
+    is_available = models.BooleanField(default=False)
+    last_restock_date = models.DateField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Stock for {self.book.title}"
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['current_price']),
+
+        ]
+
+    @property
+    def total_remaining_quantity(self):
+        # Only aggregate if the Stock has a PK
+        if self.pk:
+            return self.batches.aggregate(total=Sum('remaining_quantity'))['total'] or 0
+        return 0
+
+    @property
+    def price_after_discount(self):
+        return self.current_price * (
+                1 - self.current_discount_percentage / 100
+        ).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+    def save(self, *args, **kwargs):
+        # First save to get primary key
+        super().save(*args, **kwargs)
+
+        # Now calculate is_available based on batches
+        new_is_available = self.total_remaining_quantity > 0
+        if self.is_available != new_is_available:
+            self.is_available = new_is_available
+            # Only update the field to avoid recursion
+            super().save(update_fields=['is_available'])
+        # super().save(*args, **kwargs)
+        # self.is_available = self.total_remaining_quantity > 0
+        # super().save(update_fields=['is_available'])
+
+
+class StockBatch(AbstractBaseModel):
+    stock = models.ForeignKey(Stock, on_delete=models.CASCADE, related_name='batches')
+    received_date = models.DateField(default=timezone.now)
+    initial_quantity = models.PositiveIntegerField()
+    remaining_quantity = models.PositiveIntegerField()
+    unit_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    supplier = models.ForeignKey(Publisher, on_delete=models.SET_NULL, null=True,
+                                 blank=True)
+    notes = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Batch for {self.stock.book.title} on {self.received_date} (Remaining: {self.remaining_quantity})"
+
+    class Meta:
+        ordering = ['received_date']  # Oldest first for FIFO
+        indexes = [
+            models.Index(fields=['stock', 'received_date']),
+            models.Index(fields=['remaining_quantity']),
+        ]
+
+    def save(self, *args, **kwargs):
+        if self.pk is None:  # On creation, set remaining to initial
+            self.remaining_quantity = self.initial_quantity
+        super().save(*args, **kwargs)
+
+
+class StockHistory(AbstractBaseModel):
+    CHANGE_TYPES = (
+        ('restock', 'Restock'),
+        ('reserve', 'Reserve for Order'),
+        ('release_reserve', 'Release Reservation'),
+        ('sold', 'Sold'),
+
+    )
+
+    stock = models.ForeignKey('Stock', on_delete=models.CASCADE, related_name='stock_history')
+    batch = models.ForeignKey('StockBatch', on_delete=models.SET_NULL, null=True, blank=True,
+                              related_name='history')
+    change_type = models.CharField(max_length=20, choices=CHANGE_TYPES)
+    quantity_change = models.IntegerField()
+    before_quantity = models.PositiveIntegerField()
+    after_quantity = models.PositiveIntegerField()
+    reason = models.TextField(blank=True, null=True)
+    changed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+                                   related_name='stock_changes')
+    order = models.ForeignKey('orders.Order', on_delete=models.SET_NULL, null=True,
+                              blank=True)
+
+    def __str__(self):
+        return f"{self.change_type} for {self.stock.book.title} on {self.created_at} (Change: {self.quantity_change})"
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['stock', '-created_at']),
+            models.Index(fields=['change_type']),
+        ]
+
+
+class PriceHistory(AbstractBaseModel):
+    stock = models.ForeignKey('Stock', on_delete=models.CASCADE, related_name='price_history')
+    old_price = models.DecimalField(max_digits=10, decimal_places=2)
+    new_price = models.DecimalField(max_digits=10, decimal_places=2)
+    old_discount_percentage = models.DecimalField(max_digits=5, decimal_places=2)
+    new_discount_percentage = models.DecimalField(max_digits=5, decimal_places=2)
+    changed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+                                   related_name='price_changes')
+    reason = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Price change for {self.stock.book.title} on {self.created_at}"
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['stock', '-created_at']),
+        ]
+
+
+class StockReservation(AbstractBaseModel):
+    stock = models.ForeignKey('stock.Stock', on_delete=models.CASCADE, related_name='reservations')
+    order_item = models.OneToOneField('orders.OrderItem', on_delete=models.CASCADE, related_name='reservation')
+    batch = models.ForeignKey('StockBatch', on_delete=models.CASCADE, related_name='reservations')
+    reserved_quantity = models.PositiveIntegerField()
+    is_active = models.BooleanField(default=True)  # False when released or fulfilled
+
+    def __str__(self):
+        return f"Reservation of {self.reserved_quantity} from batch {self.batch} for OrderItem {self.order_item}"
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['order_item', 'is_active']),
+            models.Index(fields=['batch']),
+        ]

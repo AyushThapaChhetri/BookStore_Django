@@ -19,8 +19,8 @@ from django.views.decorators.http import require_POST
 from pygments.lexers import q
 
 from Project_B.utils import applying_sorting, ALLOWED_SORTS
-from src.books.forms import BookForm, AuthorForm, GenreForm, PublisherForm, StockForm
-from src.books.models import Book, Stock, Author, Publisher, Genre
+from src.books.forms import BookForm, AuthorForm, GenreForm, PublisherForm
+from src.books.models import Book, Author, Publisher, Genre
 from src.books.pagination import paginate_queryset
 from src.books.utils import searchfilter_bookStore, search_query
 from src.cart.models import CartItem, Cart
@@ -28,6 +28,8 @@ from src.cart.utils import calculate_cart_totals, round_decimal
 from src.orders.models import Order, OrderItem
 from src.shipping.forms import DeliveryForm
 from src.shipping.models import DeliveryInfo
+from src.stock.forms import StockForm
+from src.stock.models import Stock
 
 
 # Create your views here.

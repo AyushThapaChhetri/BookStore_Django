@@ -1,0 +1,30 @@
+{% extends 'books/admin/admin_base_list.html' %}
+{% block content %}
+    <h2>{{ stock.book.title }}</h2>
+
+    <p>Price: {{ stock.current_price }} | Discount: {{ stock.current_discount_percentage }}%</p>
+    <p>Total Remaining: {{ stock.total_remaining_quantity }}</p>
+    <p>Available: {{ stock.is_available|yesno:"Yes,No" }}</p>
+
+    <h3>Batches</h3>
+    <table>
+        <tr>
+            <th>Date</th>
+            <th>Initial</th>
+            <th>Remaining</th>
+            <th>Supplier</th>
+        </tr>
+        {% for batch in stock.batches.all %}
+            <tr>
+                <td>{{ batch.received_date|date:"Y-m-d" }}</td>
+                <td>{{ batch.initial_quantity }}</td>
+                <td>{{ batch.remaining_quantity }}</td>
+                <td>{{ batch.supplier }}</td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="4">No batches yet.</td>
+            </tr>
+        {% endfor %}
+    </table>
+{% endblock %}

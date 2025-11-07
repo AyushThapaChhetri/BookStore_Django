@@ -1,6 +1,3 @@
-from decimal import ROUND_HALF_UP, Decimal
-
-from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.db.models import UniqueConstraint
 from django.db.models.functions import Lower
@@ -101,52 +98,3 @@ class Book(AbstractBaseModel):
                 name='unique_book_title_pubdate_publisher'
             )
         ]
-
-
-class Stock(AbstractBaseModel):
-    book = models.OneToOneField('Book', on_delete=models.CASCADE, related_name='stock')
-    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00,
-                                validators=[MinValueValidator(0.00)])
-    stock_quantity = models.PositiveIntegerField(default=0)
-    is_available = models.BooleanField(default=False)
-    discount_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0.00,
-                                              validators=[MinValueValidator(0), MaxValueValidator(100)])
-    last_restock_date = models.DateField(blank=True, null=True)
-
-    def __str__(self):
-        return f"Stock for {self.book.title} - Quantity: {self.stock_quantity}"
-
-    class Meta:
-        indexes = [
-            models.Index(fields=['price']),
-            models.Index(fields=['stock_quantity']),
-            models.Index(fields=['is_available']),
-        ]
-
-    @property
-    def discount_amount(self):
-        return self.price - self.price_after_discount_one_item
-
-    @property
-    def price_after_discount_one_item(self):
-        return self.price * (1 - self.discount_percentage / 100).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-
-    def save(self, *args, **kwargs):
-        if self.stock_quantity is not None:
-            self.is_available = self.stock_quantity > 0
-        super().save(*args, **kwargs)
-
-
-class StockMgmt(models.Model):
-    # quantty 80
-    # date
-    # publiser #wholeseller
-
-    pass
-
-
-class StockMgmtHistory:
-    # sell date 20
-    # quantity
-    # StockMgmt
-    pass

@@ -7,7 +7,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.utils import timezone
 
-from src.books.models import Book, Author, Genre, Publisher, Stock
+from src.books.models import Book, Author, Genre, Publisher
 
 
 def clean_spaces_or_none(value: str | None) -> str | None:
@@ -328,49 +328,3 @@ class BookForm(forms.ModelForm):
                 self.add_error('title', 'A book with this Title, Publication Date, and Publisher already exists.')
 
         return cleaned_data
-
-
-class StockForm(forms.ModelForm):
-    class Meta:
-        model = Stock
-        fields = [
-            'book',
-            'price',
-            'stock_quantity',
-            'is_available',
-            'discount_percentage',
-            'last_restock_date',
-        ]
-        widgets = {
-            'price': forms.NumberInput(attrs={'step': '0.01'}),
-            'discount_percentage': forms.NumberInput(attrs={'step': '0.01', 'min': '0', 'max': '100'}),
-            'last_restock_date': forms.DateInput(attrs={'type': 'date'}),
-            'book': forms.HiddenInput(),  # Often hidden if creating via Book
-            'is_available': forms.HiddenInput(),
-        }
-
-    def clean_price(self):
-        price = self.cleaned_data.get('price')
-        if price < 0:
-            raise ValidationError("Price must be non-negative.")
-        return price
-
-    def clean_stock_quantity(self):
-        quantity = self.cleaned_data.get('stock_quantity')
-        if quantity < 0:
-            raise ValidationError("Stock quantity cannot be negative.")
-        return quantity
-
-    def clean_discount_percentage(self):
-        discount = self.cleaned_data.get('discount_percentage')
-        if discount < 0 or discount > 100:
-            raise ValidationError("Discount percentage must be between 0 and 100.")
-        return discount
-
-    def clean_last_restock_date(self):
-        restock_date = self.cleaned_data.get('last_restock_date')
-        if restock_date:
-            today = timezone.localdate()
-            if restock_date > today:
-                raise ValidationError("Restock date cannot be in the future.")
-            return restock_date

@@ -3,7 +3,8 @@ from math import floor, ceil
 from django.db.models import Q, Max, Min
 
 from Project_B.utils import applying_sorting, ALLOWED_SORTS
-from src.books.models import Book, Stock
+from src.books.models import Book
+from src.stock.models import Stock
 
 
 def search_query(query, manager=Book.objects):

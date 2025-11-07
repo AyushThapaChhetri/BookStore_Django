@@ -15,14 +15,14 @@ class DeliveryInfo(AbstractBaseModel):
     full_name = models.CharField(max_length=255, help_text="Recipient's full name")
     street_address = models.CharField(max_length=255)
     city = models.CharField(max_length=100)
-    state = models.CharField(max_length=100, blank=True, null=True)  # Optional for countries without states
+    state = models.CharField(max_length=100, blank=True, null=True)
     zip_code = models.CharField(max_length=20)
-    country = models.CharField(max_length=100, default='US')  # Default to your primary market
+    country = models.CharField(max_length=100, default='US')
     phone_number = models.CharField(max_length=20)
-    is_default = models.BooleanField(default=False)  # For quick selection in checkout
+    is_default = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.full_name} - {self.street_address}, {self.city}"
 
     class Meta:
-        ordering = ['-is_default', '-created_at']  # Prioritize defaults
+        ordering = ['-is_default', '-created_at']

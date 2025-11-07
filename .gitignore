@@ -27,6 +27,9 @@ static_src/
 node_modules/
 **/node_modules/
 
+#Sql
+*.sql
+
 # if you want fresh migrations on every clone
 # */migrations/
 # !*/migrations/__init__.py
