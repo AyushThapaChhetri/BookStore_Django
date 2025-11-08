@@ -1,0 +1,27 @@
+{% extends 'books/admin/Stock/admin_reusable_stock.html' %}
+{% block title %}Reservation{% endblock %}
+{% block table_rows %}
+    {% for reservation in paginated_stock_reservation %}
+        <tr class="border-t hover:bg-gray-50">
+            <td class="px-4 py-2">{{ reservation.order_item }}</td>
+            <td class="px-4 py-2">{{ reservation.batch }}</td>
+            <td class="px-4 py-2">{{ reservation.reserved_quantity }}</td>
+            <td class="px-4 py-2">  {% if reservation.is_active %}
+                <span class="text-green-600 font-semibold">Active</span>
+            {% else %}
+                <span class="text-red-600 font-semibold">Released</span>
+            {% endif %}</td>
+            <td class="px-4 py-2">{{ reservation.created_at }}</td>
+        </tr>
+    {% empty %}
+        <tr>
+            <td colspan="6" class="text-center p-4 text-gray-500">No reservation found</td>
+        </tr>
+    {% endfor %}
+{% endblock %}
+
+{% block pagination %}
+    {% with paginated_stock_reservation as paginated_items %}
+        {{ block.super }}
+    {% endwith %}
+{% endblock %}

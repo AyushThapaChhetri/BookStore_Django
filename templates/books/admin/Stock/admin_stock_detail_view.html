@@ -47,7 +47,14 @@
 
 
         <div class="bg-white shadow-md rounded-lg p-6 mb-8 border border-gray-200">
-            <h2 class="text-2xl font-semibold mb-4 text-gray-800">Batches</h2>
+            {#            <h2 class="text-2xl font-semibold mb-4 text-gray-800">Batches</h2>#}
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-semibold text-gray-800">Batches</h2>
+                <a href="{% url 'admin_stock_batches' book.uuid %}"
+                   class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm">
+                    View All
+                </a>
+            </div>
             <div class="overflow-x-auto">
                 <table class="w-full border-collapse">
                     <thead>
@@ -84,7 +91,14 @@
 
 
         <div class="bg-white shadow-md rounded-lg p-6 border border-gray-200 mb-10">
-            <h2 class="text-2xl font-semibold mb-4 text-gray-800">Recent History</h2>
+
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-800">Stock History</h2>
+                <a href="{% url 'admin_stock_history' book.uuid %}"
+                   class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm">
+                    View All
+                </a>
+            </div>
             <div class="overflow-x-auto">
                 <table class="w-full border-collapse">
                     <thead>
@@ -120,7 +134,16 @@
         </div>
 
         <div class="bg-white rounded-lg shadow p-6 mb-10">
-            <h2 class="text-xl font-semibold mb-4 text-gray-800">Price Change History</h2>
+
+
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">Price Change History</h2>
+                <a href="{% url 'admin_price_history' book.uuid %}"
+                   class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm">
+                    View All
+                </a>
+            </div>
+
             <div class="overflow-x-auto">
                 <table class="min-w-full border border-gray-200 rounded-lg overflow-hidden">
                     <thead class="bg-gray-100 text-gray-700  text-sm">
@@ -157,7 +180,15 @@
 
 
         <div class="bg-white rounded-lg shadow p-6">
-            <h2 class="text-xl font-semibold mb-4 text-gray-800">Active Reservations</h2>
+
+
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">Active Reservations</h2>
+                <a href="{% url 'admin_active_reservation' book.uuid %}"
+                   class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm">
+                    View All
+                </a>
+            </div>
             <div class="overflow-x-auto">
                 <table class="min-w-full border border-gray-200 rounded-lg overflow-hidden">
                     <thead class="bg-gray-100 text-gray-700  text-sm">

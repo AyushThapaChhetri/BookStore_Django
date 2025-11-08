@@ -69,7 +69,7 @@
             {% else %}
                 <td class="p-3 text-sm text-gray-700">{{ book.publication_date|default:'-' }}</td>
                 <td class="p-3 whitespace-nowrap text-sm text-gray-700">{% if book.stock %}
-                    Rs {{ book.stock.price }} ({{ book.stock.stock_quantity }} left)
+                    Rs {{ book.stock.current_price }} ({{ book.stock.total_remaining_quantity }} left)
                 {% else %}
                     Out of stock
                 {% endif %}</td>

@@ -7,6 +7,7 @@ from .forms import RestockForm, PriceUpdateForm  # From Step 3
 from .models import Book
 from .models import StockReservation
 from .services import StockService
+from ..books.pagination import paginate_queryset
 
 
 @login_required
@@ -24,7 +25,7 @@ def stock_detail(request, book_uuid):
     #     print(batch.created_at)
     history = stock.stock_history.order_by('-created_at')[:10]
     price_history = stock.price_history.order_by('-created_at')[:5]
-    reservations = StockReservation.objects.filter(batch__stock=stock, is_active=True)
+    reservations = StockReservation.objects.filter(batch__stock=stock, is_active=True)[:10]
 
     context = {
         'book': book,
@@ -36,6 +37,60 @@ def stock_detail(request, book_uuid):
     }
     # print("stock detail page")
     return render(request, 'books/admin/Stock/admin_stock_detail_view.html', context)
+
+
+@login_required
+def stockBatchesView(request, book_uuid):
+    book = get_object_or_404(Book, uuid=book_uuid)
+    batches = book.stock.batches.all().order_by('-received_date')
+    paginated_batches, limit = paginate_queryset(request, batches, default_limit=10)
+    return render(request, 'books/admin/Stock/admin_stock_batches.html', {
+        'paginated_batches': paginated_batches,
+        'limit': limit,
+        'book': book,
+        'headers': ['Date', 'Initial', 'Remaining', 'Cost', 'Supplier', 'Notes']
+    })
+
+
+@login_required
+def stockHistoryView(request, book_uuid):
+    book = get_object_or_404(Book, uuid=book_uuid)
+    stock_history = book.stock.stock_history.all().order_by('-created_at')
+    paginated_stock_history, limit = paginate_queryset(request, stock_history, default_limit=10)
+    return render(request, 'books/admin/Stock/admin_stock_history.html', {
+        'paginated_stock_history': paginated_stock_history,
+        'limit': limit,
+        'book': book,
+        'headers': ['Type', 'Change', 'Before', 'After', 'By', 'Date']
+    })
+
+
+@login_required
+def stockPriceView(request, book_uuid):
+    book = get_object_or_404(Book, uuid=book_uuid)
+    stock_price_history = book.stock.price_history.all().order_by('-created_at')
+    print(stock_price_history)
+    paginated_price_history, limit = paginate_queryset(request, stock_price_history, default_limit=10)
+    print(paginated_price_history)
+    return render(request, 'books/admin/Stock/admin_price_history.html', {
+        'paginated_price_history': paginated_price_history,
+        'limit': limit,
+        'book': book,
+        'headers': ['Old Price', 'New Price', 'Old Discount', 'New Discount', 'Changed By', 'Reason', 'Date']
+    })
+
+
+@login_required
+def stockReservationView(request, book_uuid):
+    book = get_object_or_404(Book, uuid=book_uuid)
+    reservation = book.stock.reservations.all().order_by('-created_at')
+    paginated_stock_reservation, limit = paginate_queryset(request, reservation, default_limit=10)
+    return render(request, 'books/admin/Stock/admin_stock_reservation.html', {
+        'paginated_stock_reservation': paginated_stock_reservation,
+        'limit': limit,
+        'book': book,
+        'headers': ['Order Item', 'Batch', 'Reserved Qty', 'Status', 'Created_At']
+    })
 
 
 @login_required

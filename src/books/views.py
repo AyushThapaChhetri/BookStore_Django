@@ -756,7 +756,7 @@ class BookDetailStore(View):
         quantity = book_in_cart.quantity if book_in_cart else 1
 
         cart_item_uuid = str(book_in_cart.uuid) if book_in_cart else None
-        print('Cart uuid from detail store: ', cart_item_uuid)
+        # print('Cart uuid from detail store: ', cart_item_uuid)
 
         return render(request, 'books/book_detail_store.html',
                       {'books': book, 'book_in_cart': book_in_cart, 'quantity': quantity,
