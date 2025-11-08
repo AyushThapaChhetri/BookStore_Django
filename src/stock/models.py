@@ -38,6 +38,11 @@ class Stock(AbstractBaseModel):
         return 0
 
     @property
+    def discount_amount(self):
+        discount_amount = self.current_price - self.price_after_discount
+        return discount_amount
+
+    @property
     def price_after_discount(self):
         return self.current_price * (
                 1 - self.current_discount_percentage / 100
@@ -51,11 +56,8 @@ class Stock(AbstractBaseModel):
         new_is_available = self.total_remaining_quantity > 0
         if self.is_available != new_is_available:
             self.is_available = new_is_available
-            # Only update the field to avoid recursion
+
             super().save(update_fields=['is_available'])
-        # super().save(*args, **kwargs)
-        # self.is_available = self.total_remaining_quantity > 0
-        # super().save(update_fields=['is_available'])
 
 
 class StockBatch(AbstractBaseModel):
@@ -139,7 +141,7 @@ class PriceHistory(AbstractBaseModel):
 
 class StockReservation(AbstractBaseModel):
     stock = models.ForeignKey('stock.Stock', on_delete=models.CASCADE, related_name='reservations')
-    order_item = models.OneToOneField('orders.OrderItem', on_delete=models.CASCADE, related_name='reservation')
+    order_item = models.ForeignKey('orders.OrderItem', on_delete=models.CASCADE, related_name='reservation')
     batch = models.ForeignKey('StockBatch', on_delete=models.CASCADE, related_name='reservations')
     reserved_quantity = models.PositiveIntegerField()
     is_active = models.BooleanField(default=True)  # False when released or fulfilled

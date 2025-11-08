@@ -14,8 +14,8 @@ def round_decimal(value, places='0.01'):
 
 def calculate_item_discount(item):
     """Return discount amount for a CartItem."""
-    price = Decimal(str(item.book.stock.price))
-    discount_pct = Decimal(str(item.book.stock.discount_percentage)) / Decimal('100')
+    price = Decimal(str(item.book.stock.current_price))
+    discount_pct = Decimal(str(item.book.stock.current_discount_percentage)) / Decimal('100')
     return price * discount_pct * item.quantity
 
 
@@ -29,6 +29,13 @@ def calculate_cart_totals(user):
     total_discount = sum((calculate_item_discount(item) for item in items), start=Decimal('0.00'))
 
     total_amount_after_discount = total_price - total_discount
+    # print("Cart hello")
+    # print(items)
+    # print(list(item for item in items))
+    # for item in items:
+    #     book = item.book
+    #     print(f"\nBook: {book.title}")
+    #     print("Authors:", list(book.authors.values_list("name", flat=True)))
 
     return {
         "cart": cart,

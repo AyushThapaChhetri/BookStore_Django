@@ -9,6 +9,7 @@
             <div class="flex flex-col-reverse gap-4 md:gap-0 md:flex-row">
 
                 <div class="flex flex-col w-full md:w-[70%] md:pr-[40px] gap-4 ">
+
                     {% if cart.items.exists %}
                         {% for item in items %}
                             {% include 'books/components/cart_product.html' with item=item %}

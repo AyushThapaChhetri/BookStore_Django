@@ -31,11 +31,17 @@ def searchfilter_bookStore(books, query=None, min_price=None, max_price=None, so
         ).select_related('publisher', 'stock').prefetch_related('authors', 'genres').distinct()
 
     price_aggregate = Stock.objects.filter(is_available=True).aggregate(
-        min_price=Min('price'),
-        max_price=Max('price')
+        min_price=Min('current_price'),
+        max_price=Max('current_price')
     )
-    db_min = floor(price_aggregate['min_price']) if price_aggregate['min_price'] else 0
-    db_max = ceil(price_aggregate['max_price'] / 100) * 100 if price_aggregate['max_price'] else 10000
+    # db_min = floor(price_aggregate['min_price']) if price_aggregate['min_price'] else 0
+    # db_max = ceil(price_aggregate['max_price'] / 100) * 100 if price_aggregate['max_price'] else 10000
+
+    db_min_price = price_aggregate['min_price'] or 0
+    db_max_price = price_aggregate['max_price'] or 10000
+
+    db_min = floor(db_min_price)
+    db_max = ceil(db_max_price / 100) * 100
 
     # Initialize variables
     min_val, max_val = 0, db_max
@@ -51,26 +57,25 @@ def searchfilter_bookStore(books, query=None, min_price=None, max_price=None, so
         # clamp values to real DB range
         if min_val is None or min_val < 0:
             min_val = 0
-        if max_val is None or max_val < 0 or max_val > price_aggregate['max_price']:
-            # print('h')
-            max_val = price_aggregate['max_price']
-            print(max_val)
+        # if max_val is None or max_val < 0 or max_val > price_aggregate['max_price']:
+        #     # print('h')
+        #     max_val = price_aggregate['max_price']
+        #     print(max_val)
+        if max_val is None or max_val < 0 or max_val > db_max_price:
+            max_val = db_max_price
 
+        # if min_val > max_val:
+        #     min_val, max_val = 0, price_aggregate['min_price']
         if min_val > max_val:
-            min_val, max_val = 0, price_aggregate['min_price']
+            min_val, max_val = 0, db_min_price
 
         if max_val > min_val and (max_val - min_val) < 500:
             max_val = min_val + 500
 
-            # print('created gap between min and max val', min_val, max_val)
-
-        # min_price_value = floor(price_aggregate['min_price']) if price_aggregate['min_price'] else 0
-        # max_price_value = ceil(price_aggregate['max_price'] / 100) * 100 if price_aggregate['max_price'] else 10000
-
         min_val = floor(min_val)
         max_val = ceil(max_val / 100) * 100
 
-        books = books.filter(stock__price__gte=min_val, stock__price__lte=max_val)
+        books = books.filter(stock__current_price__gte=min_val, stock__current_price__lte=max_val)
         # print('nnnnnn')
 
     # if sort_by:

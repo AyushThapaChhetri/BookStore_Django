@@ -47,8 +47,11 @@ class StockForm(forms.ModelForm):
 class RestockForm(forms.ModelForm):
     class Meta:
         model = StockBatch
-        fields = ('initial_quantity', 'unit_cost', 'supplier', 'notes', 'received_date')
-        widgets = {'received_date': forms.DateInput(attrs={'type': 'date'})}
+        # fields = ('initial_quantity', 'unit_cost', 'supplier', 'notes', 'received_date')
+        fields = ['initial_quantity', 'unit_cost', 'notes', 'received_date']
+        widgets = {
+            'notes': forms.Textarea(attrs={'rows': 5}),
+            'received_date': forms.DateInput(attrs={'type': 'date'}), }
 
 
 class PriceUpdateForm(forms.ModelForm):

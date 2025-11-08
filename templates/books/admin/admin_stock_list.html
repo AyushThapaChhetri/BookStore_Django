@@ -78,19 +78,20 @@
             <td class="p-3 text-sm text-gray-700">{{ stock.book.title }}</td>
             {#            <td class="p-3 text-sm text-gray-700">{{ stock.book.publisher.name|default:'-' }}</td>#}
             <td class="p-3 text-sm text-gray-700 text-center">
-                {% if stock.price %}
-                    Rs {{ stock.price|floatformat:"-2" }}
+                {% if stock.current_price %}
+                    Rs {{ stock.current_price|floatformat:"-2" }}
                 {% else %}
                     -
                 {% endif %}
             </td>
-            <td class="p-3 text-sm text-gray-700 text-center">{% if stock.discount_percentage %}
-                {{ stock.discount_percentage|floatformat:-2 }}% → Rs
+            <td class="p-3 text-sm text-gray-700 text-center">{% if stock.current_discount_percentage %}
+                {{ stock.current_discount_percentage|floatformat:-2 }}% → Rs
                 {{ stock.discount_amount|floatformat:"2"|floatformat:"g" }}
             {% else %}
                 -
             {% endif %}</td>
-            <td class="p-3 text-sm text-gray-700 text-center">{{ stock.stock_quantity|default:'-' }}</td>
+            <td class="p-3 text-sm text-gray-700 text-center">
+                {{ stock.total_quantity|default:'-' }}</td>
             {#            <td class="p-3 text-sm text-gray-700">{% if stock.is_available %}#}
             {#                <span class="text-green-600 font-semibold">Yes</span>#}
             {#            {% else %}#}
@@ -101,23 +102,23 @@
                 <div class="flex  space-x-2 gap-1">
 
                     <button class="bg-indigo-600 hover:bg-indigo-800 text-white font-bold py-2 px-4 rounded">
-                        <a
-                                href="{% url 'stock_detail_view' stock.uuid %}">View</a>
+                        {#                        <a href="{% url 'stock_detail_view' stock.uuid %}">View</a>#}
+                        <a href="{% url 'stock_detail' stock.book.uuid %}">View</a>
                     </button>
 
-                    {% if request.user|has_perm:"stock.change_stock" %}
-                        <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-
-                            <a href="{% url 'stock_view' stock.uuid %}">Edit</a>
-                        </button>
-                        <button
-                                type="button"
-                                class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
-                                onclick="openModal('{{ stock.uuid }}','reset')"
-                        >
-                            Reset
-                        </button>
-                    {% endif %}
+                    {#                    {% if request.user|has_perm:"stock.change_stock" %}#}
+                    {#                        <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">#}
+                    {##}
+                    {#                            <a href="{% url 'stock_view' stock.uuid %}">Edit</a>#}
+                    {#                        </button>#}
+                    {#                        <button#}
+                    {#                                type="button"#}
+                    {#                                class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"#}
+                    {#                                onclick="openModal('{{ stock.uuid }}','reset')"#}
+                    {#                        >#}
+                    {#                            Reset#}
+                    {#                        </button>#}
+                    {#                    {% endif %}#}
                 </div>
 
             </td>
@@ -168,61 +169,59 @@
 {% block modal_form_action %}/admin-panel/stock/reset/{% endblock %}
 
 
-{% block base_script %}
-    {{ block.super }}
-    <script>
-        function formatDate(dateStr) {
-            if (!dateStr) return "-";
-            const options = {year: "numeric", month: "short", day: "numeric"};
-            const date = new Date(dateStr);
-            return date.toLocaleDateString(undefined, options); // e.g., "May 15, 2023"
-        }
+<script>
+    function formatDate(dateStr) {
+        if (!dateStr) return "-";
+        const options = {year: "numeric", month: "short", day: "numeric"};
+        const date = new Date(dateStr);
+        return date.toLocaleDateString(undefined, options); // e.g., "May 15, 2023"
+    }
 
-        {#Override the renderItems function for books#}
+    {#Override the renderItems function for books#}
 
-        function renderItems(books) {
-            if (books.length === 0) {
-                tableBody.innerHTML = `
+    function renderItems(books) {
+        if (books.length === 0) {
+            tableBody.innerHTML = `
     <tr>
         <td colspan="9" class="text-center p-4 text-gray-500">No Rows Found</td>
     </tr>`
-                return;
-            }
+            return;
+        }
 
-            tableBody.innerHTML = books.map((book, index) => {
+        tableBody.innerHTML = books.map((book, index) => {
 
 
-                // cover image or fallback
-                const coverImage = book.cover_image
-                    ? `<img src="${book.cover_image}" alt="${book.title}" class="h-10 w-8 object-cover"/>`
-                    : `<span class="italic text-gray-400">No cover available</span>`;
+            // cover image or fallback
+            const coverImage = book.cover_image
+                ? `<img src="${book.cover_image}" alt="${book.title}" class="h-10 w-8 object-cover"/>`
+                : `<span class="italic text-gray-400">No cover available</span>`;
 
-                // publisher
-                const publisher = book.publisher || "-";
+            // publisher
+            const publisher = book.publisher || "-";
 
-                // stock price
-                const price = book.stock?.price != null
-                    ? `Rs ${parseFloat(book.stock.price).toFixed(2).replace(/\.?0+$/, "")}`
-                    : "-";
+            // stock price
+            const price = book.stock?.price != null
+                ? `Rs ${parseFloat(book.stock.price).toFixed(2).replace(/\.?0+$/, "")}`
+                : "-";
 
-                // discount
-                const discount = (book.stock && book.stock.discount_percentage != null)
-                    ? `${parseFloat(book.stock.discount_percentage).toFixed(2).replace(/\.?0+$/, "")}% → Rs
+            // discount
+            const discount = (book.stock && book.stock.current_discount_percentage != null)
+                ? `${parseFloat(book.stock.current_discount_percentage).toFixed(2).replace(/\.?0+$/, "")}% → Rs
     ${parseFloat(book.stock.discount_amount).toFixed(2).replace(/\.?0+$/, "")}`
-                    : "-";
+                : "-";
 
-                // stock quantity
-                const stockQty = book.stock?.stock_quantity ?? "-";
+            // stock quantity
+            const stockQty = book.stock?.stock_quantity ?? "-";
 
-                // availability
-                const availability = book.stock?.is_available
-                    ? `<span class="text-green-600 font-semibold">Yes</span>`
-                    : `<span class="text-red-600 font-semibold">No</span>`;
+            // availability
+            const availability = book.stock?.is_available
+                ? `<span class="text-green-600 font-semibold">Yes</span>`
+                : `<span class="text-red-600 font-semibold">No</span>`;
 
-                // last restock date
-                const lastRestock = book.stock?.last_restock_date || "-";
+            // last restock date
+            const lastRestock = book.stock?.last_restock_date || "-";
 
-                return `
+            return `
     <tr class="${index % 2 === 0 ? 'bg-gray-50' : 'bg-gray-300'}">
         <td class="p-3 text-sm text-gray-700">${coverImage}</td>
         <td class="p-3 text-sm text-gray-700">${book.title}</td>
@@ -233,22 +232,25 @@
 {#        <td class="p-3 text-sm text-gray-700">${formatDate(lastRestock)}</td>#}
         <td class="p-3 text-sm text-gray-700">
             <div class="flex space-x-2 gap-1">
-                <a href="/admin-panel/stock/detail/${book.stock?.uuid}"
+                {#<a href="/admin-panel/stock/detail/${book.stock?.uuid}"#}
+                <a href="/admin-panel/stocked/detail/${book.uuid}"
                    class="bg-indigo-600 hover:bg-indigo-800 text-white font-bold py-2 px-4 rounded">View</a>
 
-                <a href="/admin-panel/stock/edit/${book.stock?.uuid}"
-                   class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Edit</a>
-                <button onclick="openModal('${book.stock?.uuid}','reset')"
-                        class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Reset
-                </button>
+                {#<a href="/admin-panel/stock/edit/${book.stock?.uuid}"#}
+                {#   class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Edit</a>#}
+                {#<button onclick="openModal('${book.stock?.uuid}','reset')"#}
+                {#        class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Reset#}
+                {#</button>#}
 
             </div>
         </td>
     </tr>
     `;
-            }).join('');
-        }
+        }).join('');
+    }
 
 
-    </script>
+</script>
+{% block base_script %}
+    {{ block.super }}
 {% endblock %}

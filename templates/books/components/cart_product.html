@@ -26,11 +26,12 @@
 
                 </p>
                 <p class="line-clamp-1">
-                    by {% for author in item.book.authors.all %}{{ author.name }}{% if not forloop.last %},
-                {% endif %}{% endfor %}
+                    by
+                    {% for author in item.book.authors.all %}{{ author.name }}{% if not forloop.last %},
+                    {% endif %}{% endfor %}
                 </p>
             </div>
-            <p class="font-bold p-[2px]">Rs {{ item.book.stock.price|floatformat:"-2" }}</p>
+            <p class="font-bold p-[2px]">Rs {{ item.book.stock.current_price|floatformat:"-2" }}</p>
         </div>
         <div class="flex flex-row-reverse sm:flex-row  gap-1 justify-between">
             <div class="flex flex-col  justify-between">
@@ -75,16 +76,17 @@
                 </div>
                 <p id="helper-text-explanation"
                    class="mt-2 text-sm
-                    {% if item.book.stock_quantity == 0 or item.quantity > item.book.stock_quantity %}
+                    {% if item.book.stock.total_remaining_quantity == 0 or item.quantity > item.book.stock.total_remaining_quantity %}
                         text-red-600
                   {% else %}
                       text-gray-500
                   {% endif %}
                     hidden sm:block">
-                    {% if item.book.stock.stock_quantity > 0 %}
-                        <span class="font-bold">{{ item.book.stock.stock_quantity }}</span> in stock
+                    {% if item.book.stock.total_remaining_quantity > 0 %}
+                        <span class="font-bold">{{ item.book.stock.total_remaining_quantity }}</span> in stock
                     {% else %}
-                        {{ item.book.stock_quantity }} Out of stock{% if item.quantity == 1 %}! Please remove this item
+                        {{ item.book.stock.total_remaining_quantity }} Out of stock{% if item.quantity == 1 %}! Please
+                        remove this item
                     {% endif %}
                     {% endif %}
                 </p>

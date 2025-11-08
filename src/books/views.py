@@ -6,7 +6,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models import Q, F
+from django.db.models import Q, Sum
+from django.db.models.functions import Coalesce
 from django.forms.models import model_to_dict
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -30,25 +31,17 @@ from src.shipping.forms import DeliveryForm
 from src.shipping.models import DeliveryInfo
 from src.stock.forms import StockForm
 from src.stock.models import Stock
+from src.stock.services import StockService
 
 
 # Create your views here.
 def hello(request):
-    # return render(request, '../../Project_B/templates/books/hello.html', {'name': 'Ayush'})
     return render(request, 'books/hello.html', {'name': 'Ayush'})
-    # return render(request, 'hello.html')
-    # return HttpResponse("Hello, %s!" % request.path)
-
-
-# def search_query(query):
-#     return (Book.objects.filter(Q(title__icontains=query) | Q(authors__name__icontains=query) | Q(
-#         publisher__name__icontains=query)).select_related('publisher', 'stock').prefetch_related('authors',
-#                                                                                                  'genres').distinct())
 
 
 def search_books(request):
     query = request.GET.get('q', '').strip()
-    # makes true or false if deleted is send with 1 value
+
     deleted = request.GET.get('deleted', '0') == '1'
 
     manager = Book.deleted_objects if deleted else Book.objects
@@ -65,10 +58,10 @@ def search_books(request):
         if hasattr(book, 'stock') and book.stock:
             stock_info = {
                 'uuid': str(book.stock.uuid),
-                'price': float(book.stock.price),
-                "stock_quantity": book.stock.stock_quantity,
+                'price': float(book.stock.current_price),
+                "stock_quantity": book.stock.total_remaining_quantity,
                 "is_available": book.stock.is_available,
-                "discount_percentage": float(book.stock.discount_percentage),
+                "discount_percentage": float(book.stock.current_discount_percentage),
                 "discount_amount": float(book.stock.discount_amount),
                 "last_restock_date": book.stock.last_restock_date,
             }
@@ -179,24 +172,37 @@ def add_to_cart(request):
     if not book_uuid:
         return JsonResponse({'success': False, 'message': 'No book uuid provided'}, status=400)
 
-    book = get_object_or_404(Book, uuid=book_uuid)
-
-    if book.stock.stock_quantity <= 0:
+    print("Hello1")
+    print(book_uuid)
+    # book = get_object_or_404(Book, uuid=book_uuid)
+    book = get_object_or_404(
+        Book.objects.select_related('stock')
+        .prefetch_related('stock__batches')
+        .annotate(
+            total_quantity=Coalesce(Sum('stock__batches__remaining_quantity'), 0)
+        ),
+        uuid=book_uuid
+    )
+    print("Hello")
+    # if book.stock.stock_quantity <= 0:
+    if book.total_quantity <= 0:
+        print("cannot")
         return JsonResponse({'success': False, 'message': f"'{book.title}' is sold out"}, status=400)
 
+    print("hi")
     cart, _ = Cart.objects.get_or_create(user=request.user)
-    # print('Cart: ',cart)
+
     cart_item, created = CartItem.objects.get_or_create(cart=cart, book=book)
-    # print('Cart Item: ',cart_item)
-    cart_item.unit_price = book.stock.price
-    # total discount for that item only
-    cart_item.discount_amount = book.stock.discount_amount
+
+    cart_item.unit_price = book.stock.current_price
+
+    cart_item.discount_amount = book.stock.current_discount_percentage
 
     if created:
-        # First Time
+
         message = f"{book.title} added to cart"
     else:
-        # Already in cart
+
         message = f"{book.title} is already on cart"
 
     cart_item.save()
@@ -217,7 +223,6 @@ def add_to_cart(request):
 def update_cart(request, item_uuid):
     print('cart item uuid form update: ', item_uuid)
 
-    # Check if missing or invalid UUID
     try:
         item_uuid = UUID(item_uuid)
     except (TypeError, ValueError):
@@ -236,16 +241,15 @@ def update_cart(request, item_uuid):
         book = item.book
         message = None
 
-        # Handle increment
         if action == 'increment':
-            if item.quantity >= book.stock.stock_quantity:
-                # Can't go above stock
-                quantity = book.stock.stock_quantity
-                message = f"Only {book.stock.stock_quantity} left in stock."
+            if item.quantity >= book.stock.total_remaining_quantity:
+
+                quantity = book.stock.total_remaining_quantity
+                message = f"Only {book.stock.total_remaining_quantity} left in stock."
             else:
                 quantity = item.quantity + 1
 
-        # Handle decrement
+
         elif action == 'decrement':
             if item.quantity <= 1:
                 quantity = 1
@@ -253,25 +257,20 @@ def update_cart(request, item_uuid):
             else:
                 quantity = item.quantity - 1
 
-        # Handle other cases (like stock dropped between sessions)
-        if quantity > book.stock.stock_quantity:
-            quantity = max(book.stock.stock_quantity, 1)
-            message = f"Stock updated. Only {book.stock.stock_quantity} left now."
+        if quantity > book.stock.total_remaining_quantity:
+            quantity = max(book.stock.total_remaining_quantity, 1)
+            message = f"Stock updated. Only {book.stock.total_remaining_quantity} left now."
 
         item.quantity = quantity
         item.save()
 
-        # cart = Cart.objects.get_or_create(user=request.user)[0]
-        # total_price = sum(i.get_subtotal() for i in cart.items.all())
-
-        #  Use centralized cart totals
         totals = calculate_cart_totals(request.user)
         print(totals)
         response = {
             "success": True,
             "quantity": item.quantity,
             "subtotal": item.cart.get_total_price,
-            "available_stock": book.stock.stock_quantity,
+            "available_stock": book.stock.total_remaining_quantity,
             "total_price": totals["total_price"],
             "total_discount": totals["total_discount"],
             "total_amount_after_discount": totals["total_amount_after_discount"],
@@ -312,37 +311,14 @@ class BookAdminView(View):
         return render(request, 'base/admin/admin_base.html')
 
 
-# List all books (Read)
 class BookListView(View):
-    # login_url = 'login_view'  # Optional: redirect URL for unauthenticated users
-
-    # redirect_field_name = 'next'  # Optional: default is 'next'
 
     def get(self, request):
-        # limit = request.GET.get('limit', 10)
-        # try:
-        #     limit = int(limit)
-        # except (ValueError, TypeError):
-        #     limit = 10  # fallback to default
-        #
-        # books = Book.objects.all().order_by('-created_at')
-        #
-        # # Set Up Pagination
-        # p = Paginator(Book.objects.all().order_by('created_at'), limit)
-        # page = request.GET.get('page')
-        # paginated_books = p.get_page(page)
-
-        # pagination int paginate.py
-        # books = Book.objects.all().order_by('-created_at')
         books = (
             Book.objects.all()
             .select_related('publisher', 'stock')
             .prefetch_related('authors', 'genres')
         )
-        # first_book = books.values().first()
-        # for key, value in first_book.items():
-        #     print(key, ' : ', value)
-        # author = Author.objects.filter(books__in=books)
 
         books = applying_sorting(books, request=request, allowed_sorts=ALLOWED_SORTS["book"])
 
@@ -358,7 +334,6 @@ class BookListView(View):
 
 class BookRecycleBinListView(View):
     def get(self, request):
-        # Get deleted books using your soft delete manager
         books = Book.deleted_objects.all().select_related('publisher', 'stock').prefetch_related('authors', 'genres')
         # print('Recycled', books)
         books = applying_sorting(books, request, allowed_sorts=ALLOWED_SORTS["book"])
@@ -418,21 +393,22 @@ class BookPermanentDeleteView(View):
         return redirect('book_recycle_bin')
 
 
-# List all Stock (Read)
 class StockListView(View):
 
     def get(self, request):
         stocks = (
             Stock.objects.all()
-            .select_related('book')
+            .select_related('book').annotate(
+                total_quantity=Coalesce(Sum('batches__remaining_quantity'), 0)
+            )
 
         )
 
-        # print("Stocks : ", stocks)
+        print("stocks", stocks)
+        print([f.column for f in Stock._meta.get_fields() if hasattr(f, 'column')])
 
         stocks = applying_sorting(stocks, request, allowed_sorts=ALLOWED_SORTS["stock"])
 
-        # print("After applying sorting Stocks : ", stocks)
         paginated_stocks, limit = paginate_queryset(request, stocks, default_limit=10)
 
         return render(request, 'books/admin/admin_stock_list.html', {'stocks': stocks,
@@ -441,7 +417,6 @@ class StockListView(View):
                                                                      'limit': limit})
 
 
-# View specific books(Read)
 class BookDetailView(View):
     def get(self, request, uuid):
         book = get_object_or_404(
@@ -451,7 +426,6 @@ class BookDetailView(View):
         return render(request, 'books/admin/book_detail_view.html', {'book': book})
 
 
-# View specific stock(Read)
 class StockDetailView(View):
     def get(self, request, uuid):
         stock = get_object_or_404(
@@ -479,12 +453,25 @@ class BookStore(View):
 
         # books = Book.objects.all()
         # start with Book queryset
-        books = Book.objects.all().annotate(
-            price=F('stock__price'),
-            stock_quantity=F('stock__stock_quantity'),
-            is_available=F('stock__is_available'),
-            last_restock_date=F('stock__last_restock_date')
+        # books = Book.objects.all().annotate(
+        #     price=F('stock__price'),
+        #     stock_quantity=F('stock__stock_quantity'),
+        #     is_available=F('stock__is_available'),
+        #     last_restock_date=F('stock__last_restock_date')
+        # )
+        # books = Book.objects.all().annotate(
+        #     price=F('stock__current_price'),
+        #     stock_quantity=Coalesce(Sum('stock__batches__remaining_quantity'), 0),
+        #     is_available=F('stock__is_available'),
+        #     last_restock_date=F('stock__last_restock_date')
+        # )
+        books = Book.objects.select_related('stock').prefetch_related('stock__batches').annotate(
+            total_quantity=Coalesce(Sum('stock__batches__remaining_quantity'), 0)
         )
+        # for book in books:
+        #     print(book.stock.current_price)
+        #     print(book.stock.total_remaining_quantity)
+
         items_count = CartItem.objects.filter(cart__user=request.user).count()
         print(items_count, ": Item count")
 
@@ -537,20 +524,7 @@ class BookStore(View):
 
             })
 
-            # return render(request, "books/components/book_cards.html", {
-            #     "paginated_books": paginated_books,
-            #     "limit": limit
-            # })
-
         return render(request, 'books/book_store.html', context)
-        # return render(request, 'books/book_store.html', {'books': books,
-        #                                                  'paginated_books': paginated_books,
-        #                                                  'limit': limit,
-        #                                                  'min_price_value': min_price_value,
-        #                                                  'max_price_value': max_price_value,
-        #                                                  })
-
-        # return render(request, 'books/book_store.html', context)
 
 
 def is_cart_item_exists(request):
@@ -568,7 +542,6 @@ class BookCheckout(View):
 
         delivery_instance = None
 
-        # First session
         delivery_uuid = request.session.get('delivery_uuid')
         print(delivery_uuid, ' : Delivery UUID')
         if delivery_uuid:
@@ -577,37 +550,25 @@ class BookCheckout(View):
                 user=request.user
             ).first()
 
-        # If session is missing/invalid, fallback to latest delivery
+        # Session missing cha vane, fallback to latest delivery
         if not delivery_instance:
             delivery_instance = DeliveryInfo.objects.filter(user=request.user).order_by('-created_at').first()
 
         form = DeliveryForm(instance=delivery_instance)
 
-        # --- Cart stock validation ---
         cart = Cart.objects.get_or_create(user=request.user)[0]
         items = cart.items.all()
         stock_adjusted = False
 
         for item in items:
-            if item.quantity > item.book.stock.stock_quantity:
-                item.quantity = max(item.book.stock.stock_quantity, 1)  # keep at least 1
+            if item.quantity > item.book.stock.total_remaining_quantity:
+                item.quantity = max(item.book.stock.total_remaining_quantity, 1)  # keep at least 1
                 item.save()
                 stock_adjusted = True
                 messages.warning(
                     request,
                     f"{item.book.title} quantity adjusted to {item.quantity} due to stock limits."
                 )
-
-            # total_price = sum(item.get_subtotal() for item in items)
-            # total_quantity = cart.items.aggregate(Sum('quantity'))[
-            #                      'quantity__sum'
-            #                  ] or 0
-            # --- Use centralized cart totals ---
-
-        # print("Form")
-        # print(form)
-        # return render(request, 'books/book_checkout.html',
-        #               {'form': form, 'total_price': total_price, 'total_quantity': total_quantity})
 
         totals = calculate_cart_totals(request.user)
         return render(request, 'books/book_checkout.html',
@@ -627,6 +588,112 @@ class BookCheckout(View):
             return JsonResponse({'success': False, 'errors': errors}, status=400)
 
 
+# class BookCheckoutPayment(View):
+#     def get(self, request):
+#         redirect_response = is_cart_item_exists(request)
+#         if redirect_response:
+#             return redirect_response
+#
+#         delivery_uuid = request.session.get('delivery_uuid')
+#         delivery_instance = None
+#
+#         if delivery_uuid:
+#             try:
+#                 delivery_instance = DeliveryInfo.objects.get(uuid=delivery_uuid, user=request.user)
+#             except DeliveryInfo.DoesNotExist:
+#                 delivery_instance = None
+#         else:
+#             return redirect('book_cart')
+#
+#         cart_totals = calculate_cart_totals(request.user)
+#         total_discount = cart_totals["total_discount"]
+#         total_quantity = cart_totals["total_quantity"]
+#         total_price = cart_totals['total_price']
+#         total_amount_after_discount = cart_totals['total_amount_after_discount']
+#
+#         return render(request, 'books/book_payment.html', {'delivery': delivery_instance,
+#                                                            'total_price': total_price,
+#                                                            'total_discount': total_discount,
+#                                                            'total_amount_after_discount': total_amount_after_discount,
+#                                                            'total_quantity': total_quantity})
+#
+#     def post(self, request):
+#         payment_method = request.POST.get('payment_method')
+#         if not payment_method:
+#             messages.error(request, 'Please Select Payment Options')
+#             return redirect('book_payment')
+#
+#         redirect_response = is_cart_item_exists(request)
+#         if redirect_response:
+#             return redirect_response
+#
+#         delivery_uuid = request.session.get('delivery_uuid')
+#         delivery_instance = None
+#         if delivery_uuid:
+#             delivery_instance = DeliveryInfo.objects.filter(uuid=delivery_uuid, user=request.user).first()
+#
+#         if not delivery_instance:
+#             delivery_instance = request.user.addresses.order_by('-created_at').first()
+#
+#         cart_totals = calculate_cart_totals(request.user)
+#         cart = cart_totals['cart']
+#         items = cart_totals["items"]
+#
+#         total_amount = cart.total_after_discount_shipping
+#         shopping_cost = cart.shipping_cost
+#         try:
+#             with transaction.atomic():
+#
+#                 locked_objects = {}
+#                 for item in items:
+#                     book = Book.objects.select_for_update().get(id=item.book.id)
+#                     stock = Stock.objects.select_for_update().get(book=book)
+#                     if item.quantity > stock.stock_quantity:
+#                         messages.error(request, f"Not enough stock for {book.title}")
+#                         return redirect('book_cart')
+#
+#                     locked_objects[item.book.id] = (book, stock)
+#                 order = Order.objects.create(
+#                     user=request.user,
+#                     status='pending',
+#                     total_amount=total_amount,
+#                     shipping_address=delivery_instance,
+#                     shipping_cost=shopping_cost,
+#                 )
+#
+#                 request.session['order_uuid'] = str(order.uuid)
+#
+#                 for item in items:
+#                     book, stock = locked_objects[item.book.id]
+#                     OrderItem.objects.create(
+#                         order=order,
+#                         book=item.book,
+#                         quantity=item.quantity,
+#                         unit_price=item.unit_price,
+#                         discount_amount=item.discount_amount,
+#                     )
+#
+#                     # Reduce stock
+#                     print("Stock Q Before", stock.stock_quantity)
+#                     stock.stock_quantity -= item.quantity
+#                     stock.save(update_fields=["stock_quantity"])
+#                     print("Stock Q After", stock.stock_quantity)
+#
+#                 cart.items.all().delete()
+#                 order_items = order.items.all()
+#
+#                 if delivery_uuid:
+#                     del request.session['delivery_uuid']
+#
+#                 messages.success(request, f"Order Successful")
+#
+#         except Exception as e:
+#             messages.error(request, f"An error occurred: {str(e)}")
+#             return redirect('book_cart')
+#
+#         return redirect('book_order_complete')
+
+
 class BookCheckoutPayment(View):
     def get(self, request):
         redirect_response = is_cart_item_exists(request)
@@ -644,10 +711,6 @@ class BookCheckoutPayment(View):
         else:
             return redirect('book_cart')
 
-        # cart = Cart.objects.get_or_create(user=request.user)[0]
-        # items = cart.items.all()
-        # total_quantity = cart.items.aggregate(Sum('quantity'))['quantity__sum'] or 0
-        # total_price = sum(item.get_subtotal() for item in items)
         cart_totals = calculate_cart_totals(request.user)
         total_discount = cart_totals["total_discount"]
         total_quantity = cart_totals["total_quantity"]
@@ -666,12 +729,10 @@ class BookCheckoutPayment(View):
             messages.error(request, 'Please Select Payment Options')
             return redirect('book_payment')
 
-        # Get card
         redirect_response = is_cart_item_exists(request)
         if redirect_response:
             return redirect_response
 
-        # Get Delivery info
         delivery_uuid = request.session.get('delivery_uuid')
         delivery_instance = None
         if delivery_uuid:
@@ -680,27 +741,22 @@ class BookCheckoutPayment(View):
         if not delivery_instance:
             delivery_instance = request.user.addresses.order_by('-created_at').first()
 
-        # cart, _ = Cart.objects.get_or_create(user=request.user)
-        # items = cart.items.all()
-        # total_amount = sum(item.get_subtotal() for item in items)
         cart_totals = calculate_cart_totals(request.user)
         cart = cart_totals['cart']
         items = cart_totals["items"]
-        # total_amount = cart_totals['total_amount_after_discount']
+
         total_amount = cart.total_after_discount_shipping
         shopping_cost = cart.shipping_cost
         try:
             with transaction.atomic():
-                # locked_books = {}
-                locked_objects = {}
+                # Pre-check availability without locking yet
                 for item in items:
-                    book = Book.objects.select_for_update().get(id=item.book.id)
-                    stock = Stock.objects.select_for_update().get(book=book)
-                    if item.quantity > stock.stock_quantity:
-                        messages.error(request, f"Not enough stock for {book.title}")
+                    stock = item.book.stock
+                    if item.quantity > stock.total_remaining_quantity:
+                        messages.error(request, f"Not enough stock for {item.book.title}")
                         return redirect('book_cart')
-                    # locked_books[item.book.id] = book
-                    locked_objects[item.book.id] = (book, stock)
+
+                # Create order
                 order = Order.objects.create(
                     user=request.user,
                     status='pending',
@@ -711,10 +767,9 @@ class BookCheckoutPayment(View):
 
                 request.session['order_uuid'] = str(order.uuid)
 
+                # Create order items and reserve stock
                 for item in items:
-                    # book = Book.objects.select_for_update().get(id=item.book.id)
-                    book, stock = locked_objects[item.book.id]
-                    OrderItem.objects.create(
+                    order_item = OrderItem.objects.create(
                         order=order,
                         book=item.book,
                         quantity=item.quantity,
@@ -722,23 +777,25 @@ class BookCheckoutPayment(View):
                         discount_amount=item.discount_amount,
                     )
 
-                    # Reduce stock
-                    print("Stock Q Before", stock.stock_quantity)
-                    stock.stock_quantity -= item.quantity
-                    stock.save(update_fields=["stock_quantity"])
-                    print("Stock Q After", stock.stock_quantity)
+                    print("Hi")
+                    # Reserve using service (handles locking and FIFO)
+                    StockService.reserve_for_order(order_item, changed_by=request.user)
 
-                # Clear cart only after success
+                # Clear cart
                 cart.items.all().delete()
-                order_items = order.items.all()
 
                 if delivery_uuid:
                     del request.session['delivery_uuid']
 
-                messages.success(request, f"Order Successful")
+                messages.success(request, "Order Successful")
 
+        except ValueError as ve:
+            # From service if not enough stock (race condition)
+            messages.error(request, str(ve))
+            return redirect('book_cart')
         except Exception as e:
             messages.error(request, f"An error occurred: {str(e)}")
+            print(e)
             return redirect('book_cart')
 
         return redirect('book_order_complete')
@@ -766,9 +823,7 @@ class BookOrderComplete(View):
             'order': order,
             'order_items': order_items,
             'shipping_cost': order.shipping_cost,
-            # 'subtotal': sum(item.base_price for item in order.items.all()),
-            # 'discount': order.get_total_discount,
-            # 'total_price': order.total_after_shipping_discount,
+
             'subtotal': round_decimal(subtotal),
             'discount': round_decimal(discount),
             'total_price': round_decimal(total_price),
@@ -782,52 +837,10 @@ class BookCart(View):
         if not request.user.is_authenticated:
             return redirect('/login/')
 
-        # cart = Cart.objects.get_or_create(user=request.user)[0]
-        # items = cart.items.all()
-        # items_count = cart.items.count()
-        # total_quantity = cart.items.aggregate(Sum('quantity'))[
-        #                      'quantity__sum'
-        #                  ] or 0
-
-        # total_price = sum(item.get_subtotal() for item in items)
-
-        # items_discount_prices = []
-        # for item in items:
-        #     discount_price = item.stock.price * (item.stock.discount_percentage / 100) * item.quantity
-        #     items_discount_prices.append(discount_price)
-        # total_discount = sum(items_discount_prices)
-        #
-        # total_price_after_discount = total_price - total_discount
-
-        # Use Decimal for precise calculations
-        # total_price = sum(
-        #     (Decimal(str(item.get_subtotal())) for item in items),
-        #     start=Decimal('0.00')
-        # )
-        #
-        # total_discount = sum(
-        #     (
-        #         Decimal(str(item.book.stock.price)) *
-        #         Decimal(str(item.book.stock.discount_percentage)) / Decimal('100') *
-        #         item.quantity
-        #         for item in items
-        #     ),
-        #     start=Decimal('0.00')
-        # )
-        #
-        # total_amount_after_discount = total_price - total_discount
-        #
-        # # Round to 2 decimal points
-        # total_price = total_price.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-        # total_discount = total_discount.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-        # total_amount_after_discount = total_amount_after_discount.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-
         totals = calculate_cart_totals(request.user)
 
         return render(request, 'books/book_cart.html',
-                      # {'cart': cart, 'items': items, 'items_count': items_count, 'total_quantity': total_quantity,
-                      #  'total_price': total_price, 'total_discount': total_discount,
-                      #  'total_amount_after_discount': total_amount_after_discount}
+
                       totals
                       )
 
@@ -835,16 +848,22 @@ class BookCart(View):
 @method_decorator(never_cache, name='dispatch')
 class BookDetailStore(View):
     def get(self, request, uuid):
-        book = get_object_or_404(Book, uuid=uuid)
+        # book = get_object_or_404(Book, uuid=uuid)
+
+        book = get_object_or_404(
+            Book.objects.select_related('stock')
+            .prefetch_related('stock__batches')
+            .annotate(
+                total_quantity=Coalesce(Sum('stock__batches__remaining_quantity'), 0)
+            ),
+            uuid=uuid
+        )
         cart = Cart.objects.get_or_create(user=request.user)[0]
 
-        # Try to get the CartItem for this book in the user's cart
         book_in_cart = CartItem.objects.filter(cart=cart, book=book).first()
 
-        # Safely define quantity
         quantity = book_in_cart.quantity if book_in_cart else 1
 
-        # Pass the CartItem UUID to template (or None if not in cart)
         cart_item_uuid = str(book_in_cart.uuid) if book_in_cart else None
         print('Cart uuid from detail store: ', cart_item_uuid)
 
@@ -1030,7 +1049,6 @@ class AuthorView(View):
             print("Errors:", form.errors)
 
         if request.headers.get("X-requested-with") == "XMLHttpRequest":
-            # Re-render form with errors
             html = render_to_string('author/components/author_form.html',
                                     {'form': form, 'title': 'Author', 'form_type': 'authors'},
                                     request=request)
@@ -1056,7 +1074,6 @@ class AuthorListView(View):
             'limit': limit})
 
 
-# View specific books(Read)
 class AuthorDetailView(View):
     def get(self, request, uuid):
         author = get_object_or_404(
@@ -1075,10 +1092,9 @@ class PublisherListView(View):
         publisher = (
             Publisher.objects.all()
         )
-        # print(publisher.__dict__)
-        # See all field names
+
         print([field.name for field in Publisher._meta.get_fields()])
-        # print(model_to_dict(publisher))
+
         publisher = applying_sorting(publisher, request, allowed_sorts=ALLOWED_SORTS["publisher"])
         paginated_publisher, limit = paginate_queryset(request, publisher, default_limit=10)
 
@@ -1162,13 +1178,6 @@ class PublisherView(View):
                     "message": "Publisher created successfully"
                 })
             return redirect('admin_publisher_list')
-        # else:
-        #     # DEBUGGING STARTS HERE
-        #     print(" Form is NOT valid!")
-        #     print("Errors:", form.errors)
-        #     print("Non-field errors:", form.non_field_errors())  # errors not tied to a specific field
-        #     for field, errors in form.errors.items():
-        #         print(f"Field: {field} -> Errors: {errors}")
 
         print('publisher 2')
         if request.headers.get("X-requested-with") == "XMLHttpRequest":
@@ -1193,8 +1202,7 @@ class GenreListView(View):
         genre = (
             Genre.objects.all()
         )
-        # print(genre.__dict__)
-        # See all field names
+
         print([field.name for field in Genre._meta.get_fields()])
         # print(model_to_dict(genre))
         genre = applying_sorting(genre, request, allowed_sorts=ALLOWED_SORTS["genre"])
@@ -1273,7 +1281,6 @@ class GenreView(View):
             return redirect('admin_genre_list')
 
         if request.headers.get("X-requested-with") == "XMLHttpRequest":
-            # Re-render form with errors
             html = render_to_string('author/components/author_form.html',
                                     {'form': form, 'title': 'Genre', 'form_type': 'genres'},
                                     request=request)
@@ -1283,7 +1290,6 @@ class GenreView(View):
 
 
 def field_options(request, field_name):
-    # Example: fetch fresh data for Authors, Publishers, etc.
     print("hello")
     if field_name == "authors":
         print("author")
@@ -1297,22 +1303,18 @@ def field_options(request, field_name):
     else:
         return JsonResponse({"html": ""}, status=400)
 
-        # detect if it's multiple
     is_multiple = field_name in ["genres", "authors"]
 
-    # optionally get currently selected values from request
     selected = request.GET.getlist("selected[]", [])  # or []
 
     if not is_multiple and selected:
-        # single-select: keep only the last/first selected
         selected = [selected[-1]]
 
-    # convert strings to integers
     selected = [int(x) for x in selected if x.isdigit()]
 
     html = render_to_string(
         "author/components/field_options.html",
         {"choices": queryset, "selected_values": selected, "is_multiple": is_multiple}
     )
-    # print(html)
+
     return JsonResponse({"html": html})

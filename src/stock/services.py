@@ -24,22 +24,32 @@ def update_stock_price(stock, new_price, new_discount, user, reason="Manual upda
     )
 
 
-def add_stock_batch(stock, quantity, cost_price, user, received_date=None):
+def add_stock_batch(stock, initial_quantity, unit_cost, user, received_date=None, notes=None):
+    supplier = stock.book.publisher
+    before_qty = stock.total_remaining_quantity
+
     batch = StockBatch.objects.create(
         stock=stock,
-        quantity=quantity,
-        remaining_quantity=quantity,
-        cost_price=cost_price,
+        initial_quantity=initial_quantity,
+        remaining_quantity=initial_quantity,
+        unit_cost=unit_cost,
         received_date=received_date,
+        supplier=supplier,
+        notes=notes,
     )
 
-    stock.total_quantity += quantity
+    # stock.total_quantity += initial_quantity
     stock.save()
+
+    print("inital price before: ", before_qty)
 
     StockHistory.objects.create(
         stock=stock,
+        batch=batch,
         change_type="restock",
-        quantity_changed=quantity,
+        quantity_change=initial_quantity,
+        before_quantity=before_qty,
+        after_quantity=before_qty + initial_quantity,
         changed_by=user,
         reason="New batch added",
     )
@@ -50,13 +60,13 @@ def add_stock_batch(stock, quantity, cost_price, user, received_date=None):
 class StockService:
     @staticmethod
     @transaction.atomic
-    def restock(stock, quantity, cost_price, user, received_date=None):
-        return add_stock_batch(stock, quantity, cost_price, user, received_date)
+    def restock(stock, initial_quantity, unit_cost, user, received_date=None, notes=None):
+        return add_stock_batch(stock, initial_quantity, unit_cost, user, received_date, notes)
 
-    @staticmethod
-    @transaction.atomic
-    def update_price(stock, new_price, new_discount, user, received_date=None):
-        return update_stock_price(stock, new_price, new_discount, user, reason="Manual update")
+    # @staticmethod
+    # @transaction.atomic
+    # def update_price(stock, new_price, new_discount, user, received_date=None):
+    #     return update_stock_price(stock, new_price, new_discount, user, reason="Manual update")
 
     @staticmethod
     @transaction.atomic
@@ -72,7 +82,8 @@ class StockService:
         needed = order_item.quantity
         reserved = 0
 
-        batches = stock.batches.filter(remaining_quantity__gt=0).select_for_update().order_by('received_date')
+        batches = stock.batches.filter(remaining_quantity__gt=0).select_for_update().order_by('received_date',
+                                                                                              'created_at')
 
         for batch in batches:
             if reserved >= needed:
@@ -83,6 +94,7 @@ class StockService:
             batch.save()
 
             reservation = StockReservation.objects.create(
+                stock=stock,
                 order_item=order_item,
                 batch=batch,
                 reserved_quantity=can_reserve

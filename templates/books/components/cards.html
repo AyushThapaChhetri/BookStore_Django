@@ -19,10 +19,10 @@
                 {#     onclick="window.location='{% url 'book_detail_store' book.uuid %}'#}
                 data-href="{% url 'book_detail_store' book.uuid %}"
         >
-            {% if book.stock.discount_percentage > 0 %}
+            {% if book.stock.current_discount_percentage > 0 %}
                 <div class="flex absolute bg-red-700 px-2 py-[2px] rounded-br-md">
 
-                    <span class="font-lexend text-md font-light text-white "> - {{ book.stock.discount_percentage }}%</span>
+                    <span class="font-lexend text-md font-light text-white "> - {{ book.stock.current_discount_percentage }}%</span>
                 </div>
             {% endif %}
             {#    <a href="#">#}
@@ -83,11 +83,11 @@
                 {#            <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-sm  ">5.0</span>#}
                 {#        </div>#}
                 <div class="flex gap-2 items-center ">
-                    {% if book.stock.discount_percentage > 0 %}
-                        <span class="font-lexend text-md font-light text-gray-400 line-through decoration-red-800">Rs {{ book.stock.price|floatformat:"-2" }}</span>
-                        <span class="font-lexend text-md font-light text-red-800 ">Rs {{ book.stock.price_after_discount_one_item|floatformat:"-2" }}</span>
+                    {% if book.stock.current_discount_percentage > 0 %}
+                        <span class="font-lexend text-md font-light text-gray-400 line-through decoration-red-800">Rs {{ book.stock.current_price|floatformat:"-2" }}</span>
+                        <span class="font-lexend text-md font-light text-red-800 ">Rs {{ book.stock.price_after_discount|floatformat:"-2" }}</span>
                     {% else %}
-                        <span class="font-lexend text-md font-light text-gray-400">Rs {{ book.stock.price|floatformat:"-2" }}</span>
+                        <span class="font-lexend text-md font-light text-gray-400">Rs {{ book.stock.current_price|floatformat:"-2" }}</span>
 
                     {% endif %}
 
@@ -96,16 +96,18 @@
                 <button
                         type="button"
                         class="button_cart_add text-white
-                   {% if book.stock.stock_quantity > 0 %}
+                   {% if book.total_quantity > 0 %}
                        bg-blue-700 hover:bg-blue-800 focus:ring-blue-300
                    {% else %}
                        bg-red-700 hover:bg-red-800 focus:ring-red-300 cursor-not-allowed
                    {% endif %}
                    focus:ring-4 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center"
                         data-book-uuid="{{ book.uuid }}"
-                        {% if book.stock.stock_quantity <= 0 %}disabled aria-disabled="true"{% endif %}
+                        {% if book.total_quantity <= 0 %}disabled aria-disabled="true"{% endif %}
                 >
-                    {% if book.stock.stock_quantity > 0 %}Add to cart{% else %}Sold Out{% endif %}
+                    {% if book.total_quantity > 0 %}Add to cart
+                    {% else %}Sold
+                        Out{% endif %}
                 </button>
                 <div class="group-hover:block hidden flex gap-2 items-center ">
                     {% if book.publisher %}

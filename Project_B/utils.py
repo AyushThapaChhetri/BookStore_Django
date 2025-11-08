@@ -1,7 +1,7 @@
 def applying_sorting(queryset, request=None, sort_by=None, allowed_sorts=None, default='-created_at'):
     # Sorting helper
     # sort = request.GET.get('sort')
-
+    # print("hello")
     if allowed_sorts is None:
         allowed_sorts = {}
 
@@ -47,8 +47,8 @@ ALLOWED_SORTS = {
     # add more models here as needed
 
     "stock": {
-        "price_asc": "price",
-        "price_desc": "-price",
+        "price_asc": "current_price",
+        "price_desc": "-current_price",
         "quantity_asc": "stock_quantity",
         "quantity_desc": "-stock_quantity",
         "available_first": "-is_available",  # available items first
@@ -73,10 +73,10 @@ ALLOWED_SORTS = {
     #     "name_desc": "-title",
     # },
     "bookstore": {
-        "price_asc": "stock__price",
-        "price_desc": "-stock__price",
-        "quantity_asc": "stock__stock_quantity",
-        "quantity_desc": "-stock__stock_quantity",
+        "price_asc": "stock__current_price",
+        "price_desc": "-stock__current_price",
+        "quantity_asc": "total_quantity",
+        "quantity_desc": "-total_quantity",
         "available_first": "-stock__is_available",
         "unavailable_first": "stock__is_available",
         "restock_asc": "stock__last_restock_date",

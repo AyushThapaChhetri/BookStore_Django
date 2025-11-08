@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     'src.cart',
     'src.shipping',
     'src.stock',
-    'src.stock.apps.StockConfig',
+   
     # 'src.users.apps.UsersConfig',
     'tailwind',
     'theme'

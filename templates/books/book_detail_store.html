@@ -96,7 +96,7 @@
                             </svg>
                             {% if books %}
 
-                                {{ books.stock.stock_quantity }}
+                                {{ books.total_quantity }}
 
                             {% endif %}
                         </div>
@@ -109,13 +109,15 @@
                 </h2>
                 <div class="flex justify-between">
                     <p class="text-lg text-gray-600">
-                        Rs
+
 
                         {% if books %}
-                            {% if not books.stock.price %}
-                                0
+                            {% if books.stock.current_discount_percentage > 0 %}
+                                <span class="font-lexend text-md font-light text-gray-400 line-through decoration-red-800">Rs {{ books.stock.current_price|floatformat:"-2" }}</span>
+                                <span class="font-lexend text-md font-light text-red-800 ">Rs {{ books.stock.price_after_discount|floatformat:"-2" }}</span>
                             {% else %}
-                                {{ books.stock.price|floatformat:"-2" }}
+                                <span class="font-lexend text-md font-light text-gray-400">Rs {{ books.stock.current_price|floatformat:"-2" }}</span>
+
                             {% endif %}
                         {% endif %}
                     </p>
@@ -164,22 +166,23 @@
                         </div>
                         <p id="helper-text-explanation"
                            class="mt-2 text-sm text-gray-500"><span
-                                class="font-bold">{{ books.stock.stock_quantity }}</span> in stock</p>
+                                class="font-bold">{{ books.total_quantity }}</span>
+                            in stock</p>
                         {#            </form>#}
                     </div>
                     <button
                             type="button"
                             class="button_cart_add text-white
-           {% if books.stock.stock_quantity > 0 %}
+           {% if books.total_quantity > 0 %}
                bg-blue-700 hover:bg-blue-800 focus:ring-blue-300
            {% else %}
                bg-red-700 hover:bg-red-800 focus:ring-red-300 cursor-not-allowed
            {% endif %}
            focus:ring-4 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center"
                             data-book-uuid="{{ books.uuid }}"
-                            {% if books.stock.stock_quantity <= 0 %}disabled aria-disabled="true"{% endif %}
+                            {% if books.total_quantity <= 0 %}disabled aria-disabled="true"{% endif %}
                     >
-                        {% if books.stock.stock_quantity > 0 %}
+                        {% if books.total_quantity > 0 %}
                             Add to cart
                         {% else %}
                             Sold Out
