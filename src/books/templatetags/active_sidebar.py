@@ -10,7 +10,8 @@ URL_GROUPS = {
         'admin-stock-list',
         'admin_author_list',
         'admin_publisher_list',
-        'admin_genre_list'
+        'admin_genre_list',
+        'admin_order_list',
     ],
     'recycle_bin': [
         'book_recycle_bin',

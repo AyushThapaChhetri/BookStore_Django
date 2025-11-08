@@ -63,11 +63,6 @@ class StockService:
     def restock(stock, initial_quantity, unit_cost, user, received_date=None, notes=None):
         return add_stock_batch(stock, initial_quantity, unit_cost, user, received_date, notes)
 
-    # @staticmethod
-    # @transaction.atomic
-    # def update_price(stock, new_price, new_discount, user, received_date=None):
-    #     return update_stock_price(stock, new_price, new_discount, user, reason="Manual update")
-
     @staticmethod
     @transaction.atomic
     def update_price(stock, new_price, new_discount, user, reason="Manual update"):
@@ -124,55 +119,64 @@ class StockService:
     @transaction.atomic
     def release_reservation(order_item, changed_by=None):
 
-        reservation = getattr(order_item, 'reservation', None)
-        if not reservation or not reservation.is_active:
+        active_reservations = order_item.reservation.filter(
+            is_active=True
+        ).select_related('batch', 'batch__stock')
+
+        if not active_reservations.exists():
             return
 
-        batch = reservation.batch
-        before = batch.remaining_quantity
-        batch.remaining_quantity += reservation.reserved_quantity
-        batch.save()
+        affected_stocks = set()
 
-        reservation.is_active = False
-        reservation.save()
+        for reservation in active_reservations:
+            batch = reservation.batch
+            if not batch:
+                continue
 
-        StockHistory.objects.create(
-            stock=batch.stock,
-            batch=batch,
-            change_type='release_reserve',
-            quantity_change=reservation.reserved_quantity,
-            before_quantity=before,
-            after_quantity=batch.remaining_quantity,
-            changed_by=changed_by,
-            order=order_item.order,
-            reason="Reservation released"
-        )
+            before = batch.remaining_quantity
+            batch.remaining_quantity += reservation.reserved_quantity
+            batch.save()
 
-        batch.stock.save()
+            reservation.is_active = False
+            reservation.save()
+
+            StockHistory.objects.create(
+                stock=batch.stock,
+                batch=batch,
+                change_type='release_reserve',
+                quantity_change=reservation.reserved_quantity,
+                before_quantity=before,
+                after_quantity=batch.remaining_quantity,
+                changed_by=changed_by,
+                order=order_item.order,
+                reason="Reservation released due to order cancellation"
+            )
+
+            affected_stocks.add(batch.stock)
+
+        for stock in affected_stocks:
+            stock.save()
 
     @staticmethod
     @transaction.atomic
     def finalize_reservation(order_item, changed_by=None):
-        """
-        Finalize reservation when order is completed (delivered/paid).
-        - Keeps reservation inactive (fulfilled).
-        - Logs it as 'sold'.
-        """
-        reservation = getattr(order_item, 'reservation', None)
-        if not reservation or not reservation.is_active:
+        active_reservations = order_item.reservation.filter(is_active=True).select_related('batch', 'batch__stock')
+
+        if not active_reservations.exists():
             return
 
-        reservation.is_active = False
-        reservation.save()
+        for reservation in active_reservations:
+            reservation.is_active = False
+            reservation.save()
 
-        StockHistory.objects.create(
-            stock=reservation.batch.stock,
-            batch=reservation.batch,
-            change_type='sold',
-            quantity_change=-reservation.reserved_quantity,
-            before_quantity=None,  # Optional
-            after_quantity=None,
-            changed_by=changed_by,
-            order=order_item.order,
-            reason="Order completed and stock finalized"
-        )
+            StockHistory.objects.create(
+                stock=reservation.batch.stock,
+                batch=reservation.batch,
+                change_type='sold',
+                quantity_change=-reservation.reserved_quantity,
+                before_quantity=None,
+                after_quantity=None,
+                changed_by=changed_by,
+                order=order_item.order,
+                reason="Order completed and stock finalized"
+            )

@@ -74,7 +74,7 @@ class StockBatch(AbstractBaseModel):
         return f"Batch for {self.stock.book.title} on {self.received_date} (Remaining: {self.remaining_quantity})"
 
     class Meta:
-        ordering = ['received_date']  # Oldest first for FIFO
+        ordering = ['received_date']
         indexes = [
             models.Index(fields=['stock', 'received_date']),
             models.Index(fields=['remaining_quantity']),
@@ -100,8 +100,8 @@ class StockHistory(AbstractBaseModel):
                               related_name='history')
     change_type = models.CharField(max_length=20, choices=CHANGE_TYPES)
     quantity_change = models.IntegerField()
-    before_quantity = models.PositiveIntegerField()
-    after_quantity = models.PositiveIntegerField()
+    before_quantity = models.PositiveIntegerField(null=True, blank=True)
+    after_quantity = models.PositiveIntegerField(null=True, blank=True)
     reason = models.TextField(blank=True, null=True)
     changed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
                                    related_name='stock_changes')

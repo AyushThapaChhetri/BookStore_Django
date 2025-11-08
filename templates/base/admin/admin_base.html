@@ -177,6 +177,13 @@
                                        pl-11 group hover:bg-gray-100 dark:text-white
                                        dark:hover:bg-gray-700 {% active_class request 'admin_genre_list' %}">Genres</a>
                                 </li>
+                                <li>
+
+                                    <a href="{% url 'admin_order_list' %}"
+                                       class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg
+                                       pl-11 group hover:bg-gray-100 dark:text-white
+                                       dark:hover:bg-gray-700 {% active_class request 'admin_order_list' %}">Order</a>
+                                </li>
                             </ul>
                         </li>
                         {#                        <li>#}
