@@ -30,7 +30,9 @@ def calculate_cart_totals(user):
 
     total_amount_after_discount = total_price - total_discount
     # print("Cart hello")
-    # print(items)
+    print(items)
+    for item in items:
+        item.cannot_purchase = item.book.is_deleted
     # print(list(item for item in items))
     # for item in items:
     #     book = item.book

@@ -31,6 +31,10 @@ class Stock(AbstractBaseModel):
         ]
 
     @property
+    def can_sell(self):
+        return self.total_remaining_quantity > 0 and self.current_price > 0
+
+    @property
     def total_remaining_quantity(self):
         # Only aggregate if the Stock has a PK
         if self.pk:

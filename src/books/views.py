@@ -185,7 +185,8 @@ def add_to_cart(request):
     )
     print("Hello")
     # if book.stock.stock_quantity <= 0:
-    if book.total_quantity <= 0:
+    # if book.total_quantity <= 0:
+    if not book.stock.can_sell:
         print("cannot")
         return JsonResponse({'success': False, 'message': f"'{book.title}' is sold out"}, status=400)
 
@@ -242,20 +243,22 @@ def update_cart(request, item_uuid):
         message = None
 
         if action == 'increment':
-            if item.quantity >= book.stock.total_remaining_quantity:
+            if book.stock.can_sell:
+                if item.quantity >= book.stock.total_remaining_quantity:
 
-                quantity = book.stock.total_remaining_quantity
-                message = f"Only {book.stock.total_remaining_quantity} left in stock."
-            else:
-                quantity = item.quantity + 1
+                    quantity = book.stock.total_remaining_quantity
+                    message = f"Only {book.stock.total_remaining_quantity} left in stock."
+                else:
+                    quantity = item.quantity + 1
 
 
         elif action == 'decrement':
-            if item.quantity <= 1:
-                quantity = 1
-                message = "Quantity cannot be less than 1."
-            else:
-                quantity = item.quantity - 1
+            if book.stock.can_sell:
+                if item.quantity <= 1:
+                    quantity = 1
+                    message = "Quantity cannot be less than 1."
+                else:
+                    quantity = item.quantity - 1
 
         if quantity > book.stock.total_remaining_quantity:
             quantity = max(book.stock.total_remaining_quantity, 1)
@@ -452,19 +455,7 @@ class BookStore(View):
         # print('sort_by store:', sort_by)
 
         # books = Book.objects.all()
-        # start with Book queryset
-        # books = Book.objects.all().annotate(
-        #     price=F('stock__price'),
-        #     stock_quantity=F('stock__stock_quantity'),
-        #     is_available=F('stock__is_available'),
-        #     last_restock_date=F('stock__last_restock_date')
-        # )
-        # books = Book.objects.all().annotate(
-        #     price=F('stock__current_price'),
-        #     stock_quantity=Coalesce(Sum('stock__batches__remaining_quantity'), 0),
-        #     is_available=F('stock__is_available'),
-        #     last_restock_date=F('stock__last_restock_date')
-        # )
+
         books = Book.objects.select_related('stock').prefetch_related('stock__batches').annotate(
             total_quantity=Coalesce(Sum('stock__batches__remaining_quantity'), 0)
         )
@@ -536,6 +527,23 @@ def is_cart_item_exists(request):
 
 class BookCheckout(View):
     def get(self, request):
+        try:
+
+            user_cart = Cart.objects.get(user=request.user)
+        except Cart.DoesNotExist:
+            messages.error(request, "Your cart is empty.")
+            return redirect('book_cart')
+
+        cart_items = user_cart.items.select_related('book').all()
+
+        for cart_item in cart_items:
+            if cart_item.book.is_deleted:
+                messages.error(
+                    request,
+                    f"'{cart_item.book.title}' is unavailable. Please remove it from your cart."
+                )
+                return redirect('book_cart')
+
         redirect_response = is_cart_item_exists(request)
         if redirect_response:
             return redirect_response

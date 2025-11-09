@@ -114,7 +114,7 @@ class OrderView(View):
             order = order.filter(status=show_by)
 
         sorted_order = applying_sorting(order, sort_by=sort_by, allowed_sorts=ALLOWED_SORTS["order"],
-                                        default='created_at')
+                                        default='-created_at')
 
         if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.headers.get(
                 'Accept') == 'application/json':

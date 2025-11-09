@@ -76,19 +76,28 @@
                 </div>
                 <p id="helper-text-explanation"
                    class="mt-2 text-sm
-                    {% if item.book.stock.total_remaining_quantity == 0 or item.quantity > item.book.stock.total_remaining_quantity %}
+
+                    {% if item.book.stock.total_remaining_quantity == 0 or item.quantity > item.book.stock.total_remaining_quantity or item.book.is_deleted %}
                         text-red-600
                   {% else %}
                       text-gray-500
                   {% endif %}
                     hidden sm:block">
-                    {% if item.book.stock.total_remaining_quantity > 0 %}
-                        <span class="font-bold">{{ item.book.stock.total_remaining_quantity }}</span> in stock
+                    {% if not item.book.is_deleted %}
+
+                        {% if item.book.stock.total_remaining_quantity > 0 %}
+                            <span class="font-bold">{{ item.book.stock.total_remaining_quantity }}</span> in stock
+                        {% else %}
+                            {{ item.book.stock.total_remaining_quantity }} Out of stock{% if item.quantity == 1 %}!
+                            Please
+                            remove this item
+                        {% endif %}
+                        {% endif %}
                     {% else %}
-                        {{ item.book.stock.total_remaining_quantity }} Out of stock{% if item.quantity == 1 %}! Please
-                        remove this item
+
+                        Please remove this item, It is not available at the moment!
                     {% endif %}
-                    {% endif %}
+
                 </p>
                 {#            </form>#}
             </div>

@@ -1,4 +1,5 @@
 {% extends 'books/admin/Stock/admin_reusable_stock.html' %}
+{% load tz %}
 {% block title %}Reservation{% endblock %}
 {% block table_rows %}
     {% for reservation in paginated_stock_reservation %}
@@ -11,7 +12,7 @@
             {% else %}
                 <span class="text-red-600 font-semibold">Released</span>
             {% endif %}</td>
-            <td class="px-4 py-2">{{ reservation.created_at }}</td>
+            <td class="px-4 py-2">{{ reservation.created_at|localtime|date:"Y-m-d h:i a" }}</td>
         </tr>
     {% empty %}
         <tr>

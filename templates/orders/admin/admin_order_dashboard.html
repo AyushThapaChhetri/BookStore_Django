@@ -19,14 +19,14 @@
 {% block sort_title_desc %}Name{% endblock %}
 {% block sort_options %}
 
-
+    <option value="created_desc" {% if request.GET.sort == "created_desc" %}selected{% endif %}>
+        Created (Newest)
+    </option>
 
     <option value="created_asc" {% if request.GET.sort == "created_asc" %}selected{% endif %}>
         Created (Oldest)
     </option>
-    <option value="created_desc" {% if request.GET.sort == "created_desc" %}selected{% endif %}>
-        Created (Newest)
-    </option>
+
 {% endblock %}
 {% block add_url %}
     {#    {% url 'publisher_view' %}#}
@@ -122,7 +122,7 @@
 
 
 {% block modals %}
-   
+
 {% endblock %}
 
 {% block search_url %}

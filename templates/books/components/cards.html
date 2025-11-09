@@ -96,16 +96,16 @@
                 <button
                         type="button"
                         class="button_cart_add text-white
-                   {% if book.total_quantity > 0 %}
+                   {% if book.stock.can_sell > 0 %}
                        bg-blue-700 hover:bg-blue-800 focus:ring-blue-300
                    {% else %}
                        bg-red-700 hover:bg-red-800 focus:ring-red-300 cursor-not-allowed
                    {% endif %}
                    focus:ring-4 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center"
                         data-book-uuid="{{ book.uuid }}"
-                        {% if book.total_quantity <= 0 %}disabled aria-disabled="true"{% endif %}
+                        {% if book.stock.can_sell <= 0 %}disabled aria-disabled="true"{% endif %}
                 >
-                    {% if book.total_quantity > 0 %}Add to cart
+                    {% if book.stock.can_sell > 0 %}Add to cart
                     {% else %}Sold
                         Out{% endif %}
                 </button>
