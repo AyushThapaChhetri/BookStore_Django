@@ -47,7 +47,7 @@ class SafeDeleteModel(models.Model):
                     keep_parents: Whether to keep parent objects in cascades (optional)
                 """
         # ( date delete)
-        print("date", self.is_deleted)
+        # print("date", self.is_deleted)
         if self.is_deleted:
             raise ValueError("This object is already deleted")
 
@@ -70,7 +70,8 @@ class SafeDeleteModel(models.Model):
                 """
         if not self.is_deleted:
             raise ValueError("This object is not deleted")
-
+        # print("From here restore function to be done")
+        # print(self)
         self.deleted_at = None
         self.deleted_by = None
         self.save(update_fields=['deleted_at', 'deleted_by'])

@@ -3,6 +3,8 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from .models import Stock, StockBatch
+from ..core.forms.validators import validate_percentage, validate_no_leading_trailing_spaces
+from ..core.validators.stock import validate_current_price
 
 
 class StockForm(forms.ModelForm):
@@ -55,8 +57,19 @@ class RestockForm(forms.ModelForm):
 
 
 class PriceUpdateForm(forms.ModelForm):
-    reason = forms.CharField(widget=forms.Textarea(attrs={'rows': 3}), required=False)
+    reason = forms.CharField(widget=forms.Textarea(attrs={'rows': 3}), required=False, strip=False,
+                             validators=[validate_no_leading_trailing_spaces])
 
     class Meta:
         model = Stock
         fields = ('current_price', 'current_discount_percentage')
+
+    def clean_current_price(self):
+        price = self.cleaned_data.get('current_price')
+        validate_current_price(price)
+        return price
+
+    def clean_current_discount_percentage(self):
+        discount = self.cleaned_data.get('current_discount_percentage')
+        validate_percentage(discount)
+        return discount

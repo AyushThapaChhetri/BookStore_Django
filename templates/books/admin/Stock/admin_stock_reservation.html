@@ -1,6 +1,7 @@
 {% extends 'books/admin/Stock/admin_reusable_stock.html' %}
 {% load tz %}
 {% block title %}Reservation{% endblock %}
+{% block heading_title_stock %}Reservation{% endblock %}
 {% block table_rows %}
     {% for reservation in paginated_stock_reservation %}
         <tr class="border-t hover:bg-gray-50">
@@ -21,8 +22,10 @@
     {% endfor %}
 {% endblock %}
 
+
+
 {% block pagination %}
     {% with paginated_stock_reservation as paginated_items %}
-        {{ block.super }}
+        {% include "books/admin/Stock/pagination/stock_pagination.html" with paginated_items=paginated_items limit=limit %}
     {% endwith %}
 {% endblock %}

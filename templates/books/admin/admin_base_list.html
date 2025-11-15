@@ -204,18 +204,18 @@
         {% endblock %}
 
         {% block modals %}
-            <!-- Default modal can be overridden by child templates -->
+
         {% endblock %}
 
-    </div> <!-- closes .flex-col.space-between -->
+    </div>
     {% block base_script %}
         <script>
-            // Base search functionality
+
             const searchInput = document.getElementById('searchInput');
             const tableBody = document.getElementById('listTableBody');
             const is_recycle_bin = {{ is_recycle_bin|yesno:"true,false"}}
 
-            // Debounce function to delay execution
+
             function debounce(func, delay) {
                 let timeout;
                 return (...args) => {
@@ -259,7 +259,7 @@
                 });
             }
 
-            // Base modal functions - can be overridden
+         
             function openModal(itemUUID, modalType = 'delete') {
                 {#console.log("clicked model", itemUUID, modalType);#}
                 const modal = document.getElementById(modalType + 'Modal');

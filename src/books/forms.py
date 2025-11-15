@@ -296,11 +296,9 @@ class BookForm(forms.ModelForm):
         if not pub_date:
             return None
 
-            # Ensure it's a date object
         if not isinstance(pub_date, (datetime.date,)):
             raise ValidationError("Invalid date format.")
 
-        # Check if the date is in the future
         today = timezone.localdate()
         if pub_date > today:
             raise ValidationError("Publication date cannot be in the future.")
@@ -319,11 +317,10 @@ class BookForm(forms.ModelForm):
                 publication_date=publication_date,
                 publisher=publisher,
             )
-            # If you’re editing an existing Book → self.instance.pk is the primary key of that Book.,updating a book, you don’t want Django to think your current record is a “duplicate of itself”.
+
             if self.instance.pk:
                 qs = qs.exclude(pk=self.instance.pk)
 
-            # Returns True if there’s at least one row matching.
             if qs.exists():
                 self.add_error('title', 'A book with this Title, Publication Date, and Publisher already exists.')
 

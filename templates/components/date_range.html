@@ -1,0 +1,35 @@
+<div class="flex items-center gap-4 mb-4" id="{{ prefix }}_date_range">
+    <div class="flex flex-col">
+        <label for="{{ prefix }}_from" class="text-sm font-medium text-gray-600">From</label>
+        <input
+                type="date"
+                name="{{ prefix }}_from"
+                id="{{ prefix }}_from"
+                value="{{ from_value|default:'' }}"
+                class="filter-input border border-gray-300 rounded px-2 py-1"
+                data-filter="{{ prefix }}"
+        >
+        <span id="{{ prefix }}_from_error" class="text-red-500 text-sm mt-1">
+        {% if errors and errors.from %}
+            {{ errors.from.0 }}
+        {% endif %}
+    </span>
+    </div>
+
+    <div class="flex flex-col">
+        <label for="{{ prefix }}_to" class="text-sm font-medium text-gray-600">To</label>
+        <input
+                type="date"
+                name="{{ prefix }}_to"
+                id="{{ prefix }}_to"
+                value="{{ to_value|default:'' }}"
+                class="filter-input border border-gray-300 rounded px-2 py-1"
+                data-filter="{{ prefix }}"
+        >
+        <span id="{{ prefix }}_to_error" class="text-red-500 text-sm mt-1">
+        {% if errors and errors.to %}
+            {{ errors.to.0 }}
+        {% endif %}
+    </span>
+    </div>
+</div>

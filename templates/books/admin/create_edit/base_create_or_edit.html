@@ -195,10 +195,9 @@
             console.log('field id', selectFieldId)
             console.log('name', fieldName);
             try {
-                {#const endpoint = "{% url 'create_author' %}";#}
                 console.log('why');
                 const response = await axios.get(`/admin-panel/${fieldName}`);
-                {#const response = await axios.get(endpoint);#}
+
 
                 // Save both for later use in submit
                 form_Container_popup.dataset.fieldName = fieldName;

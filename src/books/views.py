@@ -192,12 +192,16 @@ def add_to_cart(request):
 
     print("hi")
     cart, _ = Cart.objects.get_or_create(user=request.user)
+    current_price = book.stock.current_price
+    discount_percentage = book.stock.current_discount_percentage
 
     cart_item, created = CartItem.objects.get_or_create(cart=cart, book=book)
 
-    cart_item.unit_price = book.stock.current_price
+    cart_item.unit_price = current_price
 
-    cart_item.discount_amount = book.stock.current_discount_percentage
+    discount_amt = current_price * (discount_percentage / 100)
+    current_price = book.stock.current_price
+    cart_item.discount_amount = discount_amt
 
     if created:
 
@@ -357,17 +361,35 @@ class BookRestoreView(View):
     def post(self, request, uuid):
         if not request.user.has_perm('books.change_book'):
             raise PermissionDenied
-
+        print("before restore")
         try:
             with transaction.atomic():
+
                 book = get_object_or_404(Book.deleted_objects, uuid=uuid)
+                # print("before restore")
+                # book_dict = model_to_dict(book)
+                # print(book_dict)
+                # print(book.deleted_at)
+                # print(book.deleted_by)
                 book.restore()
+                # print("Restored book")
+                # book_dict = model_to_dict(book)
+                # print(book_dict)
+                # print(book.deleted_at)
+                # print(book.deleted_by)
 
                 book.stock.restore()
+                # print("Restored book 1")
+                # book_dict = model_to_dict(book)
+                # print(book_dict)
+                # print(book.deleted_at)
+                # print(book.deleted_by)
+                # print("Restored book 2")
 
         except Exception as e:
             print(e)
 
+        print("Restored book 3")
         messages.success(request, f"'{book.title}' has been restored successfully.")
         return redirect('book_recycle_bin')
 
@@ -464,7 +486,7 @@ class BookStore(View):
         #     print(book.stock.total_remaining_quantity)
 
         items_count = CartItem.objects.filter(cart__user=request.user).count()
-        print(items_count, ": Item count")
+        # print(items_count, ": Item count")
 
         books, min_price_value, max_price_value, db_max = searchfilter_bookStore(books, query, min_price,
                                                                                  max_price, sort_by)
@@ -934,7 +956,7 @@ class AuthorView(View):
 
         if form.is_valid():
             author = form.save()
-            print("author to be saved from the forntend popup")
+            print("author to be saved from the frontend popup")
             if request.headers.get("X-requested-with") == "XMLHttpRequest":
                 return JsonResponse({
                     "id": author.id,

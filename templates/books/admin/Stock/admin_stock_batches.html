@@ -1,24 +1,135 @@
 {% extends 'books/admin/Stock/admin_reusable_stock.html' %}
 {% block title %}Batches{% endblock %}
-{% block table_rows %}
-    {% for batch in paginated_batches %}
-        <tr class="border-t hover:bg-gray-50">
-            <td class="px-4 py-2">{{ batch.received_date }}</td>
-            <td class="px-4 py-2">{{ batch.initial_quantity }}</td>
-            <td class="px-4 py-2">{{ batch.remaining_quantity }}</td>
-            <td class="px-4 py-2">Rs {{ batch.unit_cost|floatformat:"-2" }}</td>
-            <td class="px-4 py-2">{{ batch.supplier.name|default:"None" }}</td>
-            <td class="px-4 py-2">{{ batch.notes|default:"-" }}</td>
-        </tr>
-    {% empty %}
-        <tr>
-            <td colspan="6" class="text-center p-4 text-gray-500">No batches found</td>
-        </tr>
-    {% endfor %}
+{% block heading_title_stock %}Batches{% endblock %}
+
+{% block search_and_filters_stock %}
+    <form method="get">
+        {% include "components/date_range.html" with prefix="received" %}
+        <button type="submit" class="bg-blue-600 text-white px-3 py-1 rounded">Filter</button>
+    </form>
 {% endblock %}
+
+{% block table_rows %}
+
+    {% include 'books/admin/Stock/table/Stock_Batch_table_rows.html' with paginated_batches=paginated_batches %}
+    {% include 'components/form_popup.html' %}
+{% endblock %}
+
 
 {% block pagination %}
     {% with paginated_batches as paginated_items %}
-        {{ block.super }}
+        {% include "books/admin/Stock/pagination/stock_pagination.html" with paginated_items=paginated_items limit=limit %}
     {% endwith %}
+{% endblock %}
+
+
+
+{% block extra_js %}
+    <script>
+        const formPopup = document.getElementById('formPopupModal');
+        const form_Container_popup = document.getElementById('form-Container-popup');
+
+
+        async function openModal(bookUid, batchUid) {
+            console.log("Hello");
+            console.log('field uuid', bookUid)
+            console.log('stock uuid', batchUid)
+            try {
+
+                console.log('why');
+                console.log(`/admin-panel/stock/${bookUid}/restock/edit/${batchUid}`)
+                const response = await axios.get(`/admin-panel/stock/${bookUid}/restock/edit/${batchUid}`, {
+                    headers: {'X-Requested-With': 'XMLHttpRequest'}
+                });
+
+
+                form_Container_popup.dataset.batchUid = batchUid;
+
+                formPopup.classList.remove("hidden");
+                form_Container_popup.innerHTML = response.data.html;
+
+            } catch (e) {
+                console.log("error", e);
+                alert(e);
+            }
+
+
+        }
+
+        function closeLogoutModal() {
+            console.log("logout");
+            formPopup.classList.add("hidden")
+        }
+
+
+        async function fetchFilteredData() {
+            const fromInput = document.getElementById("received_from");
+            const toInput = document.getElementById("received_to");
+
+            const from = fromInput.value;
+            const to = toInput.value;
+
+            // Clear previous errors
+            document.getElementById("received_from_error").textContent = "";
+            document.getElementById("received_to_error").textContent = "";
+
+            const params = new URLSearchParams(window.location.search);
+            if (from) params.set("received_from", from);
+            else params.delete("received_from");
+
+            if (to) params.set("received_to", to);
+            else params.delete("received_to");
+
+            const newUrl = `${window.location.pathname}?${params.toString()}`;
+            window.history.replaceState({}, "", newUrl);
+
+            try {
+                const response = await axios.get(newUrl, {
+                    headers: {"X-Requested-With": "XMLHttpRequest"}
+                });
+
+                document.getElementById("table-container").innerHTML =
+                    response.data.table_html;
+                document.getElementById("pagination-container").innerHTML =
+                    response.data.pagination_html;
+
+            } catch (error) {
+                if (error.response && error.response.status === 400 && error.response.data.errors) {
+                    const errs = error.response.data.errors;
+                    if (errs.from) document.getElementById("received_from_error").textContent = errs.from;
+                    if (errs.to) document.getElementById("received_to_error").textContent = errs.to;
+                } else {
+                    console.error("Filter AJAX error:", error);
+                    alert("Failed to load filtered data");
+                }
+            }
+        }
+
+
+        document.querySelector("form").addEventListener("submit", async function (e) {
+            e.preventDefault();
+            await fetchFilteredData();
+        });
+
+        document.addEventListener("click", async function (e) {
+            if (e.target.matches(".ajax-page")) {
+                e.preventDefault();
+
+                try {
+                    const response = await axios.get(e.target.href, {
+                        headers: {"X-Requested-With": "XMLHttpRequest"}
+                    });
+
+                    document.getElementById("table-container").innerHTML =
+                        response.data.table_html;
+
+                    document.getElementById("pagination-container").innerHTML =
+                        response.data.pagination_html;
+
+                } catch (error) {
+                    console.error("Pagination AJAX error:", error);
+                }
+            }
+        });
+    </script>
 {% endblock %}

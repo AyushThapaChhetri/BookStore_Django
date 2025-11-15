@@ -13,6 +13,16 @@ text-xs lg:text-sm
 
             <p class="font-medium  ">Order Number: {{ order.uuid }}</p>
             <p class="text-gray-400 ">{{ order.created_at }}</p>
+            <span class="
+            px-3 py-1 h-fit rounded-md text-sm font-semibold mr-[2px]
+            {% if order.status == 'pending' %} bg-yellow-100 text-yellow-700
+            {% elif order.status == 'completed' %} bg-green-100 text-green-700
+            {% elif order.status == 'cancelled' %} bg-red-100 text-red-700
+            {% endif %}
+        ">
+            {{ order.get_status_display }}
+        </span>
+
         </div>
         <div class="flex
 {#    border #}
@@ -33,8 +43,7 @@ text-xs lg:text-sm
                             {#                         alt="No cover available"#}
                             {#                    />#}
 
-                        {% else %}
-                            <!-- Optional placeholder image -->
+                      
                             <img class="rounded-t-lg"
                                  src="{% static 'images/no_book_cover.png' %}"
                                  alt="No cover available"

@@ -1,5 +1,6 @@
 {% extends 'books/admin/Stock/admin_reusable_stock.html' %}
 {% block title %}Stock History{% endblock %}
+{% block heading_title_stock %}Stock History{% endblock %}
 {% block table_rows %}
     {% for stock in paginated_stock_history %}
         <tr class="border-t hover:bg-gray-50">
@@ -16,9 +17,11 @@
         </tr>
     {% endfor %}
 {% endblock %}
-
 {% block pagination %}
-    {% with paginated_batches as paginated_items %}
-        {{ block.super }}
+
+ 
+
+    {% with paginated_stock_history as paginated_items %}
+        {% include "books/admin/Stock/pagination/stock_pagination.html" with paginated_items=paginated_items limit=limit %}
     {% endwith %}
 {% endblock %}

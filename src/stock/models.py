@@ -1,13 +1,15 @@
 from decimal import Decimal, ROUND_HALF_UP
 
 from django.conf import settings
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator, MaxLengthValidator
 from django.db import models
 from django.db.models import Sum
 from django.utils import timezone
 
 from src.books.models import Book, Publisher
 from src.core.models import AbstractBaseModel
+from src.core.validators.dates import validate_date, validate_past_dates
+from src.core.validators.numbers import validate_minimum_stock, validate_positive_integer
 
 
 # Create your models here.
@@ -66,13 +68,14 @@ class Stock(AbstractBaseModel):
 
 class StockBatch(AbstractBaseModel):
     stock = models.ForeignKey(Stock, on_delete=models.CASCADE, related_name='batches')
-    received_date = models.DateField(default=timezone.now)
-    initial_quantity = models.PositiveIntegerField()
+    received_date = models.DateField(default=timezone.now, validators=[validate_date, validate_past_dates])
+    initial_quantity = models.PositiveIntegerField(validators=[validate_minimum_stock])
     remaining_quantity = models.PositiveIntegerField()
-    unit_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    unit_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00,
+                                    validators=[MinValueValidator(0.00), validate_positive_integer])
     supplier = models.ForeignKey(Publisher, on_delete=models.SET_NULL, null=True,
                                  blank=True)
-    notes = models.TextField(blank=True, null=True)
+    notes = models.TextField(blank=True, null=True, validators=[MaxLengthValidator(1000)])
 
     def __str__(self):
         return f"Batch for {self.stock.book.title} on {self.received_date} (Remaining: {self.remaining_quantity})"
@@ -93,6 +96,7 @@ class StockBatch(AbstractBaseModel):
 class StockHistory(AbstractBaseModel):
     CHANGE_TYPES = (
         ('restock', 'Restock'),
+        ('editstock', 'Edit Stock'),
         ('reserve', 'Reserve for Order'),
         ('release_reserve', 'Release Reservation'),
         ('sold', 'Sold'),
@@ -148,7 +152,7 @@ class StockReservation(AbstractBaseModel):
     order_item = models.ForeignKey('orders.OrderItem', on_delete=models.CASCADE, related_name='reservation')
     batch = models.ForeignKey('StockBatch', on_delete=models.CASCADE, related_name='reservations')
     reserved_quantity = models.PositiveIntegerField()
-    is_active = models.BooleanField(default=True)  # False when released or fulfilled
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return f"Reservation of {self.reserved_quantity} from batch {self.batch} for OrderItem {self.order_item}"
