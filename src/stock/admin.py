@@ -5,9 +5,9 @@ from .models import Stock, StockBatch, StockHistory, PriceHistory, StockReservat
 
 class StockBatchInline(admin.TabularInline):
     model = StockBatch
-    extra = 1  # Easy to add new batches
+    extra = 1
     fields = ('received_date', 'initial_quantity', 'unit_cost', 'supplier', 'notes')
-    readonly_fields = ('remaining_quantity',)  # Prevent manual edit
+    readonly_fields = ('remaining_quantity',)
 
 
 class StockHistoryInline(admin.TabularInline):

@@ -34,23 +34,34 @@
 {% endblock %}
 {% block add_button %}
     <div class="flex flex-column flex-wrap gap-4 md:gap-20">
-        <div class="flex flex-row  items-center gap-2 w-fit">
-            <p>Show: </p>
-            <form class="max-w-sm mx-auto" method="get">
-                <select id="showby" name="showby" onchange="this.form.submit()"
-                        class="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg  focus:ring-blue-500 focus:border-blue-500 block w-fit p-2.5">
+        <div class="flex flex-row items-center gap-2 w-fit">
 
-                    <option value="completed" {% if request.GET.sort == "completed" %}selected{% endif %}>
-                        Completed
-                    </option>
-                    <option value="pending" {% if request.GET.sort == "pending" %}selected{% endif %}>
-                        Pending
-                    </option>
-                    <option value="cancelled" {% if request.GET.sort == "cancelled" %}selected{% endif %}>
-                        Cancelled
-                    </option>
-                </select>
-            </form>
+            <div class="flex flex-col">
+                <label class="text-sm font-semibold text-gray-600">Show</label>
+
+                <form method="get">
+                    <select name="showby"
+                            onchange="this.form.submit()"
+                            class="border rounded px-3 py-2 bg-gray-100 text-gray-900 text-sm focus:ring-blue-500 focus:border-blue-500">
+
+                        <option value="">All</option>
+
+                        <option value="completed" {% if request.GET.showby == "completed" %}selected{% endif %}>
+                            Completed
+                        </option>
+
+                        <option value="pending" {% if request.GET.showby == "pending" %}selected{% endif %}>
+                            Pending
+                        </option>
+
+                        <option value="cancelled" {% if request.GET.showby == "cancelled" %}selected{% endif %}>
+                            Cancelled
+                        </option>
+                    </select>
+                </form>
+
+            </div>
+
         </div>
     </div>
 {% endblock %}
@@ -95,7 +106,9 @@
 
                     <button class="bg-indigo-600 hover:bg-indigo-800 text-white font-bold py-2 px-4 rounded">
                         {#                                            <a href="{% url 'order_detail_view' order.uuid %}">View</a>#}
-                        View
+                        <a href="{% url 'order_detail_view' order.uuid %}">
+                            View
+                        </a>
                     </button>
 
 

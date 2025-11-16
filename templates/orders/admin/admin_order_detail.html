@@ -1,0 +1,100 @@
+{% extends "base/admin/admin_base.html" %}
+
+{% block content %}
+
+    <div class="max-w-6xl mx-auto mt-10">
+
+
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-700">
+                Order Detail (#{{ order.uuid }})
+            </h1>
+
+            <a href="/admin-panel/manage/order/list/"
+               class="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-900">
+                Back to Orders
+            </a>
+        </div>
+
+
+        <div class="bg-white shadow rounded-lg p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4 text-gray-800">Order Information</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                <div>
+                    <p class="text-sm text-gray-600">Ordered By</p>
+                    <p class="font-semibold text-gray-900">{{ order.user.email }}</p>
+                </div>
+
+                <div>
+                    <p class="text-sm text-gray-600">Order Date</p>
+                    <p class="font-semibold text-gray-900">{{ order.order_date }}</p>
+                </div>
+
+                <div>
+                    <p class="text-sm text-gray-600">Status</p>
+                    <span class="
+                    px-3 py-1 rounded text-sm font-medium
+                    {% if order.status == 'completed' %}
+                        bg-green-100 text-green-700
+                    {% elif order.status == 'pending' %}
+                        bg-yellow-100 text-yellow-700
+                    {% elif order.status == 'cancelled' %}
+                        bg-red-100 text-red-700
+                    {% else %}
+                        bg-gray-100 text-gray-700
+                    {% endif %}
+                ">
+                    {{ order.status|capfirst }}
+                </span>
+                </div>
+
+                <div>
+                    <p class="text-sm text-gray-600">Total Amount</p>
+                    <p class="font-semibold text-gray-900">Rs. {{ order.total_amount }}</p>
+                </div>
+
+            </div>
+        </div>
+
+
+        <div class="bg-white shadow rounded-lg p-6">
+            <h2 class="text-xl font-semibold mb-4 text-gray-800">Items</h2>
+
+            <table class="min-w-full border border-gray-300">
+                <thead class="bg-gray-100">
+                <tr>
+                    <th class="px-4 py-2 text-left text-sm font-semibold">Book</th>
+                    <th class="px-4 py-2 text-left text-sm font-semibold">Unit Price</th>
+                    <th class="px-4 py-2 text-left text-sm font-semibold">Quantity</th>
+                    <th class="px-4 py-2 text-left text-sm font-semibold">Discount</th>
+                    <th class="px-4 py-2 text-left text-sm font-semibold">Total</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                {% for item in items %}
+                    <tr class="border-b">
+                        <td class="px-4 py-2">{{ item.book.title }}</td>
+                        <td class="px-4 py-2">Rs. {{ item.unit_price }}</td>
+                        <td class="px-4 py-2">{{ item.quantity }}</td>
+                        <td class="px-4 py-2">Rs. {{ item.discount_amount }}</td>
+                        <td class="px-4 py-2 font-semibold">
+                            Rs. {{ item.total_price_after_discount }}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-gray-500">
+                            No items found for this order.
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+{% endblock %}

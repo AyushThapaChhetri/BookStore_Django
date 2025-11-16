@@ -1,27 +1,44 @@
 {% extends 'books/admin/Stock/admin_reusable_stock.html' %}
+{% load static %}
 {% block title %}Stock History{% endblock %}
 {% block heading_title_stock %}Stock History{% endblock %}
+
+{% block search_and_filters_stock %}
+    <form id="stock-filter-form" class="flex items-end gap-4 flex-wrap p-4 ">
+
+        {% include "books/components/text_filter.html" with label="Changed By" name="changed_by" placeholder="Email" current_value=request.GET.changed_by %}
+        {% include "books/components/select_filter.html" with  label="Change Type" name="change_type" options=change_type_options  current_value=request.GET.change_type %}
+
+        <div>
+
+            {% include "components/date_range.html" with prefix="received" %}
+            <button type="submit" class="bg-blue-600 text-white px-3 py-1  rounded">Filter</button>
+        </div>
+    </form>
+
+    <div class="flex items-center gap-2">
+        <span class="text-sm font-medium text-gray-600">Total Remaining Stock:</span>
+
+        <span class="px-3 py-1 rounded-xl bg-gray-100 text-gray-700 text-sm font-semibold">
+        {{ book.stock.total_remaining_quantity }}
+    </span>
+    </div>
+{% endblock %}
+
 {% block table_rows %}
-    {% for stock in paginated_stock_history %}
-        <tr class="border-t hover:bg-gray-50">
-            <td class="px-4 py-2">{{ stock.change_type }}</td>
-            <td class="px-4 py-2">{{ stock.quantity_change }}</td>
-            <td class="px-4 py-2">{{ stock.before_quantity }}</td>
-            <td class="px-4 py-2"> {{ stock.after_quantity }}</td>
-            <td class="px-4 py-2">{{ stock.changed_by }}</td>
-            <td class="px-4 py-2">{{ stock.created_at }}</td>
-        </tr>
-    {% empty %}
-        <tr>
-            <td colspan="6" class="text-center p-4 text-gray-500">No stock found</td>
-        </tr>
-    {% endfor %}
+    {% include "books/admin/Stock/table/stock_history_table.html" %}
 {% endblock %}
 {% block pagination %}
-
- 
 
     {% with paginated_stock_history as paginated_items %}
         {% include "books/admin/Stock/pagination/stock_pagination.html" with paginated_items=paginated_items limit=limit %}
     {% endwith %}
+{% endblock %}
+
+{% block extra_js %}
+
+    <script src="{% static 'core/js/reusable_stock_table.js' %}"></script>
+
+
+
 {% endblock %}

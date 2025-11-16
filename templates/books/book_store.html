@@ -310,21 +310,6 @@
             }
 
 
-            {#limit change#}
-
-            {#const limitSelect = document.getElementById("rowsPerPage_ajax");#}
-            {#console.log('limit select: ', limitSelect)#}
-            {#if (limitSelect) {#}
-            {##}
-            {#    console.log("Limit listener");#}
-            {#    limitSelect.addEventListener("change", () => {#}
-            {#        console.log("limit value", limitSelect.value)#}
-            {#        const newUrl = new URL(window.location.href);#}
-            {#        newUrl.searchParams.set("limit", limitSelect.value);#}
-            {#        newUrl.searchParams.set("page", 1);#}
-            {#        fetchBooks(newUrl);#}
-            {#    });#}
-
             document.addEventListener('change', (e) => {
                 if (e.target && e.target.id === "rowsPerPage_ajax") {
                     console.log("Limit changed:", e.target.value);

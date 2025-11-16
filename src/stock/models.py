@@ -38,7 +38,6 @@ class Stock(AbstractBaseModel):
 
     @property
     def total_remaining_quantity(self):
-        # Only aggregate if the Stock has a PK
         if self.pk:
             return self.batches.aggregate(total=Sum('remaining_quantity'))['total'] or 0
         return 0
@@ -55,15 +54,25 @@ class Stock(AbstractBaseModel):
         ).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
     def save(self, *args, **kwargs):
-        # First save to get primary key
+        quantity_ok = self.total_remaining_quantity > 1
+        price_ok = self.current_price > 1
+
+        new_is_available = quantity_ok and price_ok
+
+        self.is_available = new_is_available
+
         super().save(*args, **kwargs)
 
-        # Now calculate is_available based on batches
-        new_is_available = self.total_remaining_quantity > 0
-        if self.is_available != new_is_available:
-            self.is_available = new_is_available
-
-            super().save(update_fields=['is_available'])
+    # def save(self, *args, **kwargs):
+    #
+    #     super().save(*args, **kwargs)
+    #
+    #
+    #     new_is_available = self.total_remaining_quantity > 0
+    #     if self.is_available != new_is_available:
+    #         self.is_available = new_is_available
+    #
+    #         super().save(update_fields=['is_available'])
 
 
 class StockBatch(AbstractBaseModel):

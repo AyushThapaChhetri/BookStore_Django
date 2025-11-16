@@ -1,7 +1,7 @@
 from django.urls import path
 
 from . import views
-from .views import StockBatchView, StockBatchListView
+from .views import StockBatchView, StockBatchListView, StockHistoryView
 
 urlpatterns = [
 
@@ -16,7 +16,8 @@ urlpatterns = [
     # path('stocked/batch/<uuid:book_uuid>/batches/', views.stockBatchesView, name='admin_stock_batches'),
     path('stocked/batch/<uuid:book_uuid>/batches/', StockBatchListView.as_view(), name='admin_stock_batches'),
 
-    path('stocked/stockHistory/<uuid:book_uuid>/history/', views.stockHistoryView, name='admin_stock_history'),
+    # path('stocked/stockHistory/<uuid:book_uuid>/history/', views.stockHistoryView, name='admin_stock_history'),
+    path('stocked/stockHistory/<uuid:book_uuid>/history/', StockHistoryView.as_view(), name='admin_stock_history'),
     path('stocked/priceHistory/<uuid:book_uuid>/history/', views.stockPriceView, name='admin_price_history'),
     path('stocked/activeReservation/<uuid:book_uuid>/reservation/', views.stockReservationView,
          name='admin_active_reservation'),

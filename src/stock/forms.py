@@ -21,7 +21,7 @@ class StockForm(forms.ModelForm):
             'current_price': forms.NumberInput(attrs={'step': '0.01'}),
             'current_discount_percentage': forms.NumberInput(attrs={'step': '0.01', 'min': '0', 'max': '100'}),
             'last_restock_date': forms.DateInput(attrs={'type': 'date'}),
-            'book': forms.HiddenInput(),  # Often hidden if creating via Book
+            'book': forms.HiddenInput(),
             'is_available': forms.HiddenInput(),
         }
 

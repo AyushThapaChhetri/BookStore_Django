@@ -13,7 +13,6 @@ def validate_date_range(from_date_str, to_date_str, date_format="%Y-%m-%d"):
     from_date = None
     to_date = None
 
-    # Validate From date
     if not from_date_str:
         errors['from'] = "From date must be provided."
     else:
@@ -24,7 +23,6 @@ def validate_date_range(from_date_str, to_date_str, date_format="%Y-%m-%d"):
             print("Failed to parse from_date")
             errors['from'] = f"'From' date is not a valid date. Expected format: {date_format}"
 
-    # Validate To date
     if not to_date_str:
         errors['to'] = "To date must be provided."
     else:
@@ -34,7 +32,6 @@ def validate_date_range(from_date_str, to_date_str, date_format="%Y-%m-%d"):
         except ValueError:
             errors['to'] = f"'To' date is not a valid date. Expected format: {date_format}"
 
-    # Check logical order only if both dates are valid
     if from_date and to_date and from_date > to_date:
         errors['from'] = "'From' date cannot be later than 'To' date."
         errors['to'] = "'To' date cannot be earlier than 'From' date."

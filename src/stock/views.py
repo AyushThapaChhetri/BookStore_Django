@@ -1,15 +1,17 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.exceptions import PermissionDenied
+from django.core.exceptions import ValidationError
 from django.http import JsonResponse
-# src/books/views.py (add/update these)
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import get_object_or_404, render
+from django.shortcuts import redirect
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.views import View
 
 from .forms import RestockForm, PriceUpdateForm  # From Step 3
-from .models import Book, StockBatch
+from .models import Book, StockHistory
+from .models import StockBatch
 from .models import StockReservation
 from .services import StockService
 from .utils import validate_date_range
@@ -43,22 +45,6 @@ def stock_detail(request, book_uuid):
     }
     # print("stock detail page")
     return render(request, 'books/admin/Stock/admin_stock_detail_view.html', context)
-
-
-# class StockBatchListView(View):
-#     def get(self, request, book_uuid):
-#         book = get_object_or_404(Book.objects.select_related('stock').prefetch_related('stock__batches'),
-#                                  uuid=book_uuid)
-#         batches = book.stock.batches.all().order_by('received_date', 'created_at')
-#         paginated_batches, limit = paginate_queryset(request, batches, default_limit=10)
-#         stock_batch_uuid = book.stock.batches.filter(uuid=book_uuid)
-#
-#         return render(request, 'books/admin/Stock/admin_stock_batches.html', {
-#             'paginated_batches': paginated_batches,
-#             'limit': limit,
-#             'book': book,
-#             'headers': ['Date', 'Initial', 'Remaining', 'Cost', 'Supplier', 'Notes', 'Actions']
-#         })
 
 
 class StockBatchListView(View):
@@ -213,17 +199,62 @@ class StockBatchView(View):
         return render(request, 'books/admin/Stock/admin_restock.html', {'form': form, 'book': book})
 
 
-@login_required
-def stockHistoryView(request, book_uuid):
-    book = get_object_or_404(Book, uuid=book_uuid)
-    stock_history = book.stock.stock_history.all().order_by('created_at')
-    paginated_stock_history, limit = paginate_queryset(request, stock_history, default_limit=10)
-    return render(request, 'books/admin/Stock/admin_stock_history.html', {
-        'paginated_stock_history': paginated_stock_history,
-        'limit': limit,
-        'book': book,
-        'headers': ['Type', 'Change', 'Before', 'After', 'By', 'Date']
-    })
+class StockHistoryView(View):
+    def get(self, request, book_uuid=None):
+        book = get_object_or_404(Book, uuid=book_uuid)
+        stock_history = book.stock.stock_history.all()
+
+        errors = {}
+
+        changed_by = request.GET.get("changed_by")
+        if changed_by:
+            stock_history = stock_history.filter(changed_by__email__icontains=changed_by)
+
+        change_type = request.GET.get("change_type")
+        if change_type:
+            valid_types = [key for key, _ in StockHistory.CHANGE_TYPES]
+            if change_type not in valid_types:
+                errors['change_type'] = "Invalid change type selected."
+            else:
+                stock_history = stock_history.filter(change_type=change_type)
+
+        start = request.GET.get("received_from")
+        end = request.GET.get("received_to")
+
+        try:
+            start_date, end_date = validate_date_range(start, end)
+            if start_date:
+                stock_history = stock_history.filter(created_at__date__gte=start_date)
+            if end_date:
+                stock_history = stock_history.filter(created_at__date__lte=end_date)
+        except ValidationError as e:
+            errors.update(e.message_dict)
+
+        if request.GET.get("ajax") and errors:
+            return JsonResponse({"errors": errors, "table_html": "", "pagination_html": ""}, status=400)
+
+        stock_history = stock_history.order_by('created_at')
+        paginated_stock_history, limit = paginate_queryset(request, stock_history, default_limit=10)
+
+        if request.GET.get("ajax"):
+            table_html = render_to_string(
+                "books/admin/Stock/table/stock_history_table.html",
+                {"paginated_stock_history": paginated_stock_history}
+            )
+            pagination_html = render_to_string(
+                "books/admin/Stock/pagination/stock_pagination.html",
+                {"paginated_items": paginated_stock_history, "limit": limit}
+            )
+            return JsonResponse({"table_html": table_html, "pagination_html": pagination_html})
+
+        return render(request, 'books/admin/Stock/admin_stock_history.html', {
+            'paginated_stock_history': paginated_stock_history,
+            'limit': limit,
+            'book': book,
+            'headers': ['Type', 'Change', 'Before', 'After', 'Batch Uuid', 'By', 'Date'],
+            'change_type_options': StockHistory.CHANGE_TYPES,
+            'errors': errors
+        })
 
 
 @login_required

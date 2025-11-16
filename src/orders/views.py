@@ -138,3 +138,16 @@ class OrderView(View):
         return render(request, 'orders/admin/admin_order_dashboard.html', {
             'paginated_order': paginated_order,
             'limit': limit})
+
+
+class Order_detail_view(View):
+    def get(self, request, order_uuid):
+        order = get_object_or_404(
+            Order.objects.prefetch_related("items__book", "user"),
+            uuid=order_uuid
+        )
+
+        return render(request, "orders/admin/admin_order_detail.html", {
+            "order": order,
+            "items": order.items.all()
+        })
