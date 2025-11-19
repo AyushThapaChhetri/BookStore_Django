@@ -6,7 +6,7 @@
 {% block search_and_filters_stock %}
     <form id="stock-filter-form" class="flex items-end gap-4 flex-wrap p-4 ">
 
-        {% include "books/components/text_filter.html" with label="Changed By" name="changed_by" placeholder="Email" current_value=request.GET.changed_by %}
+        {% include "books/components/text_filter.html" with label="Changed By" name="changed_by"  placeholder="Email" current_value=request.GET.changed_by %}
         {% include "books/components/select_filter.html" with  label="Change Type" name="change_type" options=change_type_options  current_value=request.GET.change_type %}
 
         <div>

@@ -8,6 +8,22 @@ from django.utils import timezone
 from src.stock.models import PriceHistory, StockBatch, StockHistory, StockReservation
 
 
+def compute_batch_sold_cost(batch, book):
+    total_sold_cost = 0
+    sold_histories = batch.history.filter(change_type='sold').select_related('order')
+
+    for history in sold_histories:
+        for item in history.order.items.filter(book=book):
+            total_sold_cost += (item.unit_price - item.discount_amount) * abs(item.quantity)
+
+    net_amount = total_sold_cost - batch.stock_out_value
+
+    return {
+        "sold_cost": total_sold_cost,
+        "net_amount": net_amount
+    }
+
+
 def update_stock_price(stock, new_price, new_discount, user, reason="Manual update"):
     old_price = stock.current_price
     old_discount = stock.current_discount_percentage
@@ -131,7 +147,8 @@ class StockService:
             qty_change_before = abs(new_initial - old_initial)
             print("qty_change_before: ", qty_change_before)
 
-            if old_initial == batch.remaining_quantity:
+            # if old_initial == batch.remaining_quantity:
+            if batch.initial_quantity == batch.remaining_quantity:
                 quantity_change = -qty_change_before if old_initial > new_initial else qty_change_before
                 print("Qty change after: ", quantity_change)
 

@@ -3,9 +3,13 @@
 {% block heading_title_stock %}Batches{% endblock %}
 
 {% block search_and_filters_stock %}
-    <form method="get">
-        {% include "components/date_range.html" with prefix="received" %}
-        <button type="submit" class="bg-blue-600 text-white px-3 py-1 rounded">Filter</button>
+    <form method="get" class="flex items-end gap-4 flex-wrap p-4 ">
+        {% include "books/components/text_filter.html" with label="Batch uuid" name="batch_uuid" placeholder="Search Batch uuid" current_value=request.GET.batch_uuid %}
+
+        <div>
+            {% include "components/date_range.html" with prefix="received" %}
+            <button type="submit" class="bg-blue-600 text-white px-3 py-1 rounded">Filter</button>
+        </div>
     </form>
 {% endblock %}
 
@@ -131,5 +135,45 @@
                 }
             }
         });
+
+
+        function debounce(fn, delay) {
+            let timer;
+            return function (...args) {
+                clearTimeout(timer);
+                timer = setTimeout(() => fn.apply(this, args), delay);
+            };
+        }
+
+        const batchInput = document.getElementById("batch_uuid");
+
+        async function fetchUUIDResults() {
+            const value = batchInput.value;
+            const params = new URLSearchParams(window.location.search);
+
+            if (value) params.set("batch_uuid", value);
+            else params.delete("batch_uuid");
+
+            const newUrl = `${window.location.pathname}?${params.toString()}`;
+            window.history.replaceState({}, "", newUrl);
+
+            try {
+                const response = await axios.get(newUrl, {
+                    headers: {"X-Requested-With": "XMLHttpRequest"}
+                });
+
+                document.getElementById("table-container").innerHTML =
+                    response.data.table_html;
+
+                document.getElementById("pagination-container").innerHTML =
+                    response.data.pagination_html;
+
+            } catch (e) {
+                console.log("UUID search error:", e);
+            }
+        }
+
+
+        batchInput.addEventListener("input", debounce(fetchUUIDResults, 300));
     </script>
 {% endblock %}

@@ -4,6 +4,10 @@
         <td class="px-4 py-2">{{ batch.initial_quantity }} </td>
         <td class="px-4 py-2">{{ batch.remaining_quantity }}</td>
         <td class="px-4 py-2">Rs {{ batch.unit_cost|floatformat:"-2" }}</td>
+        <td class="px-4 py-2">{{ batch.stock_in }} (Rs. {{ batch.stock_in_value|floatformat:"-2" }})</td>
+        <td class="px-4 py-2">{{ batch.stock_out }} (Rs. {{ batch.stock_out_value|floatformat:"-2" }})</td>
+        <td class="px-4 py-2">Rs {{ batch.actual_sold_cost|floatformat:"-2" }}</td>
+        <td class="px-4 py-2">Rs {{ batch.actual_net_amount|floatformat:"-2" }}</td>
         <td class="px-4 py-2">{{ batch.supplier.name|default:"None" }}</td>
         <td class="px-4 py-2">{{ batch.notes|default:"-" }}</td>
         <td class="px-4 py-2">

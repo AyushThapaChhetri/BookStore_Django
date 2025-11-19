@@ -8,11 +8,13 @@
             <td class="px-4 py-2">{{ reservation.order_item }}</td>
             <td class="px-4 py-2">{{ reservation.batch }}</td>
             <td class="px-4 py-2">{{ reservation.reserved_quantity }}</td>
+            <td class="px-4 py-2">{{ reservation.order_item.order.user.email }}</td>
             <td class="px-4 py-2">  {% if reservation.is_active %}
                 <span class="text-green-600 font-semibold">Active</span>
             {% else %}
                 <span class="text-red-600 font-semibold">Released</span>
             {% endif %}</td>
+
             <td class="px-4 py-2">{{ reservation.created_at|localtime|date:"Y-m-d h:i a" }}</td>
         </tr>
     {% empty %}

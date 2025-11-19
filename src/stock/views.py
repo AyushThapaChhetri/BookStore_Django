@@ -2,6 +2,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.core.exceptions import ValidationError
+from django.db.models import Sum, Q, Value, Prefetch
+from django.db.models.functions import Coalesce
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.shortcuts import redirect
@@ -9,11 +11,11 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.views import View
 
-from .forms import RestockForm, PriceUpdateForm  # From Step 3
+from .forms import RestockForm, PriceUpdateForm
 from .models import Book, StockHistory
 from .models import StockBatch
 from .models import StockReservation
-from .services import StockService
+from .services import StockService, compute_batch_sold_cost
 from .utils import validate_date_range
 from ..books.pagination import paginate_queryset
 
@@ -76,13 +78,50 @@ class StockBatchListView(View):
         else:
             from_date = to_date = None
 
-        batches = book.stock.batches.all()
+        batch_uuid = request.GET.get("batch_uuid")
+
+        batches = (book.stock.batches.annotate(
+            restock_total=Coalesce(Sum('history__quantity_change', filter=Q(history__change_type='restock')), Value(0)),
+            edit_total=Coalesce(Sum('history__quantity_change', filter=Q(history__change_type='editstock')), Value(0)),
+            sold_total=Coalesce(Sum('history__quantity_change', filter=Q(history__change_type='sold')), Value(0)),
+        ).prefetch_related(
+            'history',
+            'history__order',
+            'history__order__items',
+            Prefetch(
+                'reservations',
+                queryset=StockReservation.objects.filter(is_active=False)
+                .select_related('order_item__order')
+            )
+        ))
+
+        if batch_uuid:
+            batches = batches.filter(uuid__icontains=batch_uuid)
+
         if from_date and to_date:
             batches = batches.filter(received_date__gte=from_date, received_date__lte=to_date)
 
         batches = batches.order_by("received_date", "created_at")
 
         paginated_batches, limit = paginate_queryset(request, batches, default_limit=10)
+
+        for batch in paginated_batches:
+            data = compute_batch_sold_cost(batch, book)
+            batch.actual_sold_cost = data["sold_cost"]
+            batch.actual_net_amount = data["net_amount"]
+
+            # total_sold_cost = 0
+            # sold_histories = batch.history.filter(change_type='sold').select_related('order')
+            # for history in sold_histories:
+            #
+            #     order_items = history.order.items.filter(book=book)
+            #     for item in order_items:
+            #         unit_price_after_discount = item.unit_price - item.discount_amount
+            #
+            #         total_sold_cost += unit_price_after_discount * abs(item.quantity)
+            # net_amount = total_sold_cost - batch.stock_out_value
+            # batch.actual_sold_cost = total_sold_cost
+            # batch.actual_net_amount = net_amount
 
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             table_html = render_to_string(
@@ -105,7 +144,9 @@ class StockBatchListView(View):
             "paginated_batches": paginated_batches,
             "limit": limit,
             "book": book,
-            "headers": ["Date", "Initial", "Remaining", "Cost", "Supplier", "Notes", "Actions"]
+            "headers": ["Date", "Initial", "Remaining", "Cost", "Stock In", "Stock Out", "Sold At", " Net Income",
+                        "Supplier", "Notes",
+                        "Actions"]
         })
 
 
@@ -275,13 +316,16 @@ def stockPriceView(request, book_uuid):
 @login_required
 def stockReservationView(request, book_uuid):
     book = get_object_or_404(Book, uuid=book_uuid)
-    reservation = book.stock.reservations.all().order_by('-created_at')
+    # reservation = book.stock.reservations.all().order_by('-created_at')
+    reservation = book.stock.reservations.all().select_related('order_item', 'order_item__order',
+                                                               'order_item__order__user', 'batch').order_by(
+        '-created_at')
     paginated_stock_reservation, limit = paginate_queryset(request, reservation, default_limit=10)
     return render(request, 'books/admin/Stock/admin_stock_reservation.html', {
         'paginated_stock_reservation': paginated_stock_reservation,
         'limit': limit,
         'book': book,
-        'headers': ['Order Item', 'Batch', 'Reserved Qty', 'Status', 'Created_At']
+        'headers': ['Order Item', 'Batch', 'Reserved Qty', 'Reserved By', 'Status', 'Created_At']
     })
 
 

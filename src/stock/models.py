@@ -82,6 +82,7 @@ class StockBatch(AbstractBaseModel):
     remaining_quantity = models.PositiveIntegerField()
     unit_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00,
                                     validators=[MinValueValidator(0.00), validate_positive_integer])
+
     supplier = models.ForeignKey(Publisher, on_delete=models.SET_NULL, null=True,
                                  blank=True)
     notes = models.TextField(blank=True, null=True, validators=[MaxLengthValidator(1000)])
@@ -95,6 +96,51 @@ class StockBatch(AbstractBaseModel):
             models.Index(fields=['stock', 'received_date']),
             models.Index(fields=['remaining_quantity']),
         ]
+
+    @property
+    def stock_in_value(self):
+        return Decimal(self.stock_in) * self.unit_cost
+
+    @property
+    def stock_out_value(self):
+        return Decimal(self.stock_out) * self.unit_cost
+
+    @property
+    def stock_in(self):
+        restock_total = getattr(self, "restock_total", None)
+        edit_total = getattr(self, "edit_total", None)
+
+        if restock_total is not None and edit_total is not None:
+            return restock_total + edit_total
+
+        # rest below fallback
+        from django.db.models import Sum
+
+        restock_total = self.history.filter(
+            change_type='restock'
+        ).aggregate(total=Sum('quantity_change'))['total'] or 0
+
+        edit_total = self.history.filter(
+            change_type='editstock'
+        ).aggregate(total=Sum('quantity_change'))['total'] or 0
+
+        return restock_total + edit_total
+
+    @property
+    def stock_out(self):
+        sold_total = getattr(self, "sold_total", None)
+
+        if sold_total is not None:
+            return abs(sold_total)
+
+        sold_total = self.history.filter(
+            change_type='sold'
+        ).aggregate(total=Sum('quantity_change'))['total'] or 0
+        return abs(sold_total)
+
+    @property
+    def computed_remaining(self):
+        return self.initial_quantity + self.stock_in - self.stock_out
 
     def save(self, *args, **kwargs):
         if self.pk is None:  # On creation, set remaining to initial

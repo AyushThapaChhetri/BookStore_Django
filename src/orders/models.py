@@ -30,13 +30,13 @@ class Order(AbstractBaseModel):
         null=True,
         blank=True,
         related_name='orders',
-        help_text="Shipping address for the order (snapshot at purchase)"
+        help_text="Shipping address for the order"
     )
     shipping_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
     @property
     def total_after_shipping_discount(self):
-        """Sum of all order item totals + shipping cost"""
+        # Sum of all order item totals + shipping cost
         items_total = sum(item.total_price_after_discount for item in self.items.all())
         return items_total + self.shipping_cost
 
@@ -70,16 +70,16 @@ class OrderItem(AbstractBaseModel):
 
     @property
     def base_price(self):
-        """Price without any discount or extras"""
+        # Price without any discount or extras
         return self.unit_price * self.quantity
 
     @property
     def total_price_after_discount(self):
-        """Price for this item after discount"""
+        # Price for this item after discount
         return (self.unit_price - self.discount_amount) * self.quantity
 
     def __str__(self):
         return f"{self.quantity} x {self.book.title} in Order {self.order.uuid}"
 
     class Meta:
-        unique_together = ('order', 'book')  # Prevent duplicate books in same order
+        unique_together = ('order', 'book')  # Prevents duplicate books in same order

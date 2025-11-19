@@ -404,11 +404,10 @@ class BookPermanentDeleteView(View):
 
         try:
             with transaction.atomic():
-                # Hard delete related stock first
+               
                 if hasattr(book, 'stock') and book.stock:
                     book.stock.hard_delete()
 
-                # Now hard delete the book itself
                 book.hard_delete()
 
             messages.success(request, f"'{book_title}' has been permanently deleted.")

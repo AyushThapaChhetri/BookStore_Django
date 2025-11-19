@@ -28,8 +28,9 @@
 
         <div class="bg-white shadow-md rounded-lg p-6 mb-8 border border-gray-200">
             <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-gray-700">
-                <p><span class="font-semibold">Price:</span> Rs {{ stock.current_price }}</p>
-                <p><span class="font-semibold">Discount:</span> {{ stock.current_discount_percentage }}%</p>
+                <p><span class="font-semibold">Price:</span> Rs {{ stock.current_price|floatformat:"-2" }}</p>
+                <p><span class="font-semibold">Discount:</span> {{ stock.current_discount_percentage|floatformat:"-2" }}%
+                </p>
                 <p><span class="font-semibold">Final Price:</span>
                     <span class="text-green-600 font-bold">Rs {{ stock.price_after_discount|floatformat:"-2" }}</span>
                 </p>
