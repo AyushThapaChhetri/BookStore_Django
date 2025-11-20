@@ -9,17 +9,35 @@ from src.stock.models import PriceHistory, StockBatch, StockHistory, StockReserv
 
 
 def compute_batch_sold_cost(batch, book):
-    total_sold_cost = 0
-    sold_histories = batch.history.filter(change_type='sold').select_related('order')
+    actual_sold_quantity = Decimal("0.00")
+    sold_amount = Decimal("0.00")
+
+    sold_histories = [h for h in batch.history.all() if h.change_type == 'sold']
 
     for history in sold_histories:
-        for item in history.order.items.filter(book=book):
-            total_sold_cost += (item.unit_price - item.discount_amount) * abs(item.quantity)
 
-    net_amount = total_sold_cost - batch.stock_out_value
+        actual_sold_quantity += abs(history.quantity_change)
+
+        items = [
+            item for item in history.order.items.all()
+            if item.book_id == book.id
+        ]
+
+        for item in items:
+
+            reservations = [r for r in batch.reservations.all() if r.order_item_id == item.id]
+            for res in reservations:
+                quantity = res.reserved_quantity
+                unit_price_after_discount = item.unit_price - item.discount_amount
+                line_total = unit_price_after_discount * quantity
+
+                sold_amount += line_total
+
+    store_cost = batch.unit_cost * actual_sold_quantity
+    net_amount = sold_amount - store_cost
 
     return {
-        "sold_cost": total_sold_cost,
+        "sold_cost": sold_amount,
         "net_amount": net_amount
     }
 
@@ -140,9 +158,6 @@ class StockService:
             old_initial, new_initial = changes["initial_quantity"]
             print("old initial: ", old_initial)
             print("new initial: ", new_initial)
-            # if new_initial < batch.remaining_quantity:
-            #     return {"updated": False,
-            #             "error": f"Cannot set initial quantity below remaining ({batch.remaining_quantity})."}
 
             qty_change_before = abs(new_initial - old_initial)
             print("qty_change_before: ", qty_change_before)
@@ -152,25 +167,12 @@ class StockService:
                 quantity_change = -qty_change_before if old_initial > new_initial else qty_change_before
                 print("Qty change after: ", quantity_change)
 
-                # stock_batch = stock.batches.get(uuid=batch_uuid)
-                # print('stock_batch before save', stock_batch)
-                # stock_batch.remaining_quantity = new_initial
-                # print('stock_batch between save', stock_batch)
-                # stock_batch.initial_quantity = new_initial
-                # print('stock_batch between initial save', stock_batch)
-                # stock_batch.save(update_fields=["remaining_quantity", "initial_quantity"])
-
-                # print('stock_batch after save', stock_batch)
                 before_qty = old_initial
                 after_qty = old_initial + quantity_change
 
                 print('qc:', quantity_change)
                 print('bq:', before_qty)
                 print('aq:', after_qty)
-
-                # form.save(commit=False)
-                # form.instance.remaining_quantity = new_initial
-                # form.instance.save(update_fields=["unit_cost", "notes", "received_date"])
 
                 batch.unit_cost = form.cleaned_data["unit_cost"]
                 batch.notes = form.cleaned_data["notes"]
@@ -203,33 +205,6 @@ class StockService:
         instance = form.save(commit=False)
         instance.save(update_fields=["unit_cost", "notes", "received_date", "updated_at", ])
         return {"updated": True, "message": "Batch details updated successfully."}
-
-        # batch_initial_quantity = batch.initial_quantity
-        # batch_remaining_quantity = batch.remaining_quantity
-        # batch_form_initial_quantity = form.cleaned_data.get('initial_quantity')
-        # before_total_quantity = stock.total_remaining_quantity
-        #
-        # if batch.initial_quantity == batch.remaining_quantity:
-        #
-        #     if batch_form_initial_quantity > batch.initial_quantity:
-        #         current_initial_quantity = batch_form_initial_quantity - batch.initial_quantity
-        #     else:
-        #         current_initial_quantity = batch.initial_quantity - batch_form_initial_quantity
-        #
-        #     quantity_changes = current_initial_quantity if batch_form_initial_quantity > current_initial_quantity else -current_initial_quantity
-        #
-        #     stock_batch = form.save()
-        #
-        #     StockHistory.objects.create(
-        #         stock=stock,
-        #         batch=batch,
-        #         change_type="editstock",
-        #         quantity_change=quantity_changes,
-        #         before_quantity=before_total_quantity,
-        #         after_quantity=before_total_quantity + quantity_changes,
-        #         changed_by=request.user,
-        #         reason="Stock Batch Manual Edit",
-        #     )
 
     @staticmethod
     @transaction.atomic

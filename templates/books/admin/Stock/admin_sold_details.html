@@ -1,0 +1,102 @@
+{% extends 'books/admin/admin_base_list.html' %}
+
+{% block content %}
+    <div class="p-6 bg-white shadow rounded-md">
+        <h2 class="text-2xl font-bold mb-6 text-gray-700">Sold Details for Batch <span
+                class="text-blue-600">{{ batch.uuid }}</span></h2>
+
+        <div class="p-4 bg-gray-50 rounded-md mb-4 shadow-sm">
+            <h3 class="font-semibold text-gray-700 mb-2">Batch Totals</h3>
+
+            <div class="mb-6 flex flex-wrap gap-4 text-gray-700 font-medium">
+
+                <div>
+                    Total Amount: <span class="font-bold text-gray-900">Rs {{ total_amount|floatformat:"-2" }}</span>
+                </div>
+
+                <div>
+                    Total Discount: <span class="font-bold text-red-600">Rs {{ total_discount|floatformat:"-2" }}</span>
+                </div>
+
+                <div>
+                    Sold Amount: <span class="font-bold text-blue-700">Rs {{ Grand_Total|floatformat:"-2" }}</span>
+                </div>
+
+                <div>
+                    Store Cost: <span class="font-bold text-yellow-700">Rs {{ Store_Cost|floatformat:"-2" }}</span>
+                </div>
+
+                <div>
+                    Profit / Loss:
+                    <span class="font-bold {% if Profit_Loss < 0 %}text-red-600{% else %}text-green-600{% endif %}">
+            Rs {{ Profit_Loss|floatformat:"-2" }}
+        </span>
+                </div>
+
+            </div>
+        </div>
+
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 border border-gray-200">
+                <thead class="bg-gray-100">
+                <tr>
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Order</th>
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Book</th>
+                    <th class="px-4 py-3 text-center text-sm font-semibold text-gray-600">Quantity</th>
+                    <th class="px-4 py-3 text-right text-sm font-semibold text-gray-600">Unit Price</th>
+                    <th class="px-4 py-3 text-right text-sm font-semibold text-gray-600">Discount</th>
+                    <th class="px-4 py-3 text-right text-sm font-semibold text-gray-600">Price after Discount</th>
+                    <th class="px-4 py-3 text-right text-sm font-semibold text-gray-600">Line Total</th>
+                </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-100">
+                {% for item in sold_details %}
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-4 py-2 text-sm text-gray-700">{{ item.order_uuid }}</td>
+                        <td class="px-4 py-2 text-sm text-gray-700">{{ item.book_title }}</td>
+                        <td class="px-4 py-2 text-center text-sm text-gray-700">{{ item.quantity }}</td>
+                        <td class="px-4 py-2 text-right text-sm text-gray-700">
+                            Rs {{ item.unit_price|floatformat:"-2" }}</td>
+                        <td class="px-4 py-2 text-right text-sm text-red-700">
+                            Rs {{ item.discount|floatformat:"-2" }}</td>
+                        <td class="px-4 py-2 text-right text-sm text-gray-700">
+                            Rs {{ item.unit_price_after_discount|floatformat:"-2" }}</td>
+                        <td class="px-4 py-2 text-right text-sm text-gray-700">
+                            Rs {{ item.line_total|floatformat:"-2" }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="7" class="px-4 py-4 text-center text-gray-500">No sold items found for this
+                            batch.
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+                {#                <tfoot class="bg-gray-50 font-semibold">#}
+                {#                <tr>#}
+                {#                    <td colspan="6" class="px-4 py-3 text-right text-gray-700">Total Amount:</td>#}
+                {#                    <td class="px-4 py-3 text-right text-gray-700">Rs {{ total_amount|floatformat:"-2" }}</td>#}
+                {#                </tr>#}
+                {#                <tr>#}
+                {#                    <td colspan="6" class="px-4 py-3 text-right text-gray-700">Total Discount:</td>#}
+                {#                    <td class="px-4 py-3 text-right text-red-700">Rs {{ total_discount|floatformat:"-2" }}</td>#}
+                {#                </tr>#}
+                {#                <tr>#}
+                {#                    <td colspan="6" class="px-4 py-3 text-right text-gray-700">Grand Total:</td>#}
+                {#                    <td class="px-4 py-3 text-right text-gray-700">Rs {{ Grand_Total|floatformat:"-2" }}</td>#}
+                {#                </tr>#}
+                {#                </tfoot>#}
+            </table>
+        </div>
+        {% include 'books/components/pagination_div.html' with paginated_books=sold_details limit=limit %}
+
+
+        <div class="mt-6">
+            <a href="{% url 'admin_stock_batches' batch.stock.book.uuid %}"
+               class="inline-block bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded shadow transition duration-150">
+                Back to Batches
+            </a>
+        </div>
+    </div>
+{% endblock %}

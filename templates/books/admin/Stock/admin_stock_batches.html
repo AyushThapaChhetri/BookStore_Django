@@ -3,18 +3,17 @@
 {% block heading_title_stock %}Batches{% endblock %}
 
 {% block search_and_filters_stock %}
-    <form method="get" class="flex items-end gap-4 flex-wrap p-4 ">
+    <form method="get" class="flex gap-4 flex-wrap p-4 ">
         {% include "books/components/text_filter.html" with label="Batch uuid" name="batch_uuid" placeholder="Search Batch uuid" current_value=request.GET.batch_uuid %}
 
-        <div>
+        <div class="flex items-center gap-4">
             {% include "components/date_range.html" with prefix="received" %}
-            <button type="submit" class="bg-blue-600 text-white px-3 py-1 rounded">Filter</button>
+            <button type="submit" class="bg-blue-600 h-fit text-white px-3 py-1 rounded">Filter</button>
         </div>
     </form>
 {% endblock %}
 
 {% block table_rows %}
-
     {% include 'books/admin/Stock/table/Stock_Batch_table_rows.html' with paginated_batches=paginated_batches %}
     {% include 'components/form_popup.html' %}
 {% endblock %}

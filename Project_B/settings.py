@@ -50,7 +50,9 @@ INSTALLED_APPS = [
 
     # 'src.users.apps.UsersConfig',
     'tailwind',
-    'theme'
+    'theme',
+    "debug_toolbar",
+
 ]
 AUTH_USER_MODEL = 'users.User'
 
@@ -67,6 +69,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'Project_B.middleware.PermissionMiddleware',
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
 ]
 
 if DEBUG:
@@ -207,3 +210,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MEDIA_URL = '/media/'  # URL prefix to access media files
 MEDIA_ROOT = os.path.join(BASE_DIR, 'Project_B/media')  # Actual folder where uploaded files will be saved
+
+INTERNAL_IPS = [
+    # ...
+    "127.0.0.1",
+    # ...
+]

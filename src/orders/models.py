@@ -65,9 +65,9 @@ class OrderItem(AbstractBaseModel):
     )
 
     quantity = models.PositiveIntegerField(default=1)
-    unit_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # price at time of purchase
-    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # total discount applied
-
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    
     @property
     def base_price(self):
         # Price without any discount or extras

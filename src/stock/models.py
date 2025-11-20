@@ -10,6 +10,7 @@ from src.books.models import Book, Publisher
 from src.core.models import AbstractBaseModel
 from src.core.validators.dates import validate_date, validate_past_dates
 from src.core.validators.numbers import validate_minimum_stock, validate_positive_integer
+from src.stock.managers import StockBatchManager
 
 
 # Create your models here.
@@ -63,17 +64,6 @@ class Stock(AbstractBaseModel):
 
         super().save(*args, **kwargs)
 
-    # def save(self, *args, **kwargs):
-    #
-    #     super().save(*args, **kwargs)
-    #
-    #
-    #     new_is_available = self.total_remaining_quantity > 0
-    #     if self.is_available != new_is_available:
-    #         self.is_available = new_is_available
-    #
-    #         super().save(update_fields=['is_available'])
-
 
 class StockBatch(AbstractBaseModel):
     stock = models.ForeignKey(Stock, on_delete=models.CASCADE, related_name='batches')
@@ -86,6 +76,8 @@ class StockBatch(AbstractBaseModel):
     supplier = models.ForeignKey(Publisher, on_delete=models.SET_NULL, null=True,
                                  blank=True)
     notes = models.TextField(blank=True, null=True, validators=[MaxLengthValidator(1000)])
+
+    objects = StockBatchManager()
 
     def __str__(self):
         return f"Batch for {self.stock.book.title} on {self.received_date} (Remaining: {self.remaining_quantity})"
