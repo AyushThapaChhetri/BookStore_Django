@@ -124,6 +124,10 @@ class StockBatchListView(View):
 
         received_from = request.GET.get("received_from")
         received_to = request.GET.get("received_to")
+        sort_options = [
+            ('profit', 'Profit'),
+            ('loss', 'Loss'),
+        ]
 
         if received_from or received_to:
             try:
@@ -138,7 +142,11 @@ class StockBatchListView(View):
                     "paginated_batches": [],
                     "limit": 10,
                     "book": book,
-                    "headers": ["Uuid", "Date", "Initial", "Remaining", "Cost", "Supplier", "Notes", "Actions"],
+                    "headers": ["Uuid", "Date", "Initial", "Remaining", "Unit Cost", "Stock In", "Stock Out", "Sold At",
+                                "Profit/Loss",
+                                "Supplier", "Notes",
+                                "Actions"],
+                    "sort_options": sort_options,
                     "errors": error_dict
                 })
         else:
@@ -188,7 +196,8 @@ class StockBatchListView(View):
             "headers": ["Uuid", "Date", "Initial", "Remaining", "Unit Cost", "Stock In", "Stock Out", "Sold At",
                         "Profit/Loss",
                         "Supplier", "Notes",
-                        "Actions"]
+                        "Actions"],
+            "sort_options": sort_options,
         })
 
 

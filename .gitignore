@@ -12,7 +12,7 @@ env/
 *.sqlite3
 
 # Static/media
-static/
+
 media/
 static_src/
 

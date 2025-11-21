@@ -73,20 +73,7 @@
                     </tr>
                 {% endfor %}
                 </tbody>
-                {#                <tfoot class="bg-gray-50 font-semibold">#}
-                {#                <tr>#}
-                {#                    <td colspan="6" class="px-4 py-3 text-right text-gray-700">Total Amount:</td>#}
-                {#                    <td class="px-4 py-3 text-right text-gray-700">Rs {{ total_amount|floatformat:"-2" }}</td>#}
-                {#                </tr>#}
-                {#                <tr>#}
-                {#                    <td colspan="6" class="px-4 py-3 text-right text-gray-700">Total Discount:</td>#}
-                {#                    <td class="px-4 py-3 text-right text-red-700">Rs {{ total_discount|floatformat:"-2" }}</td>#}
-                {#                </tr>#}
-                {#                <tr>#}
-                {#                    <td colspan="6" class="px-4 py-3 text-right text-gray-700">Grand Total:</td>#}
-                {#                    <td class="px-4 py-3 text-right text-gray-700">Rs {{ Grand_Total|floatformat:"-2" }}</td>#}
-                {#                </tr>#}
-                {#                </tfoot>#}
+               
             </table>
         </div>
         {% include 'books/components/pagination_div.html' with paginated_books=sold_details limit=limit %}
