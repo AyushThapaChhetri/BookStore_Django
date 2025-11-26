@@ -15,7 +15,7 @@ from .forms import RestockForm, PriceUpdateForm
 from .models import Book, StockHistory
 from .models import StockBatch
 from .models import StockReservation
-from .services import StockService, compute_batch_sold_cost
+from .services import StockService
 from .utils import validate_date_range
 from ..books.pagination import paginate_queryset
 
@@ -46,84 +46,185 @@ def stock_detail(request, book_uuid):
     return render(request, 'books/admin/Stock/admin_stock_detail_view.html', context)
 
 
+#
+# class StockBatchSoldDetailView(View):
+#     def get(self, request, batch_uuid):
+#         # batch = get_object_or_404(StockBatch, uuid=batch_uuid)
+#         batch = get_object_or_404(
+#             StockBatch.objects.select_related('stock', 'stock__book').prefetch_related('history', 'history__order',
+#                                                                                        'history__order__items',
+#                                                                                        'history__order__items__book',
+#                                                                                        'reservations')
+#             , uuid=batch_uuid)
+#
+#         sold_details = []
+#
+#         total_discount = Decimal("0.00")
+#         total_amount = Decimal("0.00")
+#         sold_amount = Decimal("0.00")
+#         actual_sold_quantity = 0
+#
+#         sold_histories = [h for h in batch.history.all() if h.change_type == "sold"]
+#
+#         book_id = batch.stock.book.id
+#
+#         for history in sold_histories:
+#
+#             actual_sold_quantity += abs(history.quantity_change)
+#
+#             items = [
+#                 item for item in history.order.items.all() if item.book_id == book_id
+#             ]
+#
+#             for item in items:
+#
+#                 reservations = [r for r in batch.reservations.all() if r.order_item_id == item.id]
+#                 for res in reservations:
+#                     quantity = res.reserved_quantity
+#                     unit_price_after_discount = item.unit_price - item.discount_amount
+#                     line_total = unit_price_after_discount * quantity
+#
+#                     sold_details.append({
+#                         "order_uuid": history.order.uuid,
+#                         "book_title": item.book.title,
+#                         "quantity": quantity,
+#                         "unit_price": item.unit_price,
+#                         "discount": item.discount_amount,
+#                         "unit_price_after_discount": unit_price_after_discount,
+#                         "line_total": line_total,
+#                     })
+#
+#                     total_discount += item.discount_amount * quantity
+#                     total_amount += item.unit_price * quantity
+#                     sold_amount += line_total
+#
+#         print("sold quantity", actual_sold_quantity)
+#         store_cost = batch.unit_cost * actual_sold_quantity
+#
+#         paginated_sold_details, limit = paginate_queryset(request, sold_details, default_limit=10)
+#
+#         context = {
+#             "batch": batch,
+#             # "sold_details": sold_details,
+#             "sold_details": paginated_sold_details,
+#             "total_amount": total_amount,
+#             "total_discount": total_discount,
+#             "Grand_Total": sold_amount,
+#             "Profit_Loss": sold_amount - store_cost,
+#             "Store_Cost": store_cost,
+#         }
+#         return render(request, "books/admin/Stock/admin_sold_details.html", context)
+
+
 class StockBatchSoldDetailView(View):
     def get(self, request, batch_uuid):
-        # batch = get_object_or_404(StockBatch, uuid=batch_uuid)
+
         batch = get_object_or_404(
-            StockBatch.objects.select_related('stock', 'stock__book').prefetch_related('history', 'history__order',
-                                                                                       'history__order__items',
-                                                                                       'history__order__items__book',
-                                                                                       'reservations')
-            , uuid=batch_uuid)
+            StockBatch.objects.select_related('stock__book', 'supplier'),
+            uuid=batch_uuid
+        )
+
+        book_id = batch.stock.book.id
+
+        sold_order_ids = list(
+            StockHistory.objects.filter(
+                batch_id=batch.id,
+                change_type='sold',
+                stock__book_id=book_id,
+                order__isnull=False
+            ).values_list('order_id', flat=True).distinct()
+        )
+
+        if not sold_order_ids:
+            context = {
+                "batch": batch,
+                "sold_details": [],
+                "total_amount": Decimal("0.00"),
+                "total_discount": Decimal("0.00"),
+                "Grand_Total": Decimal("0.00"),
+                "Profit_Loss": Decimal("0.00"),
+                "Store_Cost": Decimal("0.00"),
+            }
+            return render(request, "books/admin/Stock/admin_sold_details.html", context)
+
+        sold_reservations = StockReservation.objects.filter(
+            batch_id=batch.id,
+            order_item__book_id=book_id,
+            order_item__order_id__in=sold_order_ids,
+            is_active=False
+        ).select_related(
+            'order_item',
+            'order_item__book',
+            'order_item__order'
+        ).order_by('order_item__order__created_at')
 
         sold_details = []
-
         total_discount = Decimal("0.00")
         total_amount = Decimal("0.00")
         sold_amount = Decimal("0.00")
         actual_sold_quantity = 0
 
-        sold_histories = [h for h in batch.history.all() if h.change_type == "sold"]
+        for reservation in sold_reservations:
+            item = reservation.order_item
+            quantity = reservation.reserved_quantity
 
-        book_id = batch.stock.book.id
+            unit_price = Decimal(str(item.unit_price))
+            discount_amount = Decimal(str(item.discount_amount or 0))
+            unit_price_after_discount = unit_price - discount_amount
+            line_total = unit_price_after_discount * quantity
 
-        for history in sold_histories:
+            sold_details.append({
+                "order_uuid": item.order.uuid,
+                "book_title": item.book.title,
+                "quantity": quantity,
+                "unit_price": unit_price,
+                "discount": discount_amount,
+                "unit_price_after_discount": unit_price_after_discount,
+                "line_total": line_total,
+            })
 
-            actual_sold_quantity += abs(history.quantity_change)
+            actual_sold_quantity += quantity
+            total_discount += discount_amount * quantity
+            total_amount += unit_price * quantity
+            sold_amount += line_total
 
-            items = [
-                item for item in history.order.items.all() if item.book_id == book_id
-            ]
-
-            for item in items:
-
-                reservations = [r for r in batch.reservations.all() if r.order_item_id == item.id]
-                for res in reservations:
-                    quantity = res.reserved_quantity
-                    unit_price_after_discount = item.unit_price - item.discount_amount
-                    line_total = unit_price_after_discount * quantity
-
-                    sold_details.append({
-                        "order_uuid": history.order.uuid,
-                        "book_title": item.book.title,
-                        "quantity": quantity,
-                        "unit_price": item.unit_price,
-                        "discount": item.discount_amount,
-                        "unit_price_after_discount": unit_price_after_discount,
-                        "line_total": line_total,
-                    })
-
-                    total_discount += item.discount_amount * quantity
-                    total_amount += item.unit_price * quantity
-                    sold_amount += line_total
+        store_cost = batch.unit_cost * actual_sold_quantity
+        profit_loss = sold_amount - store_cost
 
         print("sold quantity", actual_sold_quantity)
-        store_cost = batch.unit_cost * actual_sold_quantity
 
-        paginated_sold_details, limit = paginate_queryset(request, sold_details, default_limit=10)
+        paginated_sold_details, limit = paginate_queryset(
+            request,
+            sold_details,
+            default_limit=10
+        )
 
+        # Prepare context
         context = {
             "batch": batch,
-            # "sold_details": sold_details,
             "sold_details": paginated_sold_details,
             "total_amount": total_amount,
             "total_discount": total_discount,
             "Grand_Total": sold_amount,
-            "Profit_Loss": sold_amount - store_cost,
+            "Profit_Loss": profit_loss,
             "Store_Cost": store_cost,
         }
+
         return render(request, "books/admin/Stock/admin_sold_details.html", context)
 
 
 class StockBatchListView(View):
     def get(self, request, book_uuid):
         book = get_object_or_404(
-            Book.objects.select_related('stock').prefetch_related('stock__batches'),
+            Book.objects.select_related('stock'),
             uuid=book_uuid
         )
 
         received_from = request.GET.get("received_from")
         received_to = request.GET.get("received_to")
+        batch_uuid = request.GET.get("batch_uuid")
+        sort_by = request.GET.get("sort_by")
+
         sort_options = [
             ('profit', 'Profit'),
             ('loss', 'Loss'),
@@ -133,44 +234,50 @@ class StockBatchListView(View):
             try:
                 from_date, to_date = validate_date_range(received_from, received_to)
             except ValidationError as e:
-                print("ValidationError caught:", e)
                 error_dict = e.message_dict
-                print(error_dict)
                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":
                     return JsonResponse({"errors": error_dict}, status=400)
+
                 return render(request, "books/admin/Stock/admin_stock_batches.html", {
                     "paginated_batches": [],
                     "limit": 10,
                     "book": book,
-                    "headers": ["Uuid", "Date", "Initial", "Remaining", "Unit Cost", "Stock In", "Stock Out", "Sold At",
-                                "Profit/Loss",
-                                "Supplier", "Notes",
-                                "Actions"],
+                    "headers": [
+                        "Uuid", "Date", "Initial", "Remaining", "Unit Cost",
+                        "Stock In", "Stock Out", "Sold At", "Profit/Loss",
+                        "Supplier", "Notes", "Actions"
+                    ],
                     "sort_options": sort_options,
                     "errors": error_dict
                 })
         else:
             from_date = to_date = None
 
-        batch_uuid = request.GET.get("batch_uuid")
-
-        batches = book.stock.batches.with_annotations()
+        batches_qs = book.stock.batches.with_full_details(book.id)
 
         if batch_uuid:
-            batches = batches.filter(uuid__icontains=batch_uuid)
+            batches_qs = batches_qs.filter(uuid__icontains=batch_uuid)
 
         if from_date and to_date:
-            batches = batches.filter(received_date__gte=from_date, received_date__lte=to_date)
+            batches_qs = batches_qs.filter(received_date__range=[from_date, to_date])
 
-        batches = batches.order_by("received_date", "created_at")
+        if sort_by == "profit":
+            batches_qs = batches_qs.filter(net_amount__gt=0).order_by('-net_amount')
+        elif sort_by == "loss":
+            batches_qs = batches_qs.filter(net_amount__lt=0).order_by('net_amount')
+        else:
+            batches_qs = batches_qs.order_by("received_date", "created_at")
 
-        paginated_batches, limit = paginate_queryset(request, batches, default_limit=10)
+        paginated_batches, limit = paginate_queryset(
+            request,
+            batches_qs,
+            default_limit=10
+        )
 
         for batch in paginated_batches:
-            data = compute_batch_sold_cost(batch, book)
-            batch.actual_sold_cost = data["sold_cost"]
-
-            batch.actual_net_amount = data["net_amount"]
+            batch.actual_sold_cost = batch.sold_amount
+            batch.actual_cost_amount = batch.cost_amount
+            batch.actual_net_amount = batch.net_amount
 
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             table_html = render_to_string(
@@ -183,7 +290,6 @@ class StockBatchListView(View):
                 {"paginated_items": paginated_batches, "limit": limit},
                 request=request
             )
-
             return JsonResponse({
                 "table_html": table_html,
                 "pagination_html": pagination_html
@@ -193,10 +299,11 @@ class StockBatchListView(View):
             "paginated_batches": paginated_batches,
             "limit": limit,
             "book": book,
-            "headers": ["Uuid", "Date", "Initial", "Remaining", "Unit Cost", "Stock In", "Stock Out", "Sold At",
-                        "Profit/Loss",
-                        "Supplier", "Notes",
-                        "Actions"],
+            "headers": [
+                "Uuid", "Date", "Initial", "Remaining", "Unit Cost",
+                "Stock In", "Stock Out", "Sold At", "Profit/Loss",
+                "Supplier", "Notes", "Actions"
+            ],
             "sort_options": sort_options,
         })
 

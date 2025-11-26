@@ -8,6 +8,65 @@ from django.utils import timezone
 from src.stock.models import PriceHistory, StockBatch, StockHistory, StockReservation
 
 
+def verify_batch_calculation(batch_id, book_id):
+    from src.stock.models import StockBatch, StockReservation
+    from decimal import Decimal
+
+    batch = StockBatch.objects.with_profit_loss(book_id).get(pk=batch_id)
+
+    reservations = StockReservation.objects.filter(
+        batch_id=batch_id,
+        order_item__book_id=book_id,
+        is_active=False
+    ).select_related('order_item')
+
+    manual_qty = 0
+    manual_revenue = Decimal('0.00')
+
+    for res in reservations:
+        manual_qty += res.reserved_quantity
+        unit_price = Decimal(str(res.order_item.unit_price))
+        discount = Decimal(str(res.order_item.discount_amount or 0))
+        manual_revenue += res.reserved_quantity * (unit_price - discount)
+
+    manual_cost = Decimal(manual_qty) * batch.unit_cost
+    manual_profit = manual_revenue - manual_cost
+
+    print(f"\n{'=' * 60}")
+    print(f"Batch: {batch}")
+    print(f"{'=' * 60}")
+
+    print(f"Sold Qty: {batch.sold_qty}")
+    print(f"Revenue: ${batch.sold_amount}")
+    print(f"COGS: ${batch.cost_amount}")
+    print(f"Profit/Loss: ${batch.net_amount}")
+
+    print(f"MANUAL VERIFICATION:")
+    print(f"Sold Qty: {manual_qty}")
+    print(f"Revenue: ${manual_revenue}")
+    print(f"COGS: ${manual_cost}")
+    print(f"Profit/Loss: ${manual_profit}")
+
+    print(f"\n MATCH: {batch.sold_qty == manual_qty and batch.sold_amount == manual_revenue}")
+    print(f"{'=' * 60}\n")
+
+    return {
+        'db': {
+            'qty': batch.sold_qty,
+            'revenue': batch.sold_amount,
+            'cost': batch.cost_amount,
+            'profit': batch.net_amount
+        },
+        'manual': {
+            'qty': manual_qty,
+            'revenue': manual_revenue,
+            'cost': manual_cost,
+            'profit': manual_profit
+        },
+        'match': batch.sold_qty == manual_qty and batch.sold_amount == manual_revenue
+    }
+
+
 def compute_batch_sold_cost(batch, book):
     actual_sold_quantity = Decimal("0.00")
     sold_amount = Decimal("0.00")
@@ -126,11 +185,6 @@ class StockService:
     def edit_stockBatch(form, book, request, batch_uuid):
         batch = get_object_or_404(book.stock.batches, uuid=batch_uuid)
         stock = batch.stock
-        # changed_fields = form.changed_data
-        # if not changed_fields:
-        # if not form.has_changed():
-        #     print("no changes found")
-        #     return {"updated": False, "message": "No changes detected."}
 
         print("Inside service function")
         changes = {}
@@ -162,7 +216,6 @@ class StockService:
             qty_change_before = abs(new_initial - old_initial)
             print("qty_change_before: ", qty_change_before)
 
-            # if old_initial == batch.remaining_quantity:
             if batch.initial_quantity == batch.remaining_quantity:
                 quantity_change = -qty_change_before if old_initial > new_initial else qty_change_before
                 print("Qty change after: ", quantity_change)
