@@ -9,7 +9,8 @@
             <td class="px-4 py-2">{{ price.old_discount_percentage }}</td>
             <td class="px-4 py-2"> {{ price.new_discount_percentage }}</td>
             <td class="px-4 py-2">{{ price.changed_by }}</td>
-            <td class="px-4 py-2">{{ price.reason }}</td>
+            <td class="px-4 py-2">{{ price.reason|default:'-' }}</td>
+            <td class="px-4 py-2">{{ price.created_at }}</td>
         </tr>
     {% empty %}
         <tr>

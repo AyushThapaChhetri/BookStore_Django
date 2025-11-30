@@ -103,9 +103,9 @@
             <strong>Stock Ledger Formula:</strong><br>
             Opening ({{ opening_quantity }})
             + Restocked without Adjustment ({{ restock_today }})
-            {% if adjustment_today != 0 %}+ Adjusted ({{ adjustment_today }}){% endif %}
-            {% if reserve_today != 0 %}+ Reserved ({{ reserve_today }}){% endif %}
-            {% if release_today != 0 %}+ Released ({{ release_today }}){% endif %}
+            - Adjusted ({{ adjustment_today|abs_value }})
+            - Reserved ({{ reserve_today|abs_value }})
+            + Released ({{ release_today }})
             {#            - Sold ({{ sold_quantity }})#}
             = Closing ({{ closing_quantity }})
             <br>
@@ -113,9 +113,9 @@
             {% with calculated=opening_quantity|add:restock_today|add:adjustment_today|add:release_today %}
                 {% with final=calculated|add:reserve_today|add:sold_quantity %}
                     {{ opening_quantity }} + {{ restock_today }}
-                    {% if adjustment_today != 0 %} {{ adjustment_today }}{% endif %}
-                    {% if reserve_today != 0 %} -{{ reserve_today }}{% endif %}
-                    {% if release_today != 0 %}+ {{ release_today }}{% endif %}
+                    -{{ adjustment_today|abs_value }}
+                    -{{ reserve_today|abs_value }}
+                    + {{ release_today }}
 
                     = {{ closing_quantity }}
                     {% if final == closing_quantity %}

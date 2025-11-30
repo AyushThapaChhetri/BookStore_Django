@@ -80,8 +80,10 @@
             const to = toInput.value;
 
             // Clear previous errors
-            document.getElementById("received_from_error").textContent = "";
-            document.getElementById("received_to_error").textContent = "";
+            const fromError = document.getElementById("received_from_error");
+            const toError = document.getElementById("received_to_error");
+            if (fromError) fromError.textContent = "";
+            if (toError) toError.textContent = "";
 
             const params = new URLSearchParams(window.location.search);
             if (from) params.set("received_from", from);
@@ -106,20 +108,23 @@
                 {#console.log("response closing: ", response.data.opening_closing_html)#}
 
                 {#document.getElementById("open-closing-quantity").innerHTML = response.data.opening_closing_html;#}
+                const tableContainer = document.getElementById("table-container");
+                const paginationContainer = document.getElementById("pagination-container");
 
-                document.getElementById("table-container").innerHTML =
-                    response.data.table_html;
-                document.getElementById("pagination-container").innerHTML =
-                    response.data.pagination_html;
-
+                if (tableContainer && response.data.table_html) {
+                    tableContainer.innerHTML = response.data.table_html;
+                }
+                if (paginationContainer && response.data.pagination_html) {
+                    paginationContainer.innerHTML = response.data.pagination_html;
+                }
             } catch (error) {
+                console.log("hello")
                 if (error.response && error.response.status === 400 && error.response.data.errors) {
                     const errs = error.response.data.errors;
-                    if (errs.from) document.getElementById("received_from_error").textContent = errs.from;
-                    if (errs.to) document.getElementById("received_to_error").textContent = errs.to;
+                    if (errs.from && fromError) fromError.textContent = errs.from;
+                    if (errs.to && toError) toError.textContent = errs.to;
                 } else {
                     console.error("Filter AJAX error:", error);
-                    alert("Failed to load filtered data");
                 }
             }
         }

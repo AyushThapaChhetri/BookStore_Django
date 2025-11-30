@@ -6,6 +6,8 @@
                 name="{{ prefix }}_from"
                 id="{{ prefix }}_from"
                 value="{{ from_value|default:'' }}"
+                min="{{ min_date|default:'' }}"
+                max="{{ max_date|default:'' }}"
                 class="filter-input border border-gray-300 rounded px-2 py-1"
                 data-filter="{{ prefix }}"
         >
@@ -23,6 +25,8 @@
                 name="{{ prefix }}_to"
                 id="{{ prefix }}_to"
                 value="{{ to_value|default:'' }}"
+                min="{{ min_date|default:'' }}"
+                max="{{ max_date|default:'' }}"
                 class="filter-input border border-gray-300 rounded px-2 py-1"
                 data-filter="{{ prefix }}"
         >

@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.core.exceptions import ValidationError
-from django.db.models import DecimalField, Value
+from django.db.models import DecimalField, Value, Min, Max
 from django.db.models import Prefetch
 from django.db.models import Sum
 from django.db.models.functions import Coalesce
@@ -220,6 +220,13 @@ class StockBatchListView(View):
             ('loss', 'Loss'),
         ]
 
+        date_range = book.stock.batches.aggregate(
+            min_date=Min('received_date'),
+            max_date=Max('received_date')
+        )
+        db_start = date_range['min_date']
+        db_end = date_range['max_date']
+
         has_date_filter = False
 
         if received_from or received_to:
@@ -228,6 +235,7 @@ class StockBatchListView(View):
                 has_date_filter = True
             except ValidationError as e:
                 error_dict = e.message_dict
+
                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":
                     return JsonResponse({"errors": error_dict}, status=400)
 
@@ -241,21 +249,29 @@ class StockBatchListView(View):
                         "Supplier", "Notes", "Actions"
                     ],
                     "sort_options": sort_options,
-                    "errors": error_dict
+                    "errors": error_dict,
+                    "from_value": received_from if received_from else "",
+                    "to_value": received_to if received_to else "",
+                    "min_date": db_start.isoformat() if db_start else "",
+                    "max_date": db_end.isoformat() if db_end else "",
                 })
         else:
 
-            today = timezone.now().date()
-            from_date = to_date = today
+            # today = timezone.now().date()
+            # from_date = to_date = today
+            from_date = db_start
+            to_date = db_end
             has_date_filter = False
 
-        period_start = timezone.make_aware(
-            datetime.combine(from_date, time.min)
-        )
-
-        period_end = timezone.make_aware(
-            datetime.combine(to_date, time.max)
-        )
+        # period_start = timezone.make_aware(
+        #     datetime.combine(from_date, time.min)
+        # )
+        #
+        # period_end = timezone.make_aware(
+        #     datetime.combine(to_date, time.max)
+        # )
+        period_start = timezone.make_aware(datetime.combine(from_date, time.min)) if from_date else None
+        period_end = timezone.make_aware(datetime.combine(to_date, time.max)) if to_date else None
 
         batches_qs = book.stock.batches.with_full_details(book.id)
 
@@ -321,6 +337,8 @@ class StockBatchListView(View):
             "sort_options": sort_options,
             "from_date": from_date,
             "to_date": to_date,
+            "from_value": from_date.isoformat() if from_date else "",
+            "to_value": to_date.isoformat() if to_date else "",
             "has_date_filter": has_date_filter,
             **opening_closing_data
         }
@@ -536,7 +554,9 @@ class StockBatchView(View):
 class StockHistoryView(View):
     def get(self, request, book_uuid=None):
         book = get_object_or_404(Book, uuid=book_uuid)
-        stock_history = book.stock.stock_history.all()
+        stock_history = book.stock.stock_history.select_related(
+            "batch", "changed_by"
+        ).all()
 
         errors = {}
 
@@ -555,9 +575,33 @@ class StockHistoryView(View):
         start = request.GET.get("received_from")
         end = request.GET.get("received_to")
 
+        date_range = book.stock.stock_history.aggregate(
+            min_date=Min('created_at'),
+            max_date=Max('created_at')
+        )
+
+        db_start = date_range['min_date'].date() if date_range['min_date'] else None
+        db_end = date_range['max_date'].date() if date_range['max_date'] else None
+
         has_date_filter = False
         start_date = None
         end_date = None
+
+        default_open_close = {
+            'opening_quantity': 0,
+            'opening_value': Decimal('0.00'),
+            'closing_quantity': 0,
+            'closing_value': Decimal('0.00'),
+            'order_process': 0,
+            'stock_not_placed': 0,
+
+            'sold_quantity': 0,
+            'restock_today': 0,
+            'restock_with_adjustment': 0,
+            'adjustment_today': 0,
+            'reserve_today': 0,
+            'release_today': 0,
+        }
 
         if start or end:
             try:
@@ -570,22 +614,51 @@ class StockHistoryView(View):
                 has_date_filter = True
             except ValidationError as e:
                 errors.update(e.message_dict)
+                error_dict = e.message_dict
+
+                print("Error before")
+
+                if request.GET.get("ajax"):
+                    print("Error in")
+                    return JsonResponse({"errors": error_dict}, status=400)
+                print("Error after")
+
+                return render(request, "books/admin/Stock/admin_stock_history.html", {
+                    "paginated_batches": [],
+                    'limit': 10,
+                    'book': book,
+                    'headers': ['Type', 'Change', 'Before', 'After', 'Batch Uuid', 'By', 'Date'],
+                    "min_date": db_start.isoformat() if db_start else "",
+                    "max_date": db_end.isoformat() if db_end else "",
+                    "from_value": start,
+                    "to_value": end,
+                    "errors": error_dict,
+                    **default_open_close
+                })
         else:
 
-            today = timezone.now().date()
-            start_date = end_date = today
+            # today = timezone.now().date()
+            # start_date = end_date = today
+            start_date = db_start
+            end_date = db_end
             has_date_filter = False
 
-        period_start = None
-        period_end = None
+        # period_start = None
+        # period_end = None
+        #
+        # if start_date is not None and end_date is not None:
+        #     period_start = timezone.make_aware(
+        #         datetime.combine(start_date, time.min)
+        #     )
+        #     period_end = timezone.make_aware(
+        #         datetime.combine(end_date, time.max)
+        #     )
 
-        if start_date is not None and end_date is not None:
-            period_start = timezone.make_aware(
-                datetime.combine(start_date, time.min)
-            )
-            period_end = timezone.make_aware(
-                datetime.combine(end_date, time.max)
-            )
+        from_value = start_date.isoformat() if start_date else ""
+        to_value = end_date.isoformat() if end_date else ""
+
+        period_start = timezone.make_aware(datetime.combine(start_date, time.min)) if start_date else None
+        period_end = timezone.make_aware(datetime.combine(end_date, time.max)) if end_date else None
 
         opening_closing_data = {}
         if period_start and period_end:
@@ -612,22 +685,6 @@ class StockHistoryView(View):
 
         total_actual_sold_cost = totals['total_sold']
         total_actual_cost_cost = totals['total_cost']
-
-        default_open_close = {
-            'opening_quantity': 0,
-            'opening_value': Decimal('0.00'),
-            'closing_quantity': 0,
-            'closing_value': Decimal('0.00'),
-            'order_process': 0,
-            'stock_not_placed': 0,
-
-            'sold_quantity': 0,
-            'restock_today': 0,
-            'restock_with_adjustment': 0,
-            'adjustment_today': 0,
-            'reserve_today': 0,
-            'release_today': 0,
-        }
 
         opening_closing_data = {"total_actual_sold_cost": total_actual_sold_cost,
                                 "total_actual_cost_cost": total_actual_cost_cost, **default_open_close,
@@ -664,8 +721,12 @@ class StockHistoryView(View):
             'headers': ['Type', 'Change', 'Before', 'After', 'Batch Uuid', 'By', 'Date'],
             'change_type_options': StockHistory.CHANGE_TYPES,
             'errors': errors,
+            "min_date": db_start.isoformat() if db_start else "",
+            "max_date": db_end.isoformat() if db_end else "",
             "total_actual_sold_cost": total_actual_sold_cost,
             "total_actual_cost_cost": total_actual_cost_cost,
+            "from_value": from_value,
+            "to_value": to_value,
             **opening_closing_data
 
         })
@@ -674,7 +735,7 @@ class StockHistoryView(View):
 @login_required
 def stockPriceView(request, book_uuid):
     book = get_object_or_404(Book, uuid=book_uuid)
-    stock_price_history = book.stock.price_history.all().order_by('created_at')
+    stock_price_history = book.stock.price_history.select_related('changed_by').all().order_by('created_at')
     print(stock_price_history)
     paginated_price_history, limit = paginate_queryset(request, stock_price_history, default_limit=10)
     print(paginated_price_history)
@@ -690,9 +751,20 @@ def stockPriceView(request, book_uuid):
 def stockReservationView(request, book_uuid):
     book = get_object_or_404(Book, uuid=book_uuid)
     # reservation = book.stock.reservations.all().order_by('-created_at')
-    reservation = book.stock.reservations.all().select_related('order_item', 'order_item__order',
-                                                               'order_item__order__user', 'batch').order_by(
-        '-created_at')
+    # reservation = book.stock.reservations.select_related('order_item', 'order_item__order',
+    #                                                      'order_item__order__user', 'batch').all().order_by(
+    #     '-created_at')
+
+    reservation = book.stock.reservations.select_related(
+        'batch',
+        'batch__stock',
+        'batch__stock__book',
+        'order_item',
+        'order_item__book',
+        'order_item__order',
+        'order_item__order__user',
+    ).all().order_by('-created_at')
+    print("hello")
     paginated_stock_reservation, limit = paginate_queryset(request, reservation, default_limit=10)
     return render(request, 'books/admin/Stock/admin_stock_reservation.html', {
         'paginated_stock_reservation': paginated_stock_reservation,
