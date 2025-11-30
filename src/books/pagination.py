@@ -2,10 +2,6 @@ from django.core.paginator import Paginator
 
 
 def paginate_queryset(request, queryset, default_limit=10):
-    """
-    Paginate any queryset based on GET parameters.
-    Returns the paginated page and the limit.
-    """
     # Get limit from GET params
     limit = request.GET.get('limit', default_limit)
     # print("limit before try", limit)

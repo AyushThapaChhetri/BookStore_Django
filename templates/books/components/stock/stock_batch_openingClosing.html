@@ -1,0 +1,130 @@
+
+
+{% load custom_filters %}
+<div class="p-4 bg-gray-200 rounded-md mb-4 shadow-sm">
+    <h3 class="text-lg font-semibold text-gray-800 mb-4 tracking-wide">
+        Opening & Closing Stock Summary
+        {% if has_date_filter %}
+            {% if from_date == to_date %}
+                <span class="text-sm font-normal text-gray-600">({{ from_date|date:"M d, Y" }})</span>
+            {% else %}
+                <span class="text-sm font-normal text-gray-600">({{ from_date|date:"M d, Y" }} - {{ to_date|date:"M d, Y" }})</span>
+            {% endif %}
+        {% else %}
+            <span class="text-sm font-normal text-gray-600">(All Time)</span>
+        {% endif %}
+    </h3>
+
+    <div class="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
+
+        <div class="text-gray-600">
+            <span class="font-medium">Opening Quantity:</span>
+            <span class="ml-1 font-semibold text-gray-900 text-base">{{ opening_quantity }}</span>
+        </div>
+        <div class="text-gray-600">
+            <span class="font-medium">Closing Quantity:</span>
+            <span class="ml-1 font-semibold text-gray-900 text-base">{{ closing_quantity }}</span>
+        </div>
+        <div class="text-gray-600">
+            <span class="font-medium">Total Sold:</span>
+            <span class="ml-1 font-semibold text-red-600 text-base">{{ sold_quantity }}</span>
+        </div>
+
+
+        <div class="text-gray-600">
+            <span class="font-medium">Opening Profit:</span>
+            <span class="ml-1 font-semibold text-base
+                {% if opening_value < 0 %}text-red-600{% else %}text-green-600{% endif %}">
+                Rs {{ opening_value|floatformat:"-2" }}
+            </span>
+        </div>
+        <div class="text-gray-600">
+            <span class="font-medium">Closing Profit:</span>
+            <span class="ml-1 font-semibold text-base
+                {% if closing_value < 0 %}text-red-600{% else %}text-green-600{% endif %}">
+                Rs {{ closing_value|floatformat:"-2" }}
+            </span>
+        </div>
+        <div class="text-gray-600">
+            <span class="font-medium">Period Profit:</span>
+            {% with period_profit=closing_value|floatformat:"-2" %}
+                {% with opening_profit=opening_value|floatformat:"-2" %}
+                    {% with profit_diff=closing_value|add:opening_value|floatformat:"-2" %}
+                        <span class="ml-1 font-semibold text-base
+                {% if profit_diff|slice:":1" == "-" %}text-red-600{% else %}text-green-600{% endif %}">
+                Rs {{ profit_diff }}
+            </span>
+                    {% endwith %}
+                {% endwith %}
+            {% endwith %}
+        </div>
+
+
+        <div class="text-gray-600">
+            <span class="font-medium">Restocked without Adjustment:</span>
+            <span class="ml-1 font-semibold text-blue-700 text-base">{{ restock_today }}</span>
+        </div>
+        <div class="text-gray-600">
+            <span class="font-medium">Restocked:</span>
+            <span class="ml-1 font-semibold text-blue-700 text-base">{{ restock_with_adjustment }}</span>
+        </div>
+
+        {% if order_process %}
+            <div class="text-gray-600">
+                <span class="font-medium">Order in Process:</span>
+                <span class="ml-1 font-semibold text-blue-700 text-base">{{ order_process }}</span>
+            </div>
+        {% endif %}
+
+        {% if stock_not_placed %}
+            <div class="text-gray-600">
+                <span class="font-medium">Stock Not yet Placed:</span>
+                <span class="ml-1 font-semibold text-blue-700 text-base">{{ stock_not_placed }}</span>
+            </div>
+        {% endif %}
+
+        <div class="text-gray-600">
+            <span class="font-medium">Cost of Goods Sold:</span>
+            <span class="ml-1 font-semibold text-yellow-700 text-base">
+                Rs {{ total_actual_cost_cost|floatformat:"-2" }}
+            </span>
+        </div>
+        <div class="text-gray-600">
+            <span class="font-medium">Sales Revenue:</span>
+            <span class="ml-1 font-semibold text-blue-700 text-base">
+                Rs {{ total_actual_sold_cost|floatformat:"-2" }}
+            </span>
+        </div>
+    </div>
+
+
+    <div class="mt-4 p-3 bg-blue-50 rounded border border-blue-200 text-xs">
+        <div class="text-gray-700">
+            <strong>Stock Ledger Formula:</strong><br>
+            Opening ({{ opening_quantity }})
+            + Restocked without Adjustment ({{ restock_today }})
+            {% if adjustment_today != 0 %}+ Adjusted ({{ adjustment_today }}){% endif %}
+            {% if reserve_today != 0 %}+ Reserved ({{ reserve_today }}){% endif %}
+            {% if release_today != 0 %}+ Released ({{ release_today }}){% endif %}
+            {#            - Sold ({{ sold_quantity }})#}
+            = Closing ({{ closing_quantity }})
+            <br>
+            <strong>Calculation:</strong>
+            {% with calculated=opening_quantity|add:restock_today|add:adjustment_today|add:release_today %}
+                {% with final=calculated|add:reserve_today|add:sold_quantity %}
+                    {{ opening_quantity }} + {{ restock_today }}
+                    {% if adjustment_today != 0 %} {{ adjustment_today }}{% endif %}
+                    {% if reserve_today != 0 %} -{{ reserve_today }}{% endif %}
+                    {% if release_today != 0 %}+ {{ release_today }}{% endif %}
+
+                    = {{ closing_quantity }}
+                    {% if final == closing_quantity %}
+                        <span class="text-green-600 font-semibold ml-2">✓ Verified</span>
+                    {% else %}
+                        <span class="text-orange-600 font-semibold ml-2">(Expected: {{ closing_quantity }})</span>
+                    {% endif %}
+                {% endwith %}
+            {% endwith %}
+        </div>
+    </div>
+</div>

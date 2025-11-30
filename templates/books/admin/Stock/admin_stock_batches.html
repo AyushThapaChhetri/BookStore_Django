@@ -12,6 +12,12 @@
             <button type="submit" class="bg-blue-600 h-fit text-white px-3 py-1 rounded">Filter</button>
         </div>
     </form>
+    {#    <div id="open-closing-quantity">#}
+    {##}
+    {#        {% include 'books/components/stock/stock_batch_openingClosing.html' with total_actual_cost_cost=total_actual_cost_cost total_actual_sold_cost=total_actual_sold_cost  total_profit_loss=total_profit_loss %}#}
+    {#    </div>#}
+
+
 {% endblock %}
 
 {% block table_rows %}
@@ -87,10 +93,19 @@
             const newUrl = `${window.location.pathname}?${params.toString()}`;
             window.history.replaceState({}, "", newUrl);
 
+            console.log("gggg")
+
             try {
+                console.log("hhhhh")
                 const response = await axios.get(newUrl, {
                     headers: {"X-Requested-With": "XMLHttpRequest"}
                 });
+
+                console.log("ccccc")
+                console.log("response: ", response)
+                {#console.log("response closing: ", response.data.opening_closing_html)#}
+
+                {#document.getElementById("open-closing-quantity").innerHTML = response.data.opening_closing_html;#}
 
                 document.getElementById("table-container").innerHTML =
                     response.data.table_html;
@@ -125,9 +140,11 @@
             window.history.replaceState({}, "", newUrl);
 
             try {
+
                 const response = await axios.get(newUrl, {
                     headers: {"X-Requested-With": "XMLHttpRequest"}
                 });
+
 
                 document.getElementById("table-container").innerHTML = response.data.table_html;
                 document.getElementById("pagination-container").innerHTML = response.data.pagination_html;
@@ -149,10 +166,12 @@
             if (e.target.matches(".ajax-page")) {
                 e.preventDefault();
 
+                console.log("gggg")
                 try {
                     const response = await axios.get(e.target.href, {
                         headers: {"X-Requested-With": "XMLHttpRequest"}
                     });
+
 
                     document.getElementById("table-container").innerHTML =
                         response.data.table_html;

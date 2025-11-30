@@ -1,4 +1,4 @@
-console.log("Reusable stock table JS loaded");
+// console.log("Reusable stock table JS loaded");
 
 function setupStockTable({formId, tableId, paginationId}) {
     const form = document.getElementById(formId);
@@ -91,6 +91,8 @@ function setupStockTable({formId, tableId, paginationId}) {
 
     const fetchData = (includeDates = false) => {
         const query = buildQueryFromForm(form, includeDates);
+
+
         updateUrl(query);
         const url = `${window.location.pathname}?${query}`;
         return fetchTableData({
@@ -115,6 +117,7 @@ function setupStockTable({formId, tableId, paginationId}) {
 
     form.addEventListener("submit", function (e) {
         e.preventDefault();
+        console.log("filter form")
         fetchData(true);
     });
 

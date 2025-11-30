@@ -14,7 +14,13 @@
             {% include "components/date_range.html" with prefix="received" %}
             <button type="submit" class="bg-blue-600 text-white px-3 py-1  rounded">Filter</button>
         </div>
+
     </form>
+
+    <div id="open-closing-quantity">
+
+        {% include 'books/components/stock/stock_batch_openingClosing.html' with total_actual_cost_cost=total_actual_cost_cost total_actual_sold_cost=total_actual_sold_cost  total_profit_loss=total_profit_loss %}
+    </div>
 
     <div class="flex items-center gap-2">
         <span class="text-sm font-medium text-gray-600">Total Remaining Stock:</span>
@@ -37,8 +43,152 @@
 
 {% block extra_js %}
 
-    <script src="{% static 'core/js/reusable_stock_table.js' %}"></script>
+    {#    <script src="{% static 'core/js/reusable_stock_table.js' %}"></script>#}
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
 
+            const form = document.getElementById("stock-filter-form");
+            const tableContainer = document.getElementById("table-container");
+            const paginationContainer = document.getElementById("pagination-container");
+            const openingClosingContainer = document.getElementById("open-closing-quantity");
+
+            if (!form || !tableContainer || !paginationContainer) {
+                console.error("Missing required DOM elements.");
+                return;
+            }
+
+            /* ------------------------------
+               Build Query From Form
+            ------------------------------ */
+            function buildQuery(includeDates = true) {
+                const params = new URLSearchParams();
+
+                new FormData(form).forEach((value, key) => {
+                    if (!value) return;
+                    if (!includeDates && (key.endsWith("_from") || key.endsWith("_to"))) return;
+                    params.append(key, value);
+                });
+
+                return params.toString();
+            }
+
+            /* ------------------------------
+               Update Browser URL
+            ------------------------------ */
+            function updateUrl(query) {
+                const newUrl = `${window.location.pathname}?${query}`;
+                window.history.replaceState(null, "", newUrl);
+            }
+
+            /* ------------------------------
+               Fetch and Update UI
+               (Table + Pagination + Opening/Closing)
+            ------------------------------ */
+            async function fetchAll(url) {
+                try {
+                    const response = await axios.get(`${url}&ajax=1`, {
+                        headers: {"X-Requested-With": "XMLHttpRequest"}
+                    });
+
+                    const data = response.data;
+
+                    tableContainer.innerHTML = data.table_html;
+                    paginationContainer.innerHTML = data.pagination_html;
+
+                    if (data.opening_closing_html) {
+                        openingClosingContainer.innerHTML = data.opening_closing_html;
+                    }
+
+                    attachPaginationEvents();
+
+                } catch (err) {
+                    console.error("Fetch error:", err);
+
+                    if (err.response?.data?.errors) {
+                        const errors = err.response.data.errors;
+
+                        Object.keys(errors).forEach(key => {
+                            const span = document.getElementById(`${key}_error`);
+                            if (span) span.innerText = errors[key];
+                        });
+                    }
+                }
+            }
+
+            /* ------------------------------
+               Handle pagination clicks
+            ------------------------------ */
+            function attachPaginationEvents() {
+                const links = paginationContainer.querySelectorAll(".ajax-page");
+
+                links.forEach(link => {
+                    link.addEventListener("click", (e) => {
+                        e.preventDefault();
+
+                        const urlObj = new URL(link.href, window.location.origin);
+                        const page = urlObj.searchParams.get("page");
+
+                        const query = new URLSearchParams(new FormData(form));
+                        if (page) query.set("page", page);
+
+                        const finalUrl = `${window.location.pathname}?${query.toString()}`;
+                        updateUrl(query.toString());
+
+                        fetchAll(finalUrl);
+                    });
+                });
+            }
+
+            /* ------------------------------
+               Debounce helper
+            ------------------------------ */
+            function debounce(fn, delay = 600) {
+                let timer;
+                return (...args) => {
+                    clearTimeout(timer);
+                    timer = setTimeout(() => fn.apply(this, args), delay);
+                };
+            }
+
+            /* ------------------------------
+               Fetch Data (filters)
+            ------------------------------ */
+            const fetchData = (includeDates = false) => {
+                const query = buildQuery(includeDates);
+                updateUrl(query);
+                const url = `${window.location.pathname}?${query}`;
+                fetchAll(url);
+            };
+
+            /* ------------------------------
+               Text input live search
+            ------------------------------ */
+            form.querySelectorAll('input[type="text"]').forEach(input => {
+                input.addEventListener("input", debounce(() => fetchData(false)));
+            });
+
+            /* ------------------------------
+               Select change triggers fetch
+            ------------------------------ */
+            form.querySelectorAll("select").forEach(select => {
+                select.addEventListener("change", () => fetchData(false));
+            });
+
+            /* ------------------------------
+               Form Submit (with dates)
+            ------------------------------ */
+            form.addEventListener("submit", (e) => {
+                e.preventDefault();
+                fetchData(true);
+            });
+
+            /* ------------------------------
+               Initial pagination setup
+            ------------------------------ */
+            attachPaginationEvents();
+
+        });
+    </script>
 
 
 {% endblock %}

@@ -39,6 +39,9 @@ class Stock(AbstractBaseModel):
 
     @property
     def total_remaining_quantity(self):
+        if hasattr(self, '_cached_total_quantity'):
+            return self._cached_total_quantity
+
         if self.pk:
             return self.batches.aggregate(total=Sum('remaining_quantity'))['total'] or 0
         return 0
