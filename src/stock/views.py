@@ -81,128 +81,6 @@ def stock_detail(request, book_uuid):
     return render(request, 'books/admin/Stock/admin_stock_detail_view.html', context)
 
 
-#
-# class StockBatchListView(View):
-#     def get(self, request, book_uuid):
-#         book = get_object_or_404(
-#             Book.objects.select_related('stock'),
-#             uuid=book_uuid
-#         )
-#
-#         received_from = request.GET.get("received_from")
-#         received_to = request.GET.get("received_to")
-#         batch_uuid = request.GET.get("batch_uuid")
-#         sort_by = request.GET.get("sort_by")
-#
-#         sort_options = [
-#             ('profit', 'Profit'),
-#             ('loss', 'Loss'),
-#         ]
-#
-#         if received_from or received_to:
-#             try:
-#                 from_date, to_date = validate_date_range(received_from, received_to)
-#             except ValidationError as e:
-#                 error_dict = e.message_dict
-#                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-#                     return JsonResponse({"errors": error_dict}, status=400)
-#
-#                 return render(request, "books/admin/Stock/admin_stock_batches.html", {
-#                     "paginated_batches": [],
-#                     "limit": 10,
-#                     "book": book,
-#                     "headers": [
-#                         "Uuid", "Date", "Initial", "Remaining", "Unit Cost",
-#                         "Stock In", "Stock Out", "Sold At", "Profit/Loss",
-#                         "Supplier", "Notes", "Actions"
-#                     ],
-#                     "sort_options": sort_options,
-#                     "errors": error_dict
-#                 })
-#         else:
-#             from_date = to_date = None
-#
-#         batches_qs = book.stock.batches.with_full_details(book.id)
-#
-#         if batch_uuid:
-#             batches_qs = batches_qs.filter(uuid__icontains=batch_uuid)
-#
-#         if from_date and to_date:
-#             batches_qs = batches_qs.filter(received_date__range=[from_date, to_date])
-#
-#         if sort_by == "profit":
-#             batches_qs = batches_qs.filter(net_amount__gt=0).order_by('-net_amount')
-#         elif sort_by == "loss":
-#             batches_qs = batches_qs.filter(net_amount__lt=0).order_by('net_amount')
-#         else:
-#             batches_qs = batches_qs.order_by("received_date", "created_at")
-#
-#         today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
-#         print("Time today start", today_start)
-#
-#         print("Batch qs: ", batches_qs.filter(updated_at__lt=today_start))
-#
-#         paginated_batches, limit = paginate_queryset(
-#             request,
-#             batches_qs,
-#             default_limit=10
-#         )
-#         total_actual_sold_cost = Decimal(0.00)
-#         total_actual_cost_cost = Decimal(0.00)
-#
-#         for batch in paginated_batches:
-#             total_actual_sold_cost += batch.sold_amount
-#             total_actual_cost_cost += batch.cost_amount
-#
-#             batch.actual_sold_cost = batch.sold_amount
-#             batch.actual_cost_amount = batch.cost_amount
-#             batch.actual_net_amount = batch.net_amount
-#
-#         print("hello daiiiiiiiii k cha")
-#         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-#             print("hello vai k cha")
-#             opening_closing_html = render_to_string("books/components/stock/stock_batch_openingClosing.html",
-#                                                     {
-#                                                         "total_actual_sold_cost": total_actual_sold_cost,
-#                                                         "total_actual_cost_cost": total_actual_cost_cost,
-#                                                         "total_profit_loss": total_actual_sold_cost - total_actual_cost_cost, },
-#                                                     request=request
-#                                                     )
-#
-#             print(opening_closing_html)
-#             table_html = render_to_string(
-#                 "books/admin/Stock/table/Stock_Batch_table_rows.html",
-#                 {"paginated_batches": paginated_batches, "total_actual_sold_cost": total_actual_sold_cost,
-#                  },
-#                 request=request
-#             )
-#             pagination_html = render_to_string(
-#                 "books/admin/Stock/pagination/stock_pagination.html",
-#                 {"paginated_items": paginated_batches, "limit": limit},
-#                 request=request
-#             )
-#             return JsonResponse({
-#                 "opening_closing_html": opening_closing_html,
-#                 "table_html": table_html,
-#                 "pagination_html": pagination_html
-#             })
-#
-#         return render(request, "books/admin/Stock/admin_stock_batches.html", {
-#             "paginated_batches": paginated_batches,
-#             "total_actual_sold_cost": total_actual_sold_cost,
-#             "total_actual_cost_cost": total_actual_cost_cost,
-#             "total_profit_loss": total_actual_sold_cost - total_actual_cost_cost,
-#             "limit": limit,
-#             "book": book,
-#             "headers": [
-#                 "Uuid", "Date", "Initial", "Remaining", "Unit Cost",
-#                 "Stock In", "Stock Out", "Sold At", "Profit/Loss",
-#                 "Supplier", "Notes", "Actions"
-#             ],
-#             "sort_options": sort_options,
-#         })
-
-
 class StockBatchListView(View):
     def get(self, request, book_uuid):
         book = get_object_or_404(
@@ -228,6 +106,11 @@ class StockBatchListView(View):
         db_end = date_range['max_date']
 
         has_date_filter = False
+        total_stock_quantity_all_time = StockBatch.objects.filter(stock_id=book.stock.id).aggregate(
+            total_stock_quantity_all_time=Sum('initial_quantity')
+        )['total_stock_quantity_all_time'] or 0
+
+        print('Stock_quantity_all_time', total_stock_quantity_all_time)
 
         if received_from or received_to:
             try:
@@ -326,6 +209,7 @@ class StockBatchListView(View):
             "paginated_batches": paginated_batches,
             "total_actual_sold_cost": total_actual_sold_cost,
             "total_actual_cost_cost": total_actual_cost_cost,
+            "total_stock_quantity_all_time": total_stock_quantity_all_time,
             "total_profit_loss": total_actual_sold_cost - total_actual_cost_cost,
             "limit": limit,
             "book": book,
@@ -680,11 +564,20 @@ class StockHistoryView(View):
             total_sold=Coalesce(Sum('sold_amount'),
                                 Value(0, output_field=DecimalField(max_digits=14, decimal_places=2))),
             total_cost=Coalesce(Sum('cost_amount'),
-                                Value(0, output_field=DecimalField(max_digits=14, decimal_places=2)))
+                                Value(0, output_field=DecimalField(max_digits=14, decimal_places=2))),
+            # total_stock_all_time=Coalesce(Sum('initial_quantity',
+            #                                   filter=Q(stock_id=book.stock.id)), 0),
         )
+
+        total_stock_quantity_all_time = StockBatch.objects.filter(stock_id=book.stock.id).aggregate(
+            total_stock_quantity_all_time=Sum('initial_quantity')
+        )['total_stock_quantity_all_time'] or 0
+
+        print('Stock_quantity_all_time', total_stock_quantity_all_time)
 
         total_actual_sold_cost = totals['total_sold']
         total_actual_cost_cost = totals['total_cost']
+        # total_actual_stock_all_time = totals['total_stock_all_time']
 
         opening_closing_data = {"total_actual_sold_cost": total_actual_sold_cost,
                                 "total_actual_cost_cost": total_actual_cost_cost, **default_open_close,
@@ -725,6 +618,7 @@ class StockHistoryView(View):
             "max_date": db_end.isoformat() if db_end else "",
             "total_actual_sold_cost": total_actual_sold_cost,
             "total_actual_cost_cost": total_actual_cost_cost,
+            "total_actual_stock_all_time": total_stock_quantity_all_time,
             "from_value": from_value,
             "to_value": to_value,
             **opening_closing_data
