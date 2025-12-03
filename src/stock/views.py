@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.core.exceptions import ValidationError
-from django.db.models import DecimalField, Value, Min, Max
+from django.db.models import DecimalField, Value, Min, Max, Q
 from django.db.models import Prefetch
 from django.db.models import Sum
 from django.db.models.functions import Coalesce
@@ -146,13 +146,6 @@ class StockBatchListView(View):
             to_date = db_end
             has_date_filter = False
 
-        # period_start = timezone.make_aware(
-        #     datetime.combine(from_date, time.min)
-        # )
-        #
-        # period_end = timezone.make_aware(
-        #     datetime.combine(to_date, time.max)
-        # )
         period_start = timezone.make_aware(datetime.combine(from_date, time.min)) if from_date else None
         period_end = timezone.make_aware(datetime.combine(to_date, time.max)) if to_date else None
 
@@ -521,22 +514,9 @@ class StockHistoryView(View):
                 })
         else:
 
-            # today = timezone.now().date()
-            # start_date = end_date = today
             start_date = db_start
             end_date = db_end
             has_date_filter = False
-
-        # period_start = None
-        # period_end = None
-        #
-        # if start_date is not None and end_date is not None:
-        #     period_start = timezone.make_aware(
-        #         datetime.combine(start_date, time.min)
-        #     )
-        #     period_end = timezone.make_aware(
-        #         datetime.combine(end_date, time.max)
-        #     )
 
         from_value = start_date.isoformat() if start_date else ""
         to_value = end_date.isoformat() if end_date else ""
@@ -560,13 +540,13 @@ class StockHistoryView(View):
         if has_date_filter:
             batches_qs = batches_qs.filter(received_date__range=[start_date, end_date])
 
+        # store cost for the item and sales revenue
         totals = batches_qs.aggregate(
             total_sold=Coalesce(Sum('sold_amount'),
                                 Value(0, output_field=DecimalField(max_digits=14, decimal_places=2))),
             total_cost=Coalesce(Sum('cost_amount'),
                                 Value(0, output_field=DecimalField(max_digits=14, decimal_places=2))),
-            # total_stock_all_time=Coalesce(Sum('initial_quantity',
-            #                                   filter=Q(stock_id=book.stock.id)), 0),
+
         )
 
         total_stock_quantity_all_time = StockBatch.objects.filter(stock_id=book.stock.id).aggregate(
@@ -575,13 +555,37 @@ class StockHistoryView(View):
 
         print('Stock_quantity_all_time', total_stock_quantity_all_time)
 
+        if end_date:
+            date_total_stock_till_time_select = timezone.make_aware(datetime.combine(end_date, time.max))
+        else:
+            today = timezone.localdate()
+            date_total_stock_till_time_select = timezone.make_aware(datetime.combine(today, time.max))
+
+        stock_history_div = (StockHistory.objects.
+        filter(stock_id=book.stock.id,
+               created_at__lte=date_total_stock_till_time_select)
+        .aggregate(
+            total_restock_div=Coalesce(Sum('quantity_change', filter=Q(
+                change_type='restock'
+            )), 0),
+            total_edit_div=Coalesce(Sum('quantity_change', filter=Q(
+                change_type='editstock'
+            )), 0),
+
+        )
+        )
+
+        total_stock_in_till_date = stock_history_div['total_restock_div'] + stock_history_div['total_edit_div']
+
         total_actual_sold_cost = totals['total_sold']
         total_actual_cost_cost = totals['total_cost']
         # total_actual_stock_all_time = totals['total_stock_all_time']
 
-        opening_closing_data = {"total_actual_sold_cost": total_actual_sold_cost,
-                                "total_actual_cost_cost": total_actual_cost_cost, **default_open_close,
-                                **opening_closing_data}
+        opening_closing_data = {
+            "total_actual_stock_all_time": total_stock_in_till_date,
+            "total_actual_sold_cost": total_actual_sold_cost,
+            "total_actual_cost_cost": total_actual_cost_cost, **default_open_close,
+            **opening_closing_data}
 
         if request.GET.get("ajax") and errors:
             return JsonResponse({"errors": errors, "table_html": "", "pagination_html": ""}, status=400)
@@ -618,7 +622,6 @@ class StockHistoryView(View):
             "max_date": db_end.isoformat() if db_end else "",
             "total_actual_sold_cost": total_actual_sold_cost,
             "total_actual_cost_cost": total_actual_cost_cost,
-            "total_actual_stock_all_time": total_stock_quantity_all_time,
             "from_value": from_value,
             "to_value": to_value,
             **opening_closing_data
@@ -644,10 +647,6 @@ def stockPriceView(request, book_uuid):
 @login_required
 def stockReservationView(request, book_uuid):
     book = get_object_or_404(Book, uuid=book_uuid)
-    # reservation = book.stock.reservations.all().order_by('-created_at')
-    # reservation = book.stock.reservations.select_related('order_item', 'order_item__order',
-    #                                                      'order_item__order__user', 'batch').all().order_by(
-    #     '-created_at')
 
     reservation = book.stock.reservations.select_related(
         'batch',

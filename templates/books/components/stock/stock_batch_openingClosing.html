@@ -43,20 +43,15 @@
                 Rs {{ closing_value|floatformat:"-2" }}
             </span>
         </div>
+       
+
         <div class="text-gray-600">
             <span class="font-medium">Period Profit:</span>
-            {% with period_profit=closing_value|floatformat:"-2" %}
-                {% with opening_profit=opening_value|floatformat:"-2" %}
-                    {% with profit_diff=closing_value|add:opening_value|floatformat:"-2" %}
-                        <span class="ml-1 font-semibold text-base
-                {% if profit_diff|slice:":1" == "-" %}text-red-600{% else %}text-green-600{% endif %}">
-                Rs {{ profit_diff }}
+            <span class="ml-1 font-semibold text-base
+                {% if period_profit < 0 %}text-red-600{% else %}text-green-600{% endif %}">
+                Rs {{ period_profit|floatformat:"-2" }}
             </span>
-                    {% endwith %}
-                {% endwith %}
-            {% endwith %}
         </div>
-
 
         <div class="text-gray-600">
             <span class="font-medium">Restocked without Adjustment:</span>
@@ -80,6 +75,11 @@
                 <span class="ml-1 font-semibold text-blue-700 text-base">{{ stock_not_placed }}</span>
             </div>
         {% endif %}
+
+        <div class="text-gray-600">
+            <span class="font-medium">Stock in till date:</span>
+            <span class="ml-1 font-semibold text-blue-700 text-base">{{ total_actual_stock_all_time }}</span>
+        </div>
 
         <div class="text-gray-600">
             <span class="font-medium">Cost of Goods Sold:</span>

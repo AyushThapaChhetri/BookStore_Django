@@ -69,11 +69,46 @@ def verify_batch_calculation(batch_id, book_id):
     }
 
 
+def calculate_revenue_cost(stock, period_start=None, period_end=None):
+    filters = {}
+    if period_start:
+        filters['created_at__gte'] = period_start
+    if period_end:
+        filters['created_at__lte'] = period_end
+
+    orders = StockHistory.objects.filter(
+        stock=stock,
+        change_type='sold',
+        order__isnull=False,
+        **filters
+    ).values_list('order_id', flat=True).distinct()
+
+    total_revenue = Decimal('0.00')
+    total_cost = Decimal('0.00')
+
+    if orders:
+        reservations = StockReservation.objects.filter(
+            stock=stock,
+            order_item__order_id__in=list(orders),
+            is_active=False
+        ).select_related('batch', 'order_item')
+
+        for r in reservations:
+            unit_revenue = r.order_item.unit_price - (r.order_item.discount_amount or Decimal('0.00'))
+            revenue = unit_revenue * Decimal(r.reserved_quantity)
+            cost = r.batch.unit_cost * Decimal(r.reserved_quantity)
+            total_revenue += revenue
+            total_cost += cost
+
+    return total_revenue, total_cost
+
+
 def _calculate_opening_closing_stock(stock, period_start, period_end, has_date_filter=False):
+    from src.stock.models import StockHistory
+
     DECIMAL = DecimalField(max_digits=14, decimal_places=2)
 
     if not has_date_filter:
-
         all_transactions = StockHistory.objects.filter(
             stock=stock
         ).aggregate(
@@ -99,50 +134,27 @@ def _calculate_opening_closing_stock(stock, period_start, period_end, has_date_f
             ),
         )
 
-        print('restock_qty', all_transactions['restock_qty'])
-        print('adjustment_qty', all_transactions['adjustment_qty'])
-        print('reserve_qty', all_transactions['reserve_qty'])
-        print('release_qty', all_transactions['release_qty'])
-        print('sold_qty', all_transactions['sold_qty'])
-
         closing_quantity = (
                 all_transactions['restock_qty'] +
                 all_transactions['adjustment_qty'] +
-                all_transactions['reserve_qty'] +  # Already negative
+                all_transactions['reserve_qty'] +
                 all_transactions['release_qty']
         )
 
-        orders_all_time = StockHistory.objects.filter(
-            stock=stock,
-            change_type='sold',
-            order__isnull=False
-        ).values_list('order_id', flat=True).distinct()
+        total_revenue, total_cost = calculate_revenue_cost(stock)
 
-        closing_value = Decimal('0.00')
-        if orders_all_time:
-            reservations = StockReservation.objects.filter(
-                stock=stock,
-                order_item__order_id__in=list(orders_all_time),
-                is_active=False
-            ).select_related('batch', 'order_item')
-
-            for reservation in reservations:
-                unit_revenue = reservation.order_item.unit_price - (
-                        reservation.order_item.discount_amount or Decimal('0.00')
-                )
-                revenue = unit_revenue * Decimal(reservation.reserved_quantity)
-                cost = reservation.batch.unit_cost * Decimal(reservation.reserved_quantity)
-                closing_value += (revenue - cost)
+        closing_value = total_revenue - total_cost
 
         order_process = abs(all_transactions['reserve_qty']) - all_transactions['release_qty'] - abs(
             all_transactions['sold_qty'])
-        print('order_process', order_process)
         restock_with_adjustment = all_transactions['restock_qty'] - abs(all_transactions['adjustment_qty'])
+
         return {
             'opening_quantity': 0,
             'opening_value': Decimal('0.00'),
             'closing_quantity': closing_quantity,
             'closing_value': closing_value,
+            'period_profit': closing_value,
             'order_process': order_process,
             'sold_quantity': abs(all_transactions['sold_qty']),
             'restock_today': all_transactions['restock_qty'],
@@ -150,6 +162,8 @@ def _calculate_opening_closing_stock(stock, period_start, period_end, has_date_f
             'adjustment_today': all_transactions['adjustment_qty'],
             'reserve_today': all_transactions['reserve_qty'],
             'release_today': all_transactions['release_qty'],
+            'total_actual_sold_cost': total_revenue,  # Add these
+            'total_actual_cost_cost': total_cost,  # Add these
         }
 
     opening_transactions = StockHistory.objects.filter(
@@ -178,45 +192,17 @@ def _calculate_opening_closing_stock(stock, period_start, period_end, has_date_f
         ),
     )
 
-    print('Restock_qty', opening_transactions['restock_qty'])
-    print('adjustment_qty', opening_transactions['adjustment_qty'])
-    print('reserve_qty', opening_transactions['reserve_qty'])
-    print('release_qty', opening_transactions['release_qty'])
-    print('sold_qty', opening_transactions['sold_qty'])
-
     opening_quantity = (
             opening_transactions['restock_qty'] +
             opening_transactions['adjustment_qty'] +
-            opening_transactions['reserve_qty'] +  # Already negative
+            opening_transactions['reserve_qty'] +
             opening_transactions['release_qty']
     )
 
-    orders_before = StockHistory.objects.filter(
-        stock=stock,
-        change_type='sold',
-        order__isnull=False,
-        created_at__lt=period_start
-    ).values_list('order_id', flat=True).distinct()
+    opening_revenue, opening_cost = calculate_revenue_cost(stock, period_end=period_start)
+    opening_value = opening_revenue - opening_cost
 
-    opening_value = Decimal('0.00')
-    if orders_before:
-        reservations_before = StockReservation.objects.filter(
-            stock=stock,
-            order_item__order_id__in=list(orders_before),
-            is_active=False
-        ).select_related('batch', 'order_item')
-
-        for reservation in reservations_before:
-            unit_revenue = reservation.order_item.unit_price - (
-                    reservation.order_item.discount_amount or Decimal('0.00')
-            )
-            revenue = unit_revenue * Decimal(reservation.reserved_quantity)
-            cost = reservation.batch.unit_cost * Decimal(reservation.reserved_quantity)
-            opening_value += (revenue - cost)
-
-    print("\nStock id: ", stock.id)
-    print("\nPeriod start: ", period_start)
-    print("Period end: ", period_end)
+    # Period transactions
     period_transactions = StockHistory.objects.filter(
         stock=stock,
         created_at__gte=period_start,
@@ -244,59 +230,32 @@ def _calculate_opening_closing_stock(stock, period_start, period_end, has_date_f
         ),
     )
 
-    print("\n\nPeriod Transactions date wala\n\n")
-    print('restock_qty', period_transactions['restock_qty'])
-    print('adjustment_qty', period_transactions['adjustment_qty'])
-    print('reserve_qty', period_transactions['reserve_qty'])
-    print('release_qty', period_transactions['release_qty'])
-    print('sold_qty', period_transactions['sold_qty'])
-
     period_movements = (
             period_transactions['restock_qty'] +
             period_transactions['adjustment_qty'] +
-            period_transactions['reserve_qty'] +  # Already negative
+            period_transactions['reserve_qty'] +
             period_transactions['release_qty']
-
     )
-    print("period_movements", period_movements)
 
     closing_quantity = opening_quantity + period_movements
 
-    orders_upto = StockHistory.objects.filter(
-        stock=stock,
-        change_type='sold',
-        order__isnull=False,
-        created_at__lte=period_end
-    ).values_list('order_id', flat=True).distinct()
+    closing_revenue, closing_cost = calculate_revenue_cost(stock, period_end=period_end)
 
-    closing_value = Decimal('0.00')
-    if orders_upto:
-        reservations_upto = StockReservation.objects.filter(
-            stock=stock,
-            order_item__order_id__in=list(orders_upto),
-            is_active=False
-        ).select_related('batch', 'order_item')
+    closing_value = closing_revenue - closing_cost
 
-        for reservation in reservations_upto:
-            unit_revenue = reservation.order_item.unit_price - (
-                    reservation.order_item.discount_amount or Decimal('0.00')
-            )
-            revenue = unit_revenue * Decimal(reservation.reserved_quantity)
-            cost = reservation.batch.unit_cost * Decimal(reservation.reserved_quantity)
-            closing_value += (revenue - cost)
+    period_revenue, period_cost = calculate_revenue_cost(stock, period_start=period_start, period_end=period_end)
 
     order_process = abs(period_transactions['reserve_qty']) - period_transactions['release_qty'] - abs(
         period_transactions['sold_qty'])
-    print('order_process', order_process)
     restock_with_adjustment = period_transactions['restock_qty'] - abs(period_transactions['adjustment_qty'])
-    stock_not_placed = restock_with_adjustment - abs(
-        period_transactions['reserve_qty'])
-    print('stock not placed', stock_not_placed)
+    stock_not_placed = restock_with_adjustment - abs(period_transactions['reserve_qty'])
+
     return {
         'opening_quantity': opening_quantity,
         'opening_value': opening_value,
         'closing_quantity': closing_quantity,
         'closing_value': closing_value,
+        'period_profit': closing_value - opening_value,
         'order_process': order_process,
         'stock_not_placed': max(stock_not_placed, 0),
         'sold_quantity': abs(period_transactions['sold_qty']),
@@ -305,6 +264,8 @@ def _calculate_opening_closing_stock(stock, period_start, period_end, has_date_f
         'adjustment_today': period_transactions['adjustment_qty'],
         'reserve_today': abs(period_transactions['reserve_qty']),
         'release_today': period_transactions['release_qty'],
+        'total_actual_sold_cost': period_revenue,
+        'total_actual_cost_cost': period_cost,
     }
 
 
