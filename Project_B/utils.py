@@ -49,10 +49,10 @@ ALLOWED_SORTS = {
     "stock": {
         "price_asc": "current_price",
         "price_desc": "-current_price",
-        "quantity_asc": "stock_quantity",
-        "quantity_desc": "-stock_quantity",
-        "available_first": "-is_available",  # available items first
-        "unavailable_first": "is_available",  # unavailable items first
+        "quantity_asc": "total_quantity",
+        "quantity_desc": "-total_quantity",
+        "available_first": "-is_available",
+        "unavailable_first": "is_available",
         "restock_asc": "last_restock_date",
         "restock_desc": "-last_restock_date",
         "created_asc": "created_at",
@@ -62,7 +62,7 @@ ALLOWED_SORTS = {
 
         "created_asc": "created_at",
         "created_desc": "-created_at",
-        
+
     },
     "bookstore": {
         "price_asc": "stock__current_price",

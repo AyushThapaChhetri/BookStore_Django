@@ -43,7 +43,7 @@
                 Rs {{ closing_value|floatformat:"-2" }}
             </span>
         </div>
-       
+
 
         <div class="text-gray-600">
             <span class="font-medium">Period Profit:</span>
@@ -69,12 +69,12 @@
             </div>
         {% endif %}
 
-        {% if stock_not_placed %}
-            <div class="text-gray-600">
-                <span class="font-medium">Stock Not yet Placed:</span>
-                <span class="ml-1 font-semibold text-blue-700 text-base">{{ stock_not_placed }}</span>
-            </div>
-        {% endif %}
+        {#        {% if stock_not_placed %}#}
+        <div class="text-gray-600">
+            <span class="font-medium">Stock Not yet Reserved:</span>
+            <span class="ml-1 font-semibold text-blue-700 text-base">{{ stock_not_placed }}</span>
+        </div>
+        {#        {% endif %}#}
 
         <div class="text-gray-600">
             <span class="font-medium">Stock in till date:</span>
@@ -116,11 +116,7 @@
                     + {{ release_today }}
 
                     = {{ closing_quantity }}
-                    {#                    {% if final == closing_quantity %}#}
-                    {#                        <span class="text-green-600 font-semibold ml-2">✓ Verified</span>#}
-                    {#                    {% else %}#}
-                    {#                        <span class="text-orange-600 font-semibold ml-2">(Expected: {{ closing_quantity }})</span>#}
-                    {#                    {% endif %}#}
+
                 {% endwith %}
             {% endwith %}
         </div>

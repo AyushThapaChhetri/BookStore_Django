@@ -138,7 +138,7 @@ class StockBatch(AbstractBaseModel):
         return self.initial_quantity + self.stock_in - self.stock_out
 
     def save(self, *args, **kwargs):
-        if self.pk is None:  # On creation, set remaining to initial
+        if self.pk is None:
             self.remaining_quantity = self.initial_quantity
         super().save(*args, **kwargs)
 

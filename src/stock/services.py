@@ -148,6 +148,7 @@ def _calculate_opening_closing_stock(stock, period_start, period_end, has_date_f
         order_process = abs(all_transactions['reserve_qty']) - all_transactions['release_qty'] - abs(
             all_transactions['sold_qty'])
         restock_with_adjustment = all_transactions['restock_qty'] - abs(all_transactions['adjustment_qty'])
+        stock_not_placed = restock_with_adjustment - abs(all_transactions['reserve_qty'])
 
         return {
             'opening_quantity': 0,
@@ -156,6 +157,7 @@ def _calculate_opening_closing_stock(stock, period_start, period_end, has_date_f
             'closing_value': closing_value,
             'period_profit': closing_value,
             'order_process': order_process,
+            'stock_not_placed': max(stock_not_placed, 0),
             'sold_quantity': abs(all_transactions['sold_qty']),
             'restock_today': all_transactions['restock_qty'],
             'restock_with_adjustment': restock_with_adjustment,

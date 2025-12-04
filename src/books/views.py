@@ -1,4 +1,6 @@
 import json
+import re
+from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
@@ -6,13 +8,14 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models import Q, Sum
+from django.db.models import Q, Sum, ExpressionWrapper, F, DecimalField, Value, IntegerField, OuterRef, Subquery
 from django.db.models.functions import Coalesce
 from django.forms.models import model_to_dict
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.cache import never_cache
@@ -53,6 +56,7 @@ def search_books(request):
     books = search_query(query, manager)
 
     data = []
+    print('books: ', books)
     for book in books:
         stock_info = None
         if hasattr(book, 'stock') and book.stock:
@@ -404,7 +408,7 @@ class BookPermanentDeleteView(View):
 
         try:
             with transaction.atomic():
-               
+
                 if hasattr(book, 'stock') and book.stock:
                     book.stock.hard_delete()
 
@@ -418,27 +422,204 @@ class BookPermanentDeleteView(View):
 
 
 class StockListView(View):
-
     def get(self, request):
-        stocks = (
-            Stock.objects.all()
-            .select_related('book').annotate(
-                total_quantity=Coalesce(Sum('batches__remaining_quantity'), 0)
-            )
+        datefilter = request.GET.get("datefilter")
+        is_filtered = False
 
-        )
+        if datefilter:
+            try:
+                filter_date = datetime.strptime(datefilter, '%Y-%m-%d').date()
+                filter_datetime = timezone.make_aware(
+                    datetime.combine(filter_date, datetime.max.time())
+                )
+                print(f"Filtering by date: {filter_date}")
 
-        print("stocks", stocks)
-        print([f.column for f in Stock._meta.get_fields() if hasattr(f, 'column')])
+                from src.stock.models import StockBatch, StockHistory
 
-        stocks = applying_sorting(stocks, request, allowed_sorts=ALLOWED_SORTS["stock"])
+                restock_subquery = StockHistory.objects.filter(
+                    batch=OuterRef('pk'),
+                    change_type='restock',
+                    created_at__lte=filter_datetime
+                ).values('batch').annotate(
+                    total=Coalesce(Sum('quantity_change'), Value(0))
+                ).values('total')
+
+                editstock_subquery = StockHistory.objects.filter(
+                    batch=OuterRef('pk'),
+                    change_type='editstock',
+                    created_at__lte=filter_datetime
+                ).values('batch').annotate(
+                    total=Coalesce(Sum('quantity_change'), Value(0))
+                ).values('total')
+
+                sold_subquery = StockHistory.objects.filter(
+                    batch=OuterRef('pk'),
+                    change_type='sold',
+                    created_at__lte=filter_datetime
+                ).values('batch').annotate(
+                    total=Coalesce(Sum('quantity_change'), Value(0))
+                ).values('total')
+
+                reserve_subquery = StockHistory.objects.filter(
+                    batch=OuterRef('pk'),
+                    change_type='reserve',
+                    created_at__lte=filter_datetime
+                ).values('batch').annotate(
+                    total=Coalesce(Sum('quantity_change'), Value(0))
+                ).values('total')
+
+                release_subquery = StockHistory.objects.filter(
+                    batch=OuterRef('pk'),
+                    change_type='release_reserve',
+                    created_at__lte=filter_datetime
+                ).values('batch').annotate(
+                    total=Coalesce(Sum('quantity_change'), Value(0))
+                ).values('total')
+
+                batches_annotated = StockBatch.objects.filter(
+                    received_date__lte=filter_date
+                ).annotate(
+                    restock_total=Coalesce(Subquery(restock_subquery), Value(0)),
+                    edit_total=Coalesce(Subquery(editstock_subquery), Value(0)),
+                    sold_total=Coalesce(Subquery(sold_subquery), Value(0)),
+                    reserve_total=Coalesce(Subquery(reserve_subquery), Value(0)),
+                    release_total=Coalesce(Subquery(release_subquery), Value(0)),
+                ).annotate(
+                    historical_remaining=ExpressionWrapper(
+                        F('initial_quantity') +
+                        F('restock_total') +
+                        F('edit_total') +
+                        F('sold_total') +
+                        F('reserve_total') +
+                        F('release_total'),
+                        output_field=IntegerField()
+                    ),
+                    historical_value=ExpressionWrapper(
+                        (F('initial_quantity') +
+                         F('restock_total') +
+                         F('edit_total') +
+                         F('sold_total') +
+                         F('reserve_total') +
+                         F('release_total')) * F('unit_cost'),
+                        output_field=DecimalField(max_digits=14, decimal_places=2)
+                    )
+                ).filter(
+                    historical_remaining__gt=0
+                ).values('stock_id', 'historical_remaining', 'historical_value')
+
+                # Aggregate by stock
+                from django.db.models import Sum as AggSum
+                stock_aggregates = batches_annotated.values('stock_id').annotate(
+                    total_quantity=Coalesce(AggSum('historical_remaining'), Value(0)),
+                    costofgoods=Coalesce(AggSum('historical_value'),
+                                         Value(0, output_field=DecimalField(max_digits=14, decimal_places=2)))
+                )
+
+                stock_dict = {
+                    item['stock_id']: {
+                        'total_quantity': item['total_quantity'],
+                        'costofgoods': item['costofgoods']
+                    }
+                    for item in stock_aggregates
+                }
+
+                stocks = Stock.objects.all().select_related('book')
+                stocks_list = []
+                for stock in stocks:
+                    if stock.id in stock_dict:
+                        stock.total_quantity = stock_dict[stock.id]['total_quantity']
+                        stock.costofgoods = stock_dict[stock.id]['costofgoods']
+                    else:
+                        stock.total_quantity = 0
+                        stock.costofgoods = Decimal('0.00')
+                    stocks_list.append(stock)
+
+                stocks = stocks_list
+                is_filtered = True
+
+            except ValueError as e:
+                print(f"Invalid date format: {e}")
+                stocks = self._get_current_stocks()
+        else:
+
+            stocks = self._get_current_stocks()
+
+        print("stocks count:", len(stocks) if is_filtered else stocks.count())
+
+        if is_filtered:
+            stocks = self._sort_stock_list(stocks, request)
+        else:
+            stocks = applying_sorting(stocks, request, allowed_sorts=ALLOWED_SORTS["stock"])
 
         paginated_stocks, limit = paginate_queryset(request, stocks, default_limit=10)
 
-        return render(request, 'books/admin/admin_stock_list.html', {'stocks': stocks,
-                                                                     'paginated_stocks': paginated_stocks,
+        is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
-                                                                     'limit': limit})
+        if is_ajax:
+            print("AJAX REQUEST RECEIVED - Returning JSON")
+
+            table_html = render_to_string(
+                'books/admin/admin_stock_list.html',
+                {
+                    'stocks': stocks,
+                    'paginated_stocks': paginated_stocks,
+                    'limit': limit,
+                    'request': request,
+                    'filtered_date': datefilter
+                },
+                request=request
+            )
+
+            tbody_match = re.search(r'<tbody[^>]*id="listTableBody"[^>]*>(.*?)</tbody>', table_html, re.DOTALL)
+            table_body_html = tbody_match.group(1) if tbody_match else table_html
+
+            return JsonResponse({
+                'success': True,
+                'table_html': table_body_html,
+                'total_count': len(stocks) if is_filtered else stocks.count(),
+                'filtered_date': datefilter
+            })
+
+        return render(request, 'books/admin/admin_stock_list.html', {
+            'stocks': stocks,
+            'paginated_stocks': paginated_stocks,
+            'limit': limit,
+            'filtered_date': datefilter
+        })
+
+    def _sort_stock_list(self, stocks_list, request):
+
+        sort = request.GET.get("sort", "created_desc")
+
+        sort_keys = {
+            "price_asc": lambda s: (s.current_price or Decimal('0'), s.id),
+            "price_desc": lambda s: (-(s.current_price or Decimal('0')), s.id),
+            "quantity_asc": lambda s: (s.total_quantity, s.id),
+            "quantity_desc": lambda s: (-s.total_quantity, s.id),
+            "available_first": lambda s: (not s.is_available, s.id),
+            "unavailable_first": lambda s: (s.is_available, s.id),
+            "restock_asc": lambda s: (s.last_restock_date or datetime.min.date(), s.id),
+            "restock_desc": lambda s: (-(s.last_restock_date or datetime.min.date()).toordinal(), s.id),
+            "created_asc": lambda s: (s.created_at, s.id),
+            "created_desc": lambda s: (-s.created_at.timestamp(), s.id),
+        }
+
+        sort_key = sort_keys.get(sort, sort_keys["created_desc"])
+
+        return sorted(stocks_list, key=sort_key)
+
+    def _get_current_stocks(self):
+
+        return Stock.objects.all().select_related('book').annotate(
+            total_quantity=Coalesce(Sum('batches__remaining_quantity'), Value(0)),
+            costofgoods=ExpressionWrapper(
+                Coalesce(
+                    Sum(F('batches__remaining_quantity') * F('batches__unit_cost')),
+                    Value(0)
+                ),
+                output_field=DecimalField(max_digits=14, decimal_places=2)
+            )
+        )
 
 
 class BookDetailView(View):

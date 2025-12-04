@@ -140,8 +140,6 @@ class StockBatchListView(View):
                 })
         else:
 
-            # today = timezone.now().date()
-            # from_date = to_date = today
             from_date = db_start
             to_date = db_end
             has_date_filter = False

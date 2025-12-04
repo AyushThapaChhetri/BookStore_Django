@@ -43,7 +43,6 @@ def searchfilter_bookStore(books, query=None, min_price=None, max_price=None, so
     db_min = floor(db_min_price)
     db_max = ceil(db_max_price / 100) * 100
 
-    # Initialize variables
     min_val, max_val = 0, db_max
 
     if min_price or max_price:
@@ -54,7 +53,7 @@ def searchfilter_bookStore(books, query=None, min_price=None, max_price=None, so
         # print("Min and max value after function: ", min_val, max_val)
         #
         # print('llll')
-        # clamp values to real DB range
+
         if min_val is None or min_val < 0:
             min_val = 0
         # if max_val is None or max_val < 0 or max_val > price_aggregate['max_price']:
