@@ -6,7 +6,7 @@
                     type="date"
                     name="datefilter"
                     id="datefilter"
-                    value="{{ request.GET.datefilter|default:'' }}"
+                    value="{{ filtered_date }}"
                     min="{{ min_date|default:'' }}"
                     max="{{ max_date|default:'' }}"
                     class="filter-input border border-gray-300 bg-white rounded px-2 py-1"

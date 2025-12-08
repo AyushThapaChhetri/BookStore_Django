@@ -23,7 +23,6 @@ def to_int(value, default=None):
 
 def searchfilter_bookStore(books, query=None, min_price=None, max_price=None, sort_by=None):
     if query:
-        # books = search_query(query)
         books = books.filter(
             Q(title__icontains=query) |
             Q(authors__name__icontains=query) |
@@ -34,8 +33,6 @@ def searchfilter_bookStore(books, query=None, min_price=None, max_price=None, so
         min_price=Min('current_price'),
         max_price=Max('current_price')
     )
-    # db_min = floor(price_aggregate['min_price']) if price_aggregate['min_price'] else 0
-    # db_max = ceil(price_aggregate['max_price'] / 100) * 100 if price_aggregate['max_price'] else 10000
 
     db_min_price = price_aggregate['min_price'] or 0
     db_max_price = price_aggregate['max_price'] or 10000
@@ -46,25 +43,16 @@ def searchfilter_bookStore(books, query=None, min_price=None, max_price=None, so
     min_val, max_val = 0, db_max
 
     if min_price or max_price:
-        # print("Min and max value", min_price, max_price)
+
         min_val = to_int(min_price, 0)
         max_val = to_int(max_price, db_max)
 
-        # print("Min and max value after function: ", min_val, max_val)
-        #
-        # print('llll')
-
         if min_val is None or min_val < 0:
             min_val = 0
-        # if max_val is None or max_val < 0 or max_val > price_aggregate['max_price']:
-        #     # print('h')
-        #     max_val = price_aggregate['max_price']
-        #     print(max_val)
+
         if max_val is None or max_val < 0 or max_val > db_max_price:
             max_val = db_max_price
 
-        # if min_val > max_val:
-        #     min_val, max_val = 0, price_aggregate['min_price']
         if min_val > max_val:
             min_val, max_val = 0, db_min_price
 
@@ -75,13 +63,8 @@ def searchfilter_bookStore(books, query=None, min_price=None, max_price=None, so
         max_val = ceil(max_val / 100) * 100
 
         books = books.filter(stock__current_price__gte=min_val, stock__current_price__lte=max_val)
-        # print('nnnnnn')
 
-    # if sort_by:
-    # print('sort_by')
-    # print('mathi: ', sort_by)
     books = applying_sorting(books, sort_by=sort_by, allowed_sorts=ALLOWED_SORTS["bookstore"],
                              default='-stock__is_available')
-    # print('book from sort: ', books)
 
     return books, min_val, max_val, db_max

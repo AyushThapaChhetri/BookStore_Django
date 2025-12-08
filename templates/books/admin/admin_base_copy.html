@@ -41,7 +41,7 @@
                             <div class="flex flex-row  items-center gap-2 w-fit">
                                 <p>Sort by: </p>
                                 <form class="max-w-sm mx-auto" method="get">
-                                    <select id="sortBy" name="sort" onchange="this.form.submit()"
+                                    <select id="sortBy" name="sort"
                                             class="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg  focus:ring-blue-500 focus:border-blue-500 block w-fit p-2.5">
 
                                         {% block sort_options %}
@@ -71,7 +71,7 @@
                         {% endblock %}
                     </div>
 
-             
+
 
                 {% endblock %}
                 {% if not is_recycle_bin %}
@@ -125,7 +125,7 @@
                         <div class="flex flex-row items-center gap-2 w-fit">
                             <p>Show: </p>
                             <form class="max-w-sm mx-auto" method="get">
-                                <select id="rowsPerPage" name="limit" onchange="this.form.submit()"
+                                <select id="rowsPerPage" name="limit"
                                         class="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-fit p-2.5">
                                     <option value="10" {% if limit == 10 %}selected{% endif %}>10</option>
                                     <option value="20" {% if limit == 20 %}selected{% endif %}>20</option>
@@ -216,79 +216,140 @@
     {% block base_script %}
         <script>
 
-            const searchInput = document.getElementById('searchInput');
-            const tableBody = document.getElementById('listTableBody');
-            const is_recycle_bin = {{ is_recycle_bin|yesno:"true,false"}}
+            document.addEventListener("DOMContentLoaded", () => {
+
+                const tableBody = document.getElementById("listTableBody");
+                const searchInput = document.getElementById("searchInput");
+                const sortSelect = document.getElementById("sortBy");
+                const dateFilterForm = document.getElementById("stock-datefilter-form") || null;
+                const dateInput = document.getElementById("datefilter");
 
 
-            function debounce(func, delay) {
-                let timeout;
-                return (...args) => {
-                    clearTimeout(timeout);
-                    timeout = setTimeout(() => func(...args), delay);
+                function debounce(func, delay) {
+                    let t;
+                    return (...args) => {
+                        clearTimeout(t);
+                        t = setTimeout(() => func(...args), delay);
+                    };
                 }
-            }
 
 
-            function renderItems(items) {
-                console.warn('renderItems function should be implemented by child template');
-            }
+                function buildQuery() {
+                    const params = new URLSearchParams();
 
-            const handleSearch = debounce(async () => {
-                    const query = searchInput.value.trim();
+                    if (searchInput?.value.trim()) {
+                        params.set("q", searchInput.value.trim());
+                    }
 
+                    if (sortSelect?.value) {
+                        params.set("sort", sortSelect.value);
+                    }
+
+                    if (dateInput?.value) {
+                        params.set("datefilter", dateInput.value);
+                    }
+
+                    const current = new URLSearchParams(window.location.search);
+                    if (current.get("limit")) params.set("limit", current.get("limit"));
+                    if (current.get("page")) params.set("page", current.get("page"));
+
+                    return params.toString();
+                }
+
+
+                function syncUI() {
+                    const p = new URLSearchParams(window.location.search);
+
+                    if (p.get("q") && searchInput) searchInput.value = p.get("q");
+                    if (p.get("sort") && sortSelect) sortSelect.value = p.get("sort");
+                    if (p.get("datefilter") && dateInput) dateInput.value = p.get("datefilter");
+                }
+
+
+                function updateUrl(q) {
+                    const newUrl = `${window.location.pathname}?${q}`;
+                    window.history.pushState({}, "", newUrl);
+                }
+
+
+                async function fetchTable() {
                     try {
+                        const url = `${window.location.pathname}${window.location.search}`;
+                        const response = await axios.get(url, {
+                            headers: {"X-Requested-With": "XMLHttpRequest"}
+                        });
 
-                        const response = await axios.get(`{% block search_url %}
-                    /admin-panel/books/search/{% endblock %}?q=${encodeURIComponent(query)}&deleted=${is_recycle_bin ? '1' : '0'}`, {headers: {"X-Requested-With": "XMLHttpRequest"}});
-                        renderItems(response.data.{% block response_data_key %}books{% endblock %});
-                        console.log(response.data.orders)
-                    } catch
-                        (error) {
-                        console.error('Search Failed', error);
+                        tableBody.innerHTML = response.data.table_html;
+                        syncUI();
+
+                    } catch (err) {
+                        console.error("AJAX fetch failed:", err);
                     }
                 }
-                ,
-                1000
-            )
 
 
-            if (searchInput) {
-                searchInput.addEventListener('input', handleSearch);
-                searchInput.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') {
+                if (searchInput) {
+
+                    searchInput.addEventListener("input", debounce(() => {
+                        const q = buildQuery();
+                        updateUrl(q);
+                        fetchTable();
+                    }, 500));
+
+                    searchInput.addEventListener("keydown", e => {
+                        if (e.key === "Enter") e.preventDefault();
+                    });
+                }
+
+
+                if (sortSelect) {
+                    sortSelect.addEventListener("change", () => {
+                        const q = buildQuery();
+                        updateUrl(q);
+                        fetchTable();
+                    });
+                }
+
+
+                if (dateFilterForm) {
+                    dateFilterForm.addEventListener("submit", e => {
                         e.preventDefault();
-                    }
+                        const q = buildQuery();
+                        updateUrl(q);
+                        fetchTable();
+                    });
+                }
+
+
+                document.addEventListener("click", (e) => {
+                    const a = e.target.closest("a");
+                    if (!a) return;
+
+                    if (!a.href.includes("?page=")) return;
+
+                    e.preventDefault();
+
+                    const url = new URL(a.href);
+                    const page = url.searchParams.get("page");
+
+                    const params = new URLSearchParams(window.location.search);
+                    params.set("page", page);
+
+                    updateUrl(params.toString());
+                    fetchTable();
                 });
-            }
 
 
-            function openModal(itemUUID, modalType = 'delete') {
+                window.addEventListener("popstate", () => {
+                    fetchTable();
+                });
 
-                const modal = document.getElementById(modalType + 'Modal');
-                const form = document.getElementById(modalType + 'Form');
-                if (form) {
-                    console.log('Item uuid:', itemUUID.trim());
 
-                    form.action = `{% block modal_form_action %}{% endblock %}${itemUUID.trim()}/`;
-                }
-                if (modal) {
-                    modal.classList.remove('hidden');
-                    modal.classList.add('flex');
-                }
-            }
+                syncUI();
 
-            function closeModal(modalType = 'delete') {
-                const modal = document.getElementById(modalType + 'Modal');
-                if (modal) {
-                    modal.classList.add('hidden');
-                    modal.classList.remove('flex');
-                }
-            }
-
+            });
 
         </script>
     {% endblock %}
+
 {% endblock %}
-
-

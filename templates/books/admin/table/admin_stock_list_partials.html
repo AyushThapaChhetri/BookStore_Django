@@ -1,0 +1,50 @@
+{% for stock in paginated_stocks %}
+    <tr class="{% if forloop.counter|divisibleby:2 %}bg-gray-300{% else %}bg-gray-50{% endif %}">
+        <td class="p-3 text-sm text-gray-700">
+            {% if stock.book.cover_image %}
+                <img src="{{ stock.book.cover_image.url }}"
+                     alt="{{ stock.book.title }}"
+                     class="h-10 w-8 object-cover"/>
+            {% else %}
+                <span class="italic text-gray-400">No cover available</span>
+            {% endif %}
+        </td>
+        <td class="p-3 text-sm text-gray-700">{{ stock.book.title }}</td>
+        <td class="p-3 text-sm text-gray-700 text-center">
+            {% if stock.current_price %}
+                Rs {{ stock.current_price|floatformat:"-2" }}
+            {% else %}
+                -
+            {% endif %}
+        </td>
+        {#        <td class="p-3 text-sm text-gray-700 text-center">#}
+        {#            {% if stock.current_discount_percentage %}#}
+        {#                {{ stock.current_discount_percentage|floatformat:-2 }}% → Rs#}
+        {#                {{ stock.discount_amount|floatformat:"2"|floatformat:"g" }}#}
+        {#            {% else %}#}
+        {#                -#}
+        {#            {% endif %}#}
+        {#        </td>#}
+        <td class="p-3 text-sm text-gray-700 text-center">
+            {{ stock.total_quantity|default:'-' }}
+        </td>
+        <td class="p-3 text-sm text-gray-700 text-center">
+            {% if not stock.costofgoods == 0 %}
+                {{ stock.costofgoods|default:'-'|floatformat:"-2" }}
+            {% else %}
+                -
+            {% endif %}
+        </td>
+        <td class="p-3 text-sm text-gray-700">
+            <div class="flex space-x-2 gap-1">
+                <button class="bg-indigo-600 hover:bg-indigo-800 text-white font-bold py-2 px-4 rounded">
+                    <a href="{% url 'stock_detail' stock.book.uuid %}">View</a>
+                </button>
+            </div>
+        </td>
+    </tr>
+{% empty %}
+    <tr>
+        <td colspan="7" class="text-center p-4 text-gray-500">No Rows Found</td>
+    </tr>
+{% endfor %}
