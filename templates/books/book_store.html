@@ -54,7 +54,7 @@
                                 </button>
                             </div>
 
-                            <!-- drawer component -->
+
                             <div id="drawer-example"
                                  class="fixed top-0 left-0 z-40 h-screen p-4 overflow-y-auto transition-transform -translate-x-full bg-white w-80 dark:bg-gray-100"
                                  tabindex="-1" aria-labelledby="drawer-label">
@@ -255,7 +255,7 @@
             }
         }
 
-        // --- Limit dropdown ---
+        //Limit dropdown
         function attachLimitListener() {
             const limitSelect = document.getElementById("rowsPerPage");
             if (!limitSelect) return;
@@ -272,14 +272,14 @@
         document.addEventListener("DOMContentLoaded", () => {
             const url = new URL(window.location.href);
 
-            // --- Restore search query ---
+            //Restore search query
             const existingQuery = url.searchParams.get("q");
             if (existingQuery) searchInput.value = existingQuery;
 
             fetchBooks(url);
 
 
-            // --- Search input debounce ---
+            //Search input debounce
             searchInput.addEventListener('input', () => {
                 clearTimeout(debounceTimer);
                 debounceTimer = setTimeout(() => {
@@ -294,7 +294,7 @@
                 }, 500);
             });
 
-            // --- Sorting ---
+            //Sorting
             const sortSelect = document.getElementById("sortBy_item");
             if (sortSelect) {
                 sortSelect.addEventListener("change", () => {
@@ -325,7 +325,7 @@
 
             {#attachLimitListener();#}
 
-            // --- Price slider and filter buttons ---
+            //Price slider and filter buttons
             const filterContainers = document.querySelectorAll('.filter-container');
             filterContainers.forEach(container => {
                 const min_range_price = container.querySelector('.min_range_price');

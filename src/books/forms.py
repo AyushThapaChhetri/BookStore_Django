@@ -8,6 +8,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from src.books.models import Book, Author, Genre, Publisher
+from src.stock.validators import clean_price, clean_discount_percentage
 
 
 def clean_spaces_or_none(value: str | None) -> str | None:
@@ -18,7 +19,7 @@ def clean_spaces_or_none(value: str | None) -> str | None:
 
 
 def validate_isbn(isbn: str) -> bool:
-    """Validate ISBN-13: strip non-digits, check length 13, starts with 978/979, and checksum."""
+    # Validate ISBN-13: strip non-digits, check length 13, starts with 978/979, and checksum.
     d = re.sub(r'\D', '', isbn).strip()
     print("Digits:", list(d))  # debug
 
@@ -202,6 +203,15 @@ class GenreForm(forms.ModelForm):
 
 class BookForm(forms.ModelForm):
     isbn = forms.CharField(required=False)  # override, skip default max_length check
+    price = forms.DecimalField(
+        required=False,
+        widget=forms.NumberInput(attrs={'step': '0.01'})
+    )
+
+    discount_percentage = forms.FloatField(
+        required=False,
+        widget=forms.NumberInput(attrs={'step': '0.01', 'min': '0', 'max': '100'})
+    )
 
     class Meta:
         model = Book
@@ -212,6 +222,8 @@ class BookForm(forms.ModelForm):
             'language',
             'cover_image',
             'isbn',
+            'price',
+            'discount_percentage',
             'publication_date',
             'edition',
             'authors',
@@ -223,7 +235,8 @@ class BookForm(forms.ModelForm):
             'cover_image': forms.ClearableFileInput(),
             'authors': forms.SelectMultiple(),
             'genres': forms.SelectMultiple(),
-            # 'publication_date': forms.DateInput(attrs={'type': 'date'}),
+            # 'price': forms.NumberInput(attrs={'step': '0.01'}),
+            # 'discount_percentage': forms.NumberInput(attrs={'step': '0.01', 'min': '0', 'max': '100'}),
             'publication_date': forms.DateInput(
                 attrs={'type': 'date'},
                 format='%Y-%m-%d'
@@ -261,7 +274,13 @@ class BookForm(forms.ModelForm):
             print('invalid ISBN')
             raise ValidationError("Invalid ISBN-13 format or checksum.")
         print('correct Isbn')
-        return cleaned_isbn  # Store without hyphens
+        return cleaned_isbn
+
+    def clean_price(self):
+        return clean_price(self, self.cleaned_data['price'])
+
+    def clean_discount_percentage(self):
+        return clean_discount_percentage(self, self.cleaned_data['discount_percentage'])
 
     def clean_edition(self):
         return clean_spaces_or_none(self.cleaned_data.get('edition'))

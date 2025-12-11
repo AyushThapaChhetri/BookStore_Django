@@ -29,7 +29,7 @@
 
                 <div class="relative z-0 w-full mb-5 group">
                     {% if field|widget_type == "file" %}
-                        <!-- File Input -->
+                        {#                        File Input #}
                         <input
                                 type="file"
                                 name="{{ field.html_name }}"
@@ -52,7 +52,7 @@
                         {% endif %}
 
                     {% elif field|widget_type == "textarea" %}
-                        <!-- Textarea -->
+                        {#                         Textarea #}
                         <textarea
                                 name="{{ field.html_name }}"
                                 id="{{ field.id_for_label }}"
@@ -71,7 +71,7 @@
 
                         <div class="flex flex-row mb-4 gap-2">
                             <div class="flex flex-col grow ">
-                                <!-- Single Select -->
+                                {#                                 Single Select #}
                                 <select
                                         name="{{ field.html_name }}"
                                         id="{{ field.id_for_label }}"
@@ -112,7 +112,7 @@
                             <div class="flex flex-col grow ">
 
 
-                                <!-- Multiple Select -->
+                                {#                                Multiple Select#}
                                 <select
                                         name="{{ field.html_name }}"
                                         id="{{ field.id_for_label }}"
@@ -122,7 +122,11 @@
                                 >
                                     {% for choice_value, choice_label in field.field.choices %}
                                         <option value="{{ choice_value }}"
-                                                {% if field.value and choice_value in field.value %}selected{% endif %}>
+                                                {% if field.value %}
+                                                    {% if choice_value|stringformat:"s" in field.value|stringformat:"s" %}
+                                                selected
+                                                    {% endif %}
+                                                {% endif %}>
 
                                             {{ choice_label }}
                                         </option>
@@ -149,7 +153,7 @@
                         </div>
 
                     {% elif field|widget_type == "date" %}
-                        <!-- Date Input -->
+                        {#                         Date Input #}
                         <input
                                 type="date"
                                 name="{{ field.html_name }}"
@@ -172,15 +176,18 @@
                         </label>
 
                     {% else %}
-                        <!-- Regular Input Fields -->
+                        {#                         Regular Input Fields #}
 
                         <input
                                 type="{{ field|input_type }}"
                                 name="{{ field.html_name }}"
                                 id="{{ field.id_for_label }}"
                                 value="{{ field.value|default_if_none:'' }}"
-                                class="block py-2.5 px-0 w-full text-[16px] text-gray-900 bg-transparent border-0 border-b-2 {% if field.errors %}border-red-500{% else %}border-gray-300{% endif %} appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
-                                placeholder=" "
+                        {% for attr, val in field.field.widget.attrs.items %} {{ attr }}="{{ val }}"{% endfor %}
+                        class="block py-2.5 px-0 w-full text-[16px] text-gray-900 bg-transparent border-0 border-b-2
+                        {% if field.errors %}border-red-500{% else %}border-gray-300{% endif %}
+                         appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer"
+                        placeholder=" "
                         />
                         <label
                                 for="{{ field.id_for_label }}"
@@ -233,10 +240,16 @@
             {#console.log("Hello");#}
             {#console.log('field id', selectFieldId)#}
             {#console.log('name', fieldName);#}
+            if (fieldName === "publisher") {
+                fieldName = 'publishers';
+            }
+            
+            console.log(`/admin-panel/${fieldName}/create`)
+
             try {
 
 
-                const response = await axios.get((`/admin-panel/${fieldName}`), {
+                const response = await axios.get((`/admin-panel/${fieldName}/create/`), {
                     headers: {"X-Requested-With": "XMLHttpRequest"}
                 });
 

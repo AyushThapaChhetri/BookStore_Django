@@ -30,10 +30,12 @@ text-xs lg:text-sm
             <div class=" w-[80%] overflow-hidden">
                 <div class="lg:flex  w-[50px] border-1 hidden   border-gray-200 rounded-lg gap-2 ">
 
-                    {% for item in order.items.all|slice:":5" %}
+                    {#                    {% for item in order.items.all|slice:":5" %}#}
+
+                    {% for item in items|slice:":5" %}
 
                         {% if item.book.cover_image %}
-
+                            
                             <img class=" rounded-t-lg"
                                  src="{{ item.book.cover_image.url }}"
                                  alt="{{ item.book.title }}"
@@ -43,7 +45,7 @@ text-xs lg:text-sm
                             {#                         alt="No cover available"#}
                             {#                    />#}
 
-                      
+                        {% else %}
                             <img class="rounded-t-lg"
                                  src="{% static 'images/no_book_cover.png' %}"
                                  alt="No cover available"
@@ -79,7 +81,8 @@ text-xs lg:text-sm
     </div>
     <div class="order-items flex flex-col hidden  gap-4">
 
-        {% for item in order.items.all %}
+        {#        {% for item in order.items.all %}#}
+        {% for item in items %}
             {% include 'orders/components/orderItem.html' with item=item %}
         {% endfor %}
     </div>

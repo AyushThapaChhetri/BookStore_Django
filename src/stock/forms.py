@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from .models import Stock, StockBatch
+from .validators import clean_price, clean_discount_percentage
 from ..core.forms.validators import validate_percentage, validate_no_leading_trailing_spaces
 from ..core.validators.stock import validate_current_price
 
@@ -25,17 +26,22 @@ class StockForm(forms.ModelForm):
             'is_available': forms.HiddenInput(),
         }
 
+    # def clean_current_price(self):
+    #     price = self.cleaned_data.get('current_price')
+    #     if price < 0:
+    #         raise ValidationError("Price must be non-negative.")
+    #     return price
     def clean_current_price(self):
-        price = self.cleaned_data.get('current_price')
-        if price < 0:
-            raise ValidationError("Price must be non-negative.")
-        return price
+        return clean_price(self, self.cleaned_data['current_price'])
+
+    # def clean_current_discount_percentage(self):
+    #     discount = self.cleaned_data.get('discount_percentage')
+    #     if discount < 0 or discount > 100:
+    #         raise ValidationError("Discount percentage must be between 0 and 100.")
+    #     return discount
 
     def clean_current_discount_percentage(self):
-        discount = self.cleaned_data.get('discount_percentage')
-        if discount < 0 or discount > 100:
-            raise ValidationError("Discount percentage must be between 0 and 100.")
-        return discount
+        return clean_discount_percentage(self, self.cleaned_data['current_discount_percentage'])
 
     def clean_last_restock_date(self):
         restock_date = self.cleaned_data.get('last_restock_date')

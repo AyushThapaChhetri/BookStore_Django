@@ -3,7 +3,7 @@
 {# max-w-sm #}
  min-h-[400px] sm:min-h-[400px] md:min-h-[300px] lg:min-h-[400px]">
     <div class="relative group">
-        <!-- Your original card becomes the inner element -->
+
         <div
                 class="group relative flex  flex-col h-fit hover:justify-between relative gap-2 w-full max-w-sm
         bg-white
@@ -57,31 +57,7 @@
             In stock
             </div>
                 {% else %}Out of Stock{% endif %} </span>
-                {#        <div class="flex items-center mt-2.5 mb-5">#}
-                {#            <div class="flex items-center space-x-1 rtl:space-x-reverse">#}
-                {#                <svg class="w-4 h-4 text-yellow-300" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"#}
-                {#                     fill="currentColor" viewBox="0 0 22 20">#}
-                {#                    <path d="M20.924 7.625a1.523 1.523 0 0 0-1.238-1.044l-5.051-.734-2.259-4.577a1.534 1.534 0 0 0-2.752 0L7.365 5.847l-5.051.734A1.535 1.535 0 0 0 1.463 9.2l3.656 3.563-.863 5.031a1.532 1.532 0 0 0 2.226 1.616L11 17.033l4.518 2.375a1.534 1.534 0 0 0 2.226-1.617l-.863-5.03L20.537 9.2a1.523 1.523 0 0 0 .387-1.575Z"/>#}
-                {#                </svg>#}
-                {#                <svg class="w-4 h-4 text-yellow-300" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"#}
-                {#                     fill="currentColor" viewBox="0 0 22 20">#}
-                {#                    <path d="M20.924 7.625a1.523 1.523 0 0 0-1.238-1.044l-5.051-.734-2.259-4.577a1.534 1.534 0 0 0-2.752 0L7.365 5.847l-5.051.734A1.535 1.535 0 0 0 1.463 9.2l3.656 3.563-.863 5.031a1.532 1.532 0 0 0 2.226 1.616L11 17.033l4.518 2.375a1.534 1.534 0 0 0 2.226-1.617l-.863-5.03L20.537 9.2a1.523 1.523 0 0 0 .387-1.575Z"/>#}
-                {#                </svg>#}
-                {#                <svg class="w-4 h-4 text-yellow-300" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"#}
-                {#                     fill="currentColor" viewBox="0 0 22 20">#}
-                {#                    <path d="M20.924 7.625a1.523 1.523 0 0 0-1.238-1.044l-5.051-.734-2.259-4.577a1.534 1.534 0 0 0-2.752 0L7.365 5.847l-5.051.734A1.535 1.535 0 0 0 1.463 9.2l3.656 3.563-.863 5.031a1.532 1.532 0 0 0 2.226 1.616L11 17.033l4.518 2.375a1.534 1.534 0 0 0 2.226-1.617l-.863-5.03L20.537 9.2a1.523 1.523 0 0 0 .387-1.575Z"/>#}
-                {#                </svg>#}
-                {#                <svg class="w-4 h-4 text-yellow-300" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"#}
-                {#                     fill="currentColor" viewBox="0 0 22 20">#}
-                {#                    <path d="M20.924 7.625a1.523 1.523 0 0 0-1.238-1.044l-5.051-.734-2.259-4.577a1.534 1.534 0 0 0-2.752 0L7.365 5.847l-5.051.734A1.535 1.535 0 0 0 1.463 9.2l3.656 3.563-.863 5.031a1.532 1.532 0 0 0 2.226 1.616L11 17.033l4.518 2.375a1.534 1.534 0 0 0 2.226-1.617l-.863-5.03L20.537 9.2a1.523 1.523 0 0 0 .387-1.575Z"/>#}
-                {#                </svg>#}
-                {#                <svg class="w-4 h-4 text-gray-200 " aria-hidden="true"#}
-                {#                     xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 22 20">#}
-                {#                    <path d="M20.924 7.625a1.523 1.523 0 0 0-1.238-1.044l-5.051-.734-2.259-4.577a1.534 1.534 0 0 0-2.752 0L7.365 5.847l-5.051.734A1.535 1.535 0 0 0 1.463 9.2l3.656 3.563-.863 5.031a1.532 1.532 0 0 0 2.226 1.616L11 17.033l4.518 2.375a1.534 1.534 0 0 0 2.226-1.617l-.863-5.03L20.537 9.2a1.523 1.523 0 0 0 .387-1.575Z"/>#}
-                {#                </svg>#}
-                {#            </div>#}
-                {#            <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-sm  ">5.0</span>#}
-                {#        </div>#}
+
                 <div class="flex gap-2 items-center ">
                     {% if book.stock.current_discount_percentage > 0 %}
                         <span class="font-lexend text-md font-light text-gray-400 line-through decoration-red-800">Rs {{ book.stock.current_price|floatformat:"-2" }}</span>
@@ -96,16 +72,19 @@
                 <button
                         type="button"
                         class="button_cart_add text-white
-                   {% if book.stock.can_sell > 0 %}
+{#                   {% if book.stock.can_sell > 0 %}#}
+                   {% if book.can_sell > 0 %}
                        bg-blue-700 hover:bg-blue-800 focus:ring-blue-300
                    {% else %}
                        bg-red-700 hover:bg-red-800 focus:ring-red-300 cursor-not-allowed
                    {% endif %}
                    focus:ring-4 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center"
                         data-book-uuid="{{ book.uuid }}"
-                        {% if book.stock.can_sell <= 0 %}disabled aria-disabled="true"{% endif %}
+                        {#                        {% if book.stock.can_sell <= 0 %}disabled aria-disabled="true"{% endif %}#}
+                        {% if book.can_sell <= 0 %}disabled aria-disabled="true"{% endif %}
                 >
-                    {% if book.stock.can_sell > 0 %}Add to cart
+                    {#                    {% if book.stock.can_sell > 0 %}Add to cart#}
+                    {% if book.can_sell > 0 %}Add to cart
                     {% else %}Sold
                         Out{% endif %}
                 </button>

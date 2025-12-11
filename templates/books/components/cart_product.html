@@ -11,7 +11,7 @@
             />
 
         {% else %}
-            <!-- Optional placeholder image -->
+            {#         Optional placeholder image#}
             <img class="p-8 rounded-t-lg"
                  src="{% static 'images/no_book_cover.png' %}"
                  alt="No cover available"
@@ -31,7 +31,18 @@
                     {% endif %}{% endfor %}
                 </p>
             </div>
-            <p class="font-bold p-[2px]">Rs {{ item.book.stock.current_price|floatformat:"-2" }}</p>
+            <div>
+                <p class="font-bold p-[2px] {% if item.book.stock.discount_amount > 0 %}line-through decoration-red-800 text-gray-400{% endif %}">
+                    Rs {{ item.book.stock.current_price|floatformat:"-2" }}
+
+                </p>
+                {% if item.book.stock.discount_amount > 0 %}
+                    <p class="font-bold p-[2px]">
+                        Rs {{ item.book.stock.discount_amount|floatformat:"-2" }}
+
+                    </p>
+                {% endif %}
+            </div>
         </div>
         <div class="flex flex-row-reverse sm:flex-row  gap-1 justify-between">
             <div class="flex flex-col  justify-between">
@@ -74,21 +85,22 @@
                         </svg>
                     </button>
                 </div>
+                
                 <p id="helper-text-explanation"
                    class="mt-2 text-sm
 
-                    {% if item.book.stock.total_remaining_quantity == 0 or item.quantity > item.book.stock.total_remaining_quantity or item.book.is_deleted %}
+                    {% if item.total_remaining == 0 or item.quantity > item.total_remaining or item.cannot_purchase %}
                         text-red-600
                   {% else %}
                       text-gray-500
                   {% endif %}
                     hidden sm:block">
-                    {% if not item.book.is_deleted %}
+                    {% if not item.cannot_purchase %}
 
-                        {% if item.book.stock.total_remaining_quantity > 0 %}
-                            <span class="font-bold">{{ item.book.stock.total_remaining_quantity }}</span> in stock
+                        {% if item.total_remaining > 0 %}
+                            <span class="font-bold">{{ item.total_remaining }}</span> in stock
                         {% else %}
-                            {{ item.book.stock.total_remaining_quantity }} Out of stock{% if item.quantity == 1 %}!
+                            {{ item.total_remaining }} Out of stock{% if item.quantity == 1 %}!
                             Please
                             remove this item
                         {% endif %}

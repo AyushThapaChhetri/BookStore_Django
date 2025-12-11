@@ -20,7 +20,7 @@
     <div class="flex flex-col gap-2">
 
         {% for order in orders %}
-            {% include 'orders/components/order_cards.html' with order=order %}
+            {% include 'orders/components/order_cards.html' with order=order items=order.items.all %}
         {% empty %}
             <p>You have no orders.</p>
         {% endfor %}

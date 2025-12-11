@@ -108,7 +108,7 @@
 
 {% block search_url %}/admin-panel/search/genres{% endblock %}
 {% block response_data_key %}genres{% endblock %}
-{% block modal_form_action %}/admin-panel/genre/delete/{% endblock %}
+{% block modal_form_action %}/admin-panel/genres/delete/{% endblock %}
 
 
 {% block base_script %}
@@ -157,8 +157,8 @@
 
                     <td class="p-3 text-sm text-gray-700">
                         <div class="flex space-x-2 gap-1">
-                            <a href="/admin-panel/genre/detail/${genre.uuid}" class="bg-indigo-600 hover:bg-indigo-800 text-white font-bold py-2 px-4 rounded">View</a>
-                            <a href="/admin-panel/genre/edit/${genre.uuid}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Edit</a>
+                            <a href="/admin-panel/genres/${genre.uuid}" class="bg-indigo-600 hover:bg-indigo-800 text-white font-bold py-2 px-4 rounded">View</a>
+                            <a href="/admin-panel/genres/edit/${genre.uuid}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Edit</a>
                             <button onclick="openModal('${genre.uuid}', 'delete')" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Delete</button>
                         </div>
                     </td>

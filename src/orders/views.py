@@ -10,7 +10,7 @@ from django.views import View
 
 from Project_B.utils import applying_sorting, ALLOWED_SORTS
 from src.books.pagination import paginate_queryset
-from src.orders.models import Order, OrderItem
+from src.orders.models import Order
 from src.orders.utils import search_order
 from src.stock.services import StockService
 
@@ -71,23 +71,25 @@ class MyOrders(View):
     def get(self, request):
         # print('myorders')
 
-        user_orders = Order.objects.filter(user=request.user).prefetch_related('items', 'items__book').order_by(
+        user_orders = Order.objects.filter(user=request.user).prefetch_related('items', 'items__book',
+                                                                               'items__book__stock',
+                                                                               'items__book__publisher').order_by(
             '-created_at')
         # print("User Orders:", user_orders)
 
-        user_order_items = OrderItem.objects.filter(order__user=request.user).select_related('order', 'book')
+        # user_order_items = OrderItem.objects.filter(order__user=request.user).select_related('order', 'book')
         # print("User Order Items:", user_order_items)
         if not request.user.is_superuser:
             print("not superuser")
             return render(request, 'orders/myorder_dashboard.html', {
                 "orders": user_orders,
-                "order_items": user_order_items,
+                # "order_items": user_order_items,
             })
 
         print("superuser")
         return render(request, 'orders/admin/admin_order_dashboard.html', {
             "orders": user_orders,
-            "order_items": user_order_items,
+            # "order_items": user_order_items,
         })
 
 
@@ -106,9 +108,6 @@ class OrderView(View):
         # print("order: ", order)
         if query:
             order = search_order(order, query)
-
-        # print("query: ", query)
-        # print("query: ", order)
 
         if show_by in dict(Order.STATUS_CHOICES):
             order = order.filter(status=show_by)

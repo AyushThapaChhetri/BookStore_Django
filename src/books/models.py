@@ -2,6 +2,7 @@ from django.db import models
 from django.db.models import UniqueConstraint
 from django.db.models.functions import Lower
 
+from src.books.managers import BookManager
 from src.core.models import AbstractBaseModel
 
 
@@ -82,6 +83,8 @@ class Book(AbstractBaseModel):
     authors = models.ManyToManyField(Author, related_name='books')
     publisher = models.ForeignKey('Publisher', on_delete=models.PROTECT, related_name='books')
     genres = models.ManyToManyField(Genre, related_name='books', blank=True)
+
+    objects = BookManager()
 
     def __str__(self):
         author_names = ', '.join(author.name for author in self.authors.all())

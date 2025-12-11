@@ -56,6 +56,19 @@
     </form>
 {% endblock %}
 
+
+{% block  export_cv %}
+    <form id="stock-exportExcel-form" class="flex h-fit gap-4 flex-wrap items-center">
+        <button
+                {#            onclick="window.location.href='?export=excel'"#}
+                type="submit"
+                class="bg-green-600 absolute right-0 hover:bg-green-700 text-white px-3 py-2 rounded"
+        >
+            Export Excel
+        </button>
+    </form>
+{% endblock %}
+
 {% block add_perm %}stocks.add_stock{% endblock %}
 {% block sort_title_asc %}Titles{% endblock %}
 {% block sort_title_desc %}Titles{% endblock %}

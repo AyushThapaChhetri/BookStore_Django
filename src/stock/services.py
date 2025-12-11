@@ -312,7 +312,7 @@ def update_stock_price(stock, new_price, new_discount, user, reason="Manual upda
     stock.current_price = Decimal(new_price)
     stock.current_discount_percentage = Decimal(new_discount)
     stock.save()
-
+   
     PriceHistory.objects.create(
         stock=stock,
         old_price=old_price,

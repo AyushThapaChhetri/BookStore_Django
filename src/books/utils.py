@@ -1,6 +1,8 @@
 from math import floor, ceil
 
 from django.db.models import Q, Max, Min
+from django.http import HttpResponse
+from openpyxl import Workbook
 
 from Project_B.utils import applying_sorting, ALLOWED_SORTS
 from src.books.models import Book
@@ -68,3 +70,33 @@ def searchfilter_bookStore(books, query=None, min_price=None, max_price=None, so
                              default='-stock__is_available')
 
     return books, min_val, max_val, db_max
+
+
+def export_excel(queryset):
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Stocks"
+
+    ws.append([
+        "Book Title",
+        "Authors",
+        "Publisher",
+        "Total Quantity",
+        "Cost of Goods",
+    ])
+
+    for stock in queryset:
+        ws.append([
+            stock.book.title,
+            ", ".join(a.name for a in stock.book.authors.all()),
+            stock.book.publisher.name if stock.book.publisher else "",
+            stock.total_quantity,
+            float(stock.costofgoods),
+        ])
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = 'attachment; filename="stocks.xlsx"'
+    wb.save(response)
+    return response

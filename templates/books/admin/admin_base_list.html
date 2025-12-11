@@ -71,7 +71,7 @@
                         {% endblock %}
                     </div>
 
-             
+
 
                 {% endblock %}
                 {% if not is_recycle_bin %}
@@ -242,7 +242,7 @@
                         const response = await axios.get(`{% block search_url %}
                     /admin-panel/books/search/{% endblock %}?q=${encodeURIComponent(query)}&deleted=${is_recycle_bin ? '1' : '0'}`, {headers: {"X-Requested-With": "XMLHttpRequest"}});
                         renderItems(response.data.{% block response_data_key %}books{% endblock %});
-                        console.log(response.data.orders)
+                        {#console.log(response.data.orders)#}
                     } catch
                         (error) {
                         console.error('Search Failed', error);

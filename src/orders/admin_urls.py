@@ -6,7 +6,7 @@ from . import views
 urlpatterns = [
     # path('myorders', MyOrders.as_view(), name='admin_myorders'),
     path('orders/<int:order_id>/update-status/', views.update_order_status, name='update_order_status'),
-    path('orders/detail/<uuid:order_uuid>/', Order_detail_view.as_view(), name='order_detail_view'),
-    path('manage/order/list/', OrderView.as_view(), name='admin_order_list'),
+    path('orders/<uuid:order_uuid>/', Order_detail_view.as_view(), name='order_detail_view'),
+    path('orders/', OrderView.as_view(), name='admin_order_list'),
     # path('order/detail/<uuid>', StockDetailView.as_view(), name='stock_detail_view'),
 ]

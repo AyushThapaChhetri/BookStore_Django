@@ -16,7 +16,7 @@
                     />
 
                 {% else %}
-                    <!-- Optional placeholder image -->
+
                     <img class=""
                          src="{% static 'images/no_book_cover.png' %}"
                          alt="No cover available"
@@ -95,7 +95,7 @@
                                       d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"/>
                             </svg>
                             {% if books %}
-                                {% if books.stock.can_sell %}
+                                {% if books.can_sell %}
                                     {{ books.total_quantity }}
                                 {% else %}
                                     <span class="text-red-600 font-semibold">Is Not Available</span>
@@ -171,7 +171,7 @@
                            class="mt-2 text-sm text-gray-500">
 
                             {% if books %}
-                                {% if books.stock.can_sell %}
+                                {% if books.can_sell %}
                                     <span
                                             class="font-bold">{{ books.total_quantity }}</span>
                                 {% else %}
@@ -185,16 +185,16 @@
                     <button
                             type="button"
                             class="button_cart_add text-white
-           {% if books.stock.can_sell > 0 %}
+           {% if books.can_sell > 0 %}
                bg-blue-700 hover:bg-blue-800 focus:ring-blue-300
            {% else %}
                bg-red-700 hover:bg-red-800 focus:ring-red-300 cursor-not-allowed
            {% endif %}
            focus:ring-4 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center"
                             data-book-uuid="{{ books.uuid }}"
-                            {% if books.stock.can_sell <= 0 %}disabled aria-disabled="true"{% endif %}
+                            {% if books.can_sell <= 0 %}disabled aria-disabled="true"{% endif %}
                     >
-                        {% if books.stock.can_sell > 0 %}
+                        {% if books.can_sell > 0 %}
                             Add to cart
                         {% else %}
                             Sold Out
