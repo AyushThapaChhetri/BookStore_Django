@@ -40,8 +40,6 @@ from src.stock.services import StockService
 
 
 # Create your views here.
-def hello(request):
-    return render(request, 'books/hello.html', {'name': 'Ayush'})
 
 
 def search_books(request):
@@ -605,14 +603,7 @@ class BookStore(View):
         max_price = request.GET.get('max_price')
         sort_by = request.GET.get('sort')
 
-        # books = Book.objects.select_related('stock').prefetch_related('stock__batches').annotate(
-        #     total_quantity=Coalesce(Sum('stock__batches__remaining_quantity'), 0)
-        # )
-
         books = Book.objects.can_sell()
-
-        # items_count = CartItem.objects.filter(cart__user=request.user).count()
-        # print(items_count, ": Item count")
 
         books, min_price_value, max_price_value, db_max = searchfilter_bookStore(books, query, min_price,
                                                                                  max_price, sort_by)

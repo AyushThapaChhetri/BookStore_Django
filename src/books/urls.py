@@ -5,7 +5,7 @@ from .views import BookStore, BookCart, BookCheckout, BookCheckoutPayment, BookO
     BookDetailStore
 
 urlpatterns = [
-    path('hello', views.hello),
+   
     path('bookstore', BookStore.as_view(), name='book_store'),
 
     path('store/detail/<uuid>', BookDetailStore.as_view(), name='book_detail_store'),

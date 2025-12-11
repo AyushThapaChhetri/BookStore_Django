@@ -1,6 +1,8 @@
 {% if paginated_books %}
     {% for book in paginated_books %}
-        {% include 'books/components/cards.html' with book=book %}
+        {% if not book.is_deleted_boolean %}
+            {% include 'books/components/cards.html' with book=book %}
+        {% endif %}
     {% endfor %}
 {% else %}
     <p class="text-gray-600 p-5">No books available.</p>

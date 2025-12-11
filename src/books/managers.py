@@ -14,6 +14,10 @@ class BookQuerySet(models.QuerySet):
                     default=Value(False),
                 ),
                 output_field=BooleanField()
+            ),
+            is_deleted_boolean=ExpressionWrapper(
+                Case(When(deleted_at__isnull=True, then=Value(False)), default=Value(True))
+                , output_field=BooleanField()
             )
         )
 
