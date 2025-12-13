@@ -328,11 +328,18 @@ class BookListView(View):
         stock_qs = Stock.objects.annotate(
             total_quantity=Sum('batches__remaining_quantity')
         )
+        # books = Book.objects.all().select_related('publisher').prefetch_related(
+        #     'authors',
+        #     'genres',
+        #     Prefetch('stock', queryset=stock_qs)
+        # )
         books = Book.objects.all().select_related('publisher').prefetch_related(
             'authors',
             'genres',
             Prefetch('stock', queryset=stock_qs)
         )
+
+        print('books: ', books)
 
         books = applying_sorting(books, request=request, allowed_sorts=ALLOWED_SORTS["book"])
 

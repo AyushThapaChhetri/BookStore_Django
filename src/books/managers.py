@@ -1,10 +1,12 @@
-from django.db import models
 from django.db.models import ExpressionWrapper, Case, When, Value, Sum
 from django.db.models.fields import BooleanField
 from django.db.models.functions import Coalesce
 
+from src.core.managers import AllObjectsManager
+from src.core.querysets import SafeDeleteQuerySet
 
-class BookQuerySet(models.QuerySet):
+
+class BookQuerySet(SafeDeleteQuerySet):
     def can_sell(self):
         return self.prefetch_related('publisher', 'stock', 'stock__batches').annotate(
             total_quantity=Coalesce(Sum('stock__batches__remaining_quantity'), 0),
@@ -22,9 +24,9 @@ class BookQuerySet(models.QuerySet):
         )
 
 
-class BookManager(models.Manager):
+class BookManager(AllObjectsManager):
     def get_queryset(self):
-        return BookQuerySet(self.model, using=self._db)
+        return BookQuerySet(self.model, using=self._db).active()
 
     def can_sell(self):
         return self.get_queryset().can_sell()

@@ -4,6 +4,7 @@ from django.db.models.functions import Lower
 
 from src.books.managers import BookManager
 from src.core.models import AbstractBaseModel
+from src.core.soft_delete import SafeDeleteModel
 
 
 class Author(AbstractBaseModel):

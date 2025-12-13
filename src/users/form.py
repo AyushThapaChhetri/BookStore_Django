@@ -7,10 +7,11 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from src.users.models import User
+from src.users.utils import compress_image
 
 
 def clean_spaces_or_none(value: str | None) -> str | None:
-    """Strip leading/trailing spaces, collapse multiple spaces, return None if empty."""
+    # Strip leading/trailing spaces, collapse multiple spaces, return None if empty.
     if not value:
         return None
     cleaned = re.sub(r'\s+', ' ', value).strip()
@@ -18,7 +19,7 @@ def clean_spaces_or_none(value: str | None) -> str | None:
 
 
 def not_none_or_number(value: str | None) -> str | None:
-    """Raise ValidationError if value is purely numeric (int or float)."""
+    # Raise ValidationError if value is purely numeric (int or float).
     if value:
         cleaned = value.strip()
         try:
@@ -139,7 +140,8 @@ class UserForm(forms.ModelForm):
         if image.size > max_size:
             raise ValidationError("Image too large (max 2MB).")
 
-        return image
+        compressed = compress_image(image)
+        return compressed
 
 
 # class SetPasswordForm(forms.Form):

@@ -129,7 +129,7 @@
         function openDeleteModal(bookUUID) {
             const modal = document.getElementById('deleteModal');
             const form = document.getElementById('deleteForm');
-            form.action = `/admin-panel/book/delete/${bookUUID}`;
+            form.action = `/admin-panel/books/delete/${bookUUID}/`;
             modal.classList.remove('hidden');
             modal.classList.add('flex');
         }

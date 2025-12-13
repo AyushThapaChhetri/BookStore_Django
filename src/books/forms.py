@@ -1,5 +1,4 @@
 import datetime
-import os
 import re
 
 from django import forms
@@ -9,6 +8,7 @@ from django.utils import timezone
 
 from src.books.models import Book, Author, Genre, Publisher
 from src.stock.validators import clean_price, clean_discount_percentage
+from src.users.utils import validate_and_compress_image
 
 
 def clean_spaces_or_none(value: str | None) -> str | None:
@@ -111,19 +111,7 @@ class AuthorForm(forms.ModelForm):
 
     def clean_profile_image(self):
         image = self.cleaned_data.get('profile_image')
-        if not image:
-            return None
-        valid_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
-        ext = os.path.splitext(image.name)[1].lower()
-        if ext not in valid_extensions:
-            raise ValidationError("Only JPG, JPEG, PNG, GIF, and WEBP images are allowed.")
-        valid_mime_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-        if hasattr(image, 'content_type') and image.content_type not in valid_mime_types:
-            raise ValidationError("Invalid image file type.")
-        max_size = 2 * 1024 * 1024  # 2MB
-        if image.size > max_size:
-            raise ValidationError("Image too large (max 2MB).")
-        return image
+        return validate_and_compress_image(image)
 
 
 class PublisherForm(forms.ModelForm):
@@ -139,7 +127,6 @@ class PublisherForm(forms.ModelForm):
         ]
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4}),
-            # 'address': forms.Textarea(attrs={'rows': 3}),
             'address': forms.TextInput(attrs={
                 'placeholder': 'Address',
             }),
@@ -287,19 +274,12 @@ class BookForm(forms.ModelForm):
 
     def clean_cover_image(self):
         image = self.cleaned_data.get('cover_image')
-        if not image:
-            return None
-        valid_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
-        ext = os.path.splitext(image.name)[1].lower()
-        if ext not in valid_extensions:
-            raise ValidationError("Only JPG, JPEG, PNG, GIF, and WEBP images are allowed.")
-        valid_mime_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-        if hasattr(image, 'content_type') and image.content_type not in valid_mime_types:
-            raise ValidationError("Invalid image file type.")
-        max_size = 2 * 1024 * 1024  # 2MB
-        if image.size > max_size:
-            raise ValidationError("Image too large (max 2MB).")
-        return image
+
+        image_compressed = validate_and_compress_image(image)
+        # if not image_compressed:
+        #     raise ValidationError("Invalid image.")
+
+        return image_compressed
 
     def clean_publisher(self):
         publisher = self.cleaned_data.get('publisher')
